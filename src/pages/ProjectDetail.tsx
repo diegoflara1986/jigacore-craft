@@ -76,7 +76,7 @@ export default function ProjectDetail() {
           <div className="text-muted-foreground py-10 text-center">Tablero Kanban — Próximamente</div>
         </TabsContent>
         <TabsContent value="epics">
-          <div className="text-muted-foreground py-10 text-center">Épicas — Próximamente</div>
+          <ProjectEpicsTab projectId={project.id} />
         </TabsContent>
         <TabsContent value="time">
           <div className="text-muted-foreground py-10 text-center">Registro de Tiempo — Próximamente</div>
