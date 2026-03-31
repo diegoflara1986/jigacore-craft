@@ -159,6 +159,71 @@ export type Database = {
           },
         ]
       }
+      estimation_sessions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          current_story_id: string | null
+          id: string
+          name: string
+          project_id: string
+          scale_type: string
+          sprint_id: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          current_story_id?: string | null
+          id?: string
+          name: string
+          project_id: string
+          scale_type?: string
+          sprint_id?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          current_story_id?: string | null
+          id?: string
+          name?: string
+          project_id?: string
+          scale_type?: string
+          sprint_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "estimation_sessions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "estimation_sessions_current_story_id_fkey"
+            columns: ["current_story_id"]
+            isOneToOne: false
+            referencedRelation: "user_stories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "estimation_sessions_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "estimation_sessions_sprint_id_fkey"
+            columns: ["sprint_id"]
+            isOneToOne: false
+            referencedRelation: "sprints"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       estimation_votes: {
         Row: {
           created_at: string
@@ -205,6 +270,7 @@ export type Database = {
           id: string
           project_id: string
           scale_type: string
+          session_id: string | null
           user_story_id: string
         }
         Insert: {
@@ -213,6 +279,7 @@ export type Database = {
           id?: string
           project_id: string
           scale_type?: string
+          session_id?: string | null
           user_story_id: string
         }
         Update: {
@@ -221,6 +288,7 @@ export type Database = {
           id?: string
           project_id?: string
           scale_type?: string
+          session_id?: string | null
           user_story_id?: string
         }
         Relationships: [
@@ -236,6 +304,13 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "estimations_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "estimation_sessions"
             referencedColumns: ["id"]
           },
           {
