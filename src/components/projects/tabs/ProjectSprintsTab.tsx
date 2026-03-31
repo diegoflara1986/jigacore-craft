@@ -273,10 +273,7 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
     <div className="mt-4 space-y-6">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-foreground">Sprints</h3>
-        <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={() => setCreateHUOpen(true)}><Plus className="h-4 w-4 mr-1" />Nueva HU</Button>
-          <Button size="sm" onClick={openCreate}><Plus className="h-4 w-4 mr-1" />Nuevo Sprint</Button>
-        </div>
+        <Button size="sm" onClick={openCreate}><Plus className="h-4 w-4 mr-1" />Nuevo Sprint</Button>
       </div>
 
       {activeSprint && (
@@ -351,7 +348,10 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label>Historias del Backlog sin sprint</Label>
-                <span className="text-xs text-muted-foreground">{selectedBacklogIds.length} seleccionadas · {selectedPoints} SP</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-muted-foreground">{selectedBacklogIds.length} seleccionadas · {selectedPoints} SP</span>
+                  <Button size="sm" variant="outline" onClick={() => setCreateHUOpen(true)}><Plus className="h-3.5 w-3.5 mr-1" />Nueva HU</Button>
+                </div>
               </div>
               <div className="border border-border rounded-lg max-h-52 overflow-y-auto divide-y divide-border">
                 {unassignedStories.length === 0 ? (
@@ -434,7 +434,10 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label>Historias del Backlog</Label>
-                <span className="text-xs text-muted-foreground">{selectedBacklogIds.length} seleccionadas · {selectedPoints} SP</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-muted-foreground">{selectedBacklogIds.length} seleccionadas · {selectedPoints} SP</span>
+                  <Button size="sm" variant="outline" onClick={() => setCreateHUOpen(true)}><Plus className="h-3.5 w-3.5 mr-1" />Nueva HU</Button>
+                </div>
               </div>
               <div className="border border-border rounded-lg max-h-52 overflow-y-auto divide-y divide-border">
                 {unassignedStories.length === 0 ? (
