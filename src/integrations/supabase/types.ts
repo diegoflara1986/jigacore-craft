@@ -514,6 +514,7 @@ export type Database = {
       }
       sprints: {
         Row: {
+          capacity: number | null
           created_at: string
           end_date: string | null
           goal: string | null
@@ -524,6 +525,7 @@ export type Database = {
           status: string
         }
         Insert: {
+          capacity?: number | null
           created_at?: string
           end_date?: string | null
           goal?: string | null
@@ -534,6 +536,7 @@ export type Database = {
           status?: string
         }
         Update: {
+          capacity?: number | null
           created_at?: string
           end_date?: string | null
           goal?: string | null

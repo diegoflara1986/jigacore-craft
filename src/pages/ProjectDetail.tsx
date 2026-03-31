@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useProject, useProjectMembers, useProjectStats } from "@/hooks/useProjects";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -7,8 +8,11 @@ import { ProjectOverviewTab } from "@/components/projects/tabs/ProjectOverviewTa
 import { ProjectTeamTab } from "@/components/projects/tabs/ProjectTeamTab";
 import { ProjectEpicsTab } from "@/components/projects/tabs/ProjectEpicsTab";
 import { ProjectBacklogTab } from "@/components/projects/tabs/ProjectBacklogTab";
+import { ProjectSprintsTab } from "@/components/projects/tabs/ProjectSprintsTab";
+import { ProjectKanbanTab } from "@/components/projects/tabs/ProjectKanbanTab";
 
 export default function ProjectDetail() {
+  const [activeTab, setActiveTab] = useState("overview");
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: project, isLoading } = useProject(id);
@@ -51,7 +55,7 @@ export default function ProjectDetail() {
         </div>
       </div>
 
-      <Tabs defaultValue="overview">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="bg-muted">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="backlog">Backlog</TabsTrigger>
@@ -70,10 +74,10 @@ export default function ProjectDetail() {
           <ProjectBacklogTab projectId={project.id} />
         </TabsContent>
         <TabsContent value="sprints">
-          <div className="text-muted-foreground py-10 text-center">Sprints — Próximamente</div>
+          <ProjectSprintsTab projectId={project.id} onNavigateToBoard={() => setActiveTab("board")} />
         </TabsContent>
         <TabsContent value="board">
-          <div className="text-muted-foreground py-10 text-center">Tablero Kanban — Próximamente</div>
+          <ProjectKanbanTab projectId={project.id} />
         </TabsContent>
         <TabsContent value="epics">
           <ProjectEpicsTab projectId={project.id} />

@@ -1,0 +1,1 @@
+ALTER TABLE public.sprints ADD COLUMN IF NOT EXISTS capacity integer DEFAULT 0;
