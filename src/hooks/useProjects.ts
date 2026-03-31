@@ -110,7 +110,10 @@ export function useCreateProject() {
 
   return useMutation({
     mutationFn: async (project: Partial<Project>) => {
-      if (!profile?.workspace_id) throw new Error("No workspace");
+      // Ensure workspace exists
+      const { data: workspaceId, error: wsError } = await supabase.rpc("ensure_user_workspace");
+      if (wsError) throw new Error("Error con workspace: " + wsError.message);
+
       const { data, error } = await supabase
         .from("projects")
         .insert({
@@ -121,8 +124,8 @@ export function useCreateProject() {
           start_date: project.start_date,
           end_date: project.end_date,
           budget: project.budget,
-          workspace_id: profile.workspace_id,
-          created_by: profile.id,
+          workspace_id: workspaceId,
+          created_by: profile!.id,
         })
         .select()
         .single();
