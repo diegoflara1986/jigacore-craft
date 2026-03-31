@@ -5,6 +5,8 @@ import { useCreateEstimationSession } from "@/hooks/useEstimationSessions";
 import { useUserStories } from "@/hooks/useUserStories";
 import { useSprints } from "@/hooks/useSprints";
 import { supabase } from "@/integrations/supabase/client";
+
+const fromTable = (table: string) => (supabase as any).from(table);
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
