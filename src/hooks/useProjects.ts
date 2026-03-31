@@ -110,22 +110,9 @@ export function useCreateProject() {
 
   return useMutation({
     mutationFn: async (project: Partial<Project>) => {
-      let workspaceId = profile?.workspace_id;
-
-      // Auto-create workspace if user doesn't have one
-      if (!workspaceId && profile) {
-        const { data: ws, error: wsError } = await supabase
-          .from("workspaces")
-          .insert({ name: `${profile.full_name || profile.email}'s Workspace` })
-          .select()
-          .single();
-        if (wsError) throw new Error("Error creando workspace: " + wsError.message);
-        workspaceId = ws.id;
-        // Link profile to workspace
-        await supabase.from("profiles").update({ workspace_id: ws.id }).eq("id", profile.id);
-      }
-
-      if (!workspaceId) throw new Error("No se pudo determinar el workspace");
+      // Ensure workspace exists
+      const { data: workspaceId, error: wsError } = await supabase.rpc("ensure_user_workspace");
+      if (wsError) throw new Error("Error con workspace: " + wsError.message);
 
       const { data, error } = await supabase
         .from("projects")
