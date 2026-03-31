@@ -2,7 +2,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
-export interface EstimationSession {
+// Helper to access tables not yet in generated types
+const fromTable = (table: string) => (supabase as any).from(table);
   id: string;
   project_id: string;
   sprint_id: string | null;
