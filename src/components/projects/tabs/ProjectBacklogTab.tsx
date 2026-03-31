@@ -306,6 +306,8 @@ export function ProjectBacklogTab({ projectId }: { projectId: string }) {
         epics={epics ?? []}
         members={members ?? []}
       />
+
+      <PlanningPokerModal projectId={projectId} open={planningPokerOpen} onOpenChange={setPlanningPokerOpen} />
     </div>
   );
 }
