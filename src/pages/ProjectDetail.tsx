@@ -12,6 +12,7 @@ import { ProjectSprintsTab } from "@/components/projects/tabs/ProjectSprintsTab"
 import { ProjectKanbanTab } from "@/components/projects/tabs/ProjectKanbanTab";
 
 export default function ProjectDetail() {
+  const [activeTab, setActiveTab] = useState("overview");
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: project, isLoading } = useProject(id);
