@@ -348,7 +348,10 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label>Historias del Backlog sin sprint</Label>
-                <span className="text-xs text-muted-foreground">{selectedBacklogIds.length} seleccionadas · {selectedPoints} SP</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-muted-foreground">{selectedBacklogIds.length} seleccionadas · {selectedPoints} SP</span>
+                  <Button size="sm" variant="outline" onClick={() => setCreateHUOpen(true)}><Plus className="h-3.5 w-3.5 mr-1" />Nueva HU</Button>
+                </div>
               </div>
               <div className="border border-border rounded-lg max-h-52 overflow-y-auto divide-y divide-border">
                 {unassignedStories.length === 0 ? (
