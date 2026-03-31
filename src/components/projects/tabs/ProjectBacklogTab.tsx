@@ -13,8 +13,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, Users } from "lucide-react";
 import { UserStoryDetailSheet } from "../UserStoryDetailSheet";
+import { PlanningPokerModal } from "../PlanningPokerModal";
 
 const TYPES = [
   { value: "story", label: "Historia", icon: "📖" },
@@ -54,6 +55,7 @@ export function ProjectBacklogTab({ projectId }: { projectId: string }) {
   const updateStory = useUpdateUserStory();
 
   const [createOpen, setCreateOpen] = useState(false);
+  const [planningPokerOpen, setPlanningPokerOpen] = useState(false);
   const [selectedStoryId, setSelectedStoryId] = useState<string | null>(null);
   const [newStory, setNewStory] = useState({ title: "", description: "", type: "story", priority: "medium", status: "backlog", story_points: "", epic_id: "", assigned_to: "", sprint_id: "" });
 
@@ -99,6 +101,9 @@ export function ProjectBacklogTab({ projectId }: { projectId: string }) {
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2 flex-wrap">
           <Button size="sm" onClick={() => setCreateOpen(true)}><Plus className="h-4 w-4 mr-1" />Agregar HU</Button>
+          <Button size="sm" variant="outline" onClick={() => setPlanningPokerOpen(true)}>
+            <Users className="h-4 w-4 mr-1" />Planning Poker
+          </Button>
         </div>
         <span className="text-sm text-muted-foreground">{stories?.length ?? 0} historias</span>
       </div>
@@ -301,6 +306,8 @@ export function ProjectBacklogTab({ projectId }: { projectId: string }) {
         epics={epics ?? []}
         members={members ?? []}
       />
+
+      <PlanningPokerModal projectId={projectId} open={planningPokerOpen} onOpenChange={setPlanningPokerOpen} />
     </div>
   );
 }

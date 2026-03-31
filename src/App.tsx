@@ -12,6 +12,7 @@ import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import Projects from "./pages/Projects";
 import ProjectDetail from "./pages/ProjectDetail";
+import PlanningPoker from "./pages/PlanningPoker";
 
 const App = () => (
   <TooltipProvider>
@@ -27,6 +28,7 @@ const App = () => (
           <Route path="/" element={<AppLayout><Index /></AppLayout>} />
           <Route path="/proyectos" element={<AppLayout><Projects /></AppLayout>} />
           <Route path="/proyectos/:id" element={<AppLayout><ProjectDetail /></AppLayout>} />
+          <Route path="/proyectos/:id/planning-poker/:sessionId" element={<AppLayout><PlanningPoker /></AppLayout>} />
           <Route path="/my-work" element={<AppLayout><div className="text-foreground">Mi Trabajo - Próximamente</div></AppLayout>} />
           <Route path="/incidents" element={<AppLayout><div className="text-foreground">Incidentes - Próximamente</div></AppLayout>} />
           <Route path="/reports" element={<AppLayout><div className="text-foreground">Reportes - Próximamente</div></AppLayout>} />

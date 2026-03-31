@@ -17,11 +17,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Separator } from "@/components/ui/separator";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Plus, Play, CheckCircle2, LayoutDashboard, Pencil } from "lucide-react";
+import { CalendarIcon, Plus, Play, CheckCircle2, LayoutDashboard, Pencil, Users } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
+import { PlanningPokerModal } from "../PlanningPokerModal";
 
 const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
   planning: { label: "Planificado", variant: "outline" },
@@ -81,6 +82,7 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
   const [newSprint, setNewSprint] = useState({ name: "", goal: "", start_date: undefined as Date | undefined, end_date: undefined as Date | undefined, capacity: "" });
   const [selectedBacklogIds, setSelectedBacklogIds] = useState<string[]>([]);
   const [createHUOpen, setCreateHUOpen] = useState(false);
+  const [planningPokerOpen, setPlanningPokerOpen] = useState(false);
   const [newStory, setNewStory] = useState({ title: "", description: "", type: "story", priority: "medium", status: "backlog", story_points: "", epic_id: "", assigned_to: "", sprint_id: "" });
 
   const handleCreateHU = async () => {
@@ -273,7 +275,12 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
     <div className="mt-4 space-y-6">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-foreground">Sprints</h3>
-        <Button size="sm" onClick={openCreate}><Plus className="h-4 w-4 mr-1" />Nuevo Sprint</Button>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" onClick={() => setPlanningPokerOpen(true)}>
+            <Users className="h-4 w-4 mr-1" />Planning Poker
+          </Button>
+          <Button size="sm" onClick={openCreate}><Plus className="h-4 w-4 mr-1" />Nuevo Sprint</Button>
+        </div>
       </div>
 
       {activeSprint && (
@@ -617,6 +624,8 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <PlanningPokerModal projectId={projectId} open={planningPokerOpen} onOpenChange={setPlanningPokerOpen} />
     </div>
   );
 }
