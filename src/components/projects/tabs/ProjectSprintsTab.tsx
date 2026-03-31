@@ -624,6 +624,8 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <PlanningPokerModal projectId={projectId} open={planningPokerOpen} onOpenChange={setPlanningPokerOpen} />
     </div>
   );
 }
