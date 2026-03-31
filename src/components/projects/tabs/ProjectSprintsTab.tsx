@@ -17,11 +17,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Separator } from "@/components/ui/separator";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Plus, Play, CheckCircle2, LayoutDashboard, Pencil } from "lucide-react";
+import { CalendarIcon, Plus, Play, CheckCircle2, LayoutDashboard, Pencil, Users } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
+import { PlanningPokerModal } from "../PlanningPokerModal";
 
 const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
   planning: { label: "Planificado", variant: "outline" },
