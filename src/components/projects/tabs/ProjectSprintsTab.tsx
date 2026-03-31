@@ -154,9 +154,14 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
             </div>
             <div className="flex gap-1.5">
               {sprint.status === "planning" && (
-                <Button size="sm" variant="outline" onClick={() => setStartConfirm(sprint)}>
-                  <Play className="h-3.5 w-3.5 mr-1" />Iniciar
-                </Button>
+                <>
+                  <Button size="sm" variant="ghost" onClick={() => openEdit(sprint)}>
+                    <Pencil className="h-3.5 w-3.5 mr-1" />Editar
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => setStartConfirm(sprint)}>
+                    <Play className="h-3.5 w-3.5 mr-1" />Iniciar
+                  </Button>
+                </>
               )}
               {sprint.status === "active" && (
                 <>
