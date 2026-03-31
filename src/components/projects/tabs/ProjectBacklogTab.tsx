@@ -55,6 +55,7 @@ export function ProjectBacklogTab({ projectId }: { projectId: string }) {
   const updateStory = useUpdateUserStory();
 
   const [createOpen, setCreateOpen] = useState(false);
+  const [planningPokerOpen, setPlanningPokerOpen] = useState(false);
   const [selectedStoryId, setSelectedStoryId] = useState<string | null>(null);
   const [newStory, setNewStory] = useState({ title: "", description: "", type: "story", priority: "medium", status: "backlog", story_points: "", epic_id: "", assigned_to: "", sprint_id: "" });
 
