@@ -19,7 +19,7 @@ export function AppHeader() {
   return (
     <header className="h-14 border-b border-border bg-card flex items-center justify-between px-4 gap-4">
       <div className="flex items-center gap-2">
-        <SidebarTrigger className="lg:hidden" />
+        <SidebarTrigger />
         <div className="relative hidden sm:block">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Buscar..." className="pl-9 w-64 h-9 bg-muted/50 border-0" />
