@@ -18,7 +18,7 @@ export interface UserStory {
   created_by: string | null;
   created_at: string;
   epics?: { id: string; title: string; color: string | null } | null;
-  profiles?: { id: string; full_name: string | null; email: string; avatar_url: string | null } | null;
+  assigned_profile?: { id: string; full_name: string | null; email: string; avatar_url: string | null } | null;
   sprints?: { id: string; name: string } | null;
 }
 
