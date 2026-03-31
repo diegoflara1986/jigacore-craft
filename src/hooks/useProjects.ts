@@ -152,13 +152,6 @@ export function useCreateProject() {
     onError: (e: any) => {
       toast({ title: "Error al crear proyecto", description: e.message, variant: "destructive" });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
-      toast({ title: "Proyecto creado exitosamente" });
-    },
-    onError: (e: any) => {
-      toast({ title: "Error al crear proyecto", description: e.message, variant: "destructive" });
-    },
   });
 }
 
