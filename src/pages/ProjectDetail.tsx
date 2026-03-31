@@ -67,7 +67,7 @@ export default function ProjectDetail() {
           <ProjectOverviewTab project={project} members={members ?? []} stats={stats} progress={progress} />
         </TabsContent>
         <TabsContent value="backlog">
-          <div className="text-muted-foreground py-10 text-center">Backlog — Próximamente</div>
+          <ProjectBacklogTab projectId={project.id} />
         </TabsContent>
         <TabsContent value="sprints">
           <div className="text-muted-foreground py-10 text-center">Sprints — Próximamente</div>
