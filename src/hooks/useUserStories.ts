@@ -57,7 +57,7 @@ export function useUserStory(id: string | undefined) {
       if (!id) return null;
       const { data, error } = await supabase
         .from("user_stories")
-        .select("*, epics(id, title, color), profiles:assigned_to(id, full_name, email, avatar_url), sprints(id, name)")
+        .select("*, epics(id, title, color), assigned_profile:profiles!user_stories_assigned_to_fkey(id, full_name, email, avatar_url), sprints(id, name)")
         .eq("id", id)
         .single();
       if (error) throw error;
