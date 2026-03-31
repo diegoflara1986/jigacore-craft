@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { useSprintsWithStats, useCreateSprint, useUpdateSprint, SprintWithStats } from "@/hooks/useSprints";
-import { useUserStories, useUpdateUserStory } from "@/hooks/useUserStories";
+import { useUserStories, useUpdateUserStory, useCreateUserStory } from "@/hooks/useUserStories";
+import { useEpics } from "@/hooks/useEpics";
+import { useProjectMembers } from "@/hooks/useProjects";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
