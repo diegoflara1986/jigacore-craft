@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useProject, useProjectMembers, useProjectStats } from "@/hooks/useProjects";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -7,6 +8,8 @@ import { ProjectOverviewTab } from "@/components/projects/tabs/ProjectOverviewTa
 import { ProjectTeamTab } from "@/components/projects/tabs/ProjectTeamTab";
 import { ProjectEpicsTab } from "@/components/projects/tabs/ProjectEpicsTab";
 import { ProjectBacklogTab } from "@/components/projects/tabs/ProjectBacklogTab";
+import { ProjectSprintsTab } from "@/components/projects/tabs/ProjectSprintsTab";
+import { ProjectKanbanTab } from "@/components/projects/tabs/ProjectKanbanTab";
 
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
