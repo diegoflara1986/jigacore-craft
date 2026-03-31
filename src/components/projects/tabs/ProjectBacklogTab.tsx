@@ -180,8 +180,8 @@ export function ProjectBacklogTab({ projectId }: { projectId: string }) {
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">{s.sprints?.name ?? "—"}</TableCell>
                   <TableCell>
-                    {s.profiles ? (
-                      <Avatar className="h-6 w-6"><AvatarFallback className="text-[9px] bg-muted">{initials(s.profiles.full_name)}</AvatarFallback></Avatar>
+                    {s.assigned_profile ? (
+                      <Avatar className="h-6 w-6"><AvatarFallback className="text-[9px] bg-muted">{initials(s.assigned_profile.full_name)}</AvatarFallback></Avatar>
                     ) : <span className="text-muted-foreground text-xs">—</span>}
                   </TableCell>
                   <TableCell>
