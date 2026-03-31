@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Separator } from "@/components/ui/separator";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Plus, Play, CheckCircle2, LayoutDashboard } from "lucide-react";
+import { CalendarIcon, Plus, Play, CheckCircle2, LayoutDashboard, Pencil } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -38,6 +38,7 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
   const updateStory = useUpdateUserStory();
 
   const [createOpen, setCreateOpen] = useState(false);
+  const [editSprint, setEditSprint] = useState<SprintWithStats | null>(null);
   const [startConfirm, setStartConfirm] = useState<SprintWithStats | null>(null);
   const [completeReview, setCompleteReview] = useState<SprintWithStats | null>(null);
   const [newSprint, setNewSprint] = useState({ name: "", goal: "", start_date: undefined as Date | undefined, end_date: undefined as Date | undefined, capacity: "" });
@@ -45,7 +46,7 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
 
   const activeSprint = sprints?.find((s) => s.status === "active");
   const otherSprints = sprints?.filter((s) => s.status !== "active") ?? [];
-  const unassignedStories = backlogStories?.filter((s) => !s.sprint_id) ?? [];
+  const unassignedStories = backlogStories?.filter((s) => !s.sprint_id || s.sprint_id === editSprint?.id) ?? [];
 
   const openCreate = () => {
     const nextNum = (sprints?.length ?? 0) + 1;
@@ -68,6 +69,43 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
       await updateStory.mutateAsync({ id: sid, sprint_id: created.id });
     }
     setCreateOpen(false);
+  };
+
+  const openEdit = (sprint: SprintWithStats) => {
+    setNewSprint({
+      name: sprint.name,
+      goal: sprint.goal || "",
+      start_date: sprint.start_date ? new Date(sprint.start_date) : undefined,
+      end_date: sprint.end_date ? new Date(sprint.end_date) : undefined,
+      capacity: sprint.capacity ? String(sprint.capacity) : "",
+    });
+    // Pre-select stories already assigned to this sprint
+    const assignedIds = backlogStories?.filter((s) => s.sprint_id === sprint.id).map((s) => s.id) ?? [];
+    setSelectedBacklogIds(assignedIds);
+    setEditSprint(sprint);
+  };
+
+  const handleEdit = async () => {
+    if (!editSprint || !newSprint.name.trim()) return;
+    await updateSprint.mutateAsync({
+      id: editSprint.id,
+      name: newSprint.name,
+      goal: newSprint.goal || null,
+      start_date: newSprint.start_date ? format(newSprint.start_date, "yyyy-MM-dd") : null,
+      end_date: newSprint.end_date ? format(newSprint.end_date, "yyyy-MM-dd") : null,
+      capacity: newSprint.capacity ? parseInt(newSprint.capacity) : 0,
+    });
+    // Sync story assignments: add newly selected, remove deselected
+    const currentlyAssigned = backlogStories?.filter((s) => s.sprint_id === editSprint.id).map((s) => s.id) ?? [];
+    const toAssign = selectedBacklogIds.filter((id) => !currentlyAssigned.includes(id));
+    const toRemove = currentlyAssigned.filter((id) => !selectedBacklogIds.includes(id));
+    for (const sid of toAssign) {
+      await updateStory.mutateAsync({ id: sid, sprint_id: editSprint.id });
+    }
+    for (const sid of toRemove) {
+      await updateStory.mutateAsync({ id: sid, sprint_id: null });
+    }
+    setEditSprint(null);
   };
 
   const handleStartSprint = async () => {
@@ -116,9 +154,14 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
             </div>
             <div className="flex gap-1.5">
               {sprint.status === "planning" && (
-                <Button size="sm" variant="outline" onClick={() => setStartConfirm(sprint)}>
-                  <Play className="h-3.5 w-3.5 mr-1" />Iniciar
-                </Button>
+                <>
+                  <Button size="sm" variant="ghost" onClick={() => openEdit(sprint)}>
+                    <Pencil className="h-3.5 w-3.5 mr-1" />Editar
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => setStartConfirm(sprint)}>
+                    <Play className="h-3.5 w-3.5 mr-1" />Iniciar
+                  </Button>
+                </>
               )}
               {sprint.status === "active" && (
                 <>
@@ -277,6 +320,90 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Sprint Modal */}
+      <Dialog open={!!editSprint} onOpenChange={() => setEditSprint(null)}>
+        <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Editar Sprint</DialogTitle></DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>Nombre *</Label>
+              <Input value={newSprint.name} onChange={(e) => setNewSprint((p) => ({ ...p, name: e.target.value }))} />
+            </div>
+            <div className="space-y-2">
+              <Label>Objetivo del Sprint</Label>
+              <Textarea value={newSprint.goal} onChange={(e) => setNewSprint((p) => ({ ...p, goal: e.target.value }))} rows={2} />
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-2">
+                <Label>Fecha inicio</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal h-9 text-xs", !newSprint.start_date && "text-muted-foreground")}>
+                      <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                      {newSprint.start_date ? format(newSprint.start_date, "dd/MM/yyyy") : "Seleccionar"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={newSprint.start_date} onSelect={(d) => setNewSprint((p) => ({ ...p, start_date: d }))} className="p-3 pointer-events-auto" />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="space-y-2">
+                <Label>Fecha fin</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal h-9 text-xs", !newSprint.end_date && "text-muted-foreground")}>
+                      <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                      {newSprint.end_date ? format(newSprint.end_date, "dd/MM/yyyy") : "Seleccionar"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={newSprint.end_date} onSelect={(d) => setNewSprint((p) => ({ ...p, end_date: d }))} className="p-3 pointer-events-auto" />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="space-y-2">
+                <Label>Capacidad (SP)</Label>
+                <Input type="number" min={0} value={newSprint.capacity} onChange={(e) => setNewSprint((p) => ({ ...p, capacity: e.target.value }))} placeholder="0" />
+              </div>
+            </div>
+
+            <Separator />
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>Historias del Backlog</Label>
+                <span className="text-xs text-muted-foreground">{selectedBacklogIds.length} seleccionadas · {selectedPoints} SP</span>
+              </div>
+              <div className="border border-border rounded-lg max-h-52 overflow-y-auto divide-y divide-border">
+                {unassignedStories.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">No hay historias disponibles</p>
+                ) : (
+                  unassignedStories.map((s) => (
+                    <label key={s.id} className="flex items-center gap-3 px-3 py-2 hover:bg-muted/50 cursor-pointer">
+                      <Checkbox checked={selectedBacklogIds.includes(s.id)} onCheckedChange={() => toggleBacklogItem(s.id)} />
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-medium text-foreground truncate block">{s.title}</span>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          {s.epics && <Badge variant="outline" className="text-[9px] h-4" style={{ borderColor: s.epics.color || undefined }}>{s.epics.title}</Badge>}
+                          <span className="text-[10px] text-muted-foreground capitalize">{s.priority}</span>
+                        </div>
+                      </div>
+                      <span className="text-xs font-mono text-muted-foreground">{s.story_points ?? 0} SP</span>
+                    </label>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditSprint(null)}>Cancelar</Button>
+            <Button onClick={handleEdit} disabled={!newSprint.name.trim() || updateSprint.isPending}>Guardar Cambios</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
 
       <Dialog open={!!startConfirm} onOpenChange={() => setStartConfirm(null)}>
         <DialogContent className="sm:max-w-md">
