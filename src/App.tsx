@@ -12,6 +12,7 @@ import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import Projects from "./pages/Projects";
 import ProjectDetail from "./pages/ProjectDetail";
+import PlanningPoker from "./pages/PlanningPoker";
 
 const App = () => (
   <TooltipProvider>
