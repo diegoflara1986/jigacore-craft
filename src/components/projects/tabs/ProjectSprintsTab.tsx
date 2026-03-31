@@ -405,6 +405,7 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
       </Dialog>
 
 
+      <Dialog open={!!startConfirm} onOpenChange={() => setStartConfirm(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader><DialogTitle>¿Iniciar Sprint?</DialogTitle></DialogHeader>
           <p className="text-sm text-muted-foreground">
