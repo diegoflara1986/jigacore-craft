@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useUserStories, useCreateUserStory, useUpdateUserStory, UserStory } from "@/hooks/useUserStories";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { useEpics } from "@/hooks/useEpics";
 import { useProjectMembers, ProjectMember } from "@/hooks/useProjects";
 import { Button } from "@/components/ui/button";
