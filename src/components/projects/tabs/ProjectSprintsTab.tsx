@@ -71,6 +71,43 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
     setCreateOpen(false);
   };
 
+  const openEdit = (sprint: SprintWithStats) => {
+    setNewSprint({
+      name: sprint.name,
+      goal: sprint.goal || "",
+      start_date: sprint.start_date ? new Date(sprint.start_date) : undefined,
+      end_date: sprint.end_date ? new Date(sprint.end_date) : undefined,
+      capacity: sprint.capacity ? String(sprint.capacity) : "",
+    });
+    // Pre-select stories already assigned to this sprint
+    const assignedIds = backlogStories?.filter((s) => s.sprint_id === sprint.id).map((s) => s.id) ?? [];
+    setSelectedBacklogIds(assignedIds);
+    setEditSprint(sprint);
+  };
+
+  const handleEdit = async () => {
+    if (!editSprint || !newSprint.name.trim()) return;
+    await updateSprint.mutateAsync({
+      id: editSprint.id,
+      name: newSprint.name,
+      goal: newSprint.goal || null,
+      start_date: newSprint.start_date ? format(newSprint.start_date, "yyyy-MM-dd") : null,
+      end_date: newSprint.end_date ? format(newSprint.end_date, "yyyy-MM-dd") : null,
+      capacity: newSprint.capacity ? parseInt(newSprint.capacity) : 0,
+    });
+    // Sync story assignments: add newly selected, remove deselected
+    const currentlyAssigned = backlogStories?.filter((s) => s.sprint_id === editSprint.id).map((s) => s.id) ?? [];
+    const toAssign = selectedBacklogIds.filter((id) => !currentlyAssigned.includes(id));
+    const toRemove = currentlyAssigned.filter((id) => !selectedBacklogIds.includes(id));
+    for (const sid of toAssign) {
+      await updateStory.mutateAsync({ id: sid, sprint_id: editSprint.id });
+    }
+    for (const sid of toRemove) {
+      await updateStory.mutateAsync({ id: sid, sprint_id: null });
+    }
+    setEditSprint(null);
+  };
+
   const handleStartSprint = async () => {
     if (!startConfirm) return;
     await updateSprint.mutateAsync({ id: startConfirm.id, status: "active" });
