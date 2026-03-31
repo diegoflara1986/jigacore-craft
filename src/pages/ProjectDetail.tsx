@@ -55,7 +55,7 @@ export default function ProjectDetail() {
         </div>
       </div>
 
-      <Tabs defaultValue="overview">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="bg-muted">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="backlog">Backlog</TabsTrigger>
@@ -74,10 +74,10 @@ export default function ProjectDetail() {
           <ProjectBacklogTab projectId={project.id} />
         </TabsContent>
         <TabsContent value="sprints">
-          <div className="text-muted-foreground py-10 text-center">Sprints — Próximamente</div>
+          <ProjectSprintsTab projectId={project.id} onNavigateToBoard={() => setActiveTab("board")} />
         </TabsContent>
         <TabsContent value="board">
-          <div className="text-muted-foreground py-10 text-center">Tablero Kanban — Próximamente</div>
+          <ProjectKanbanTab projectId={project.id} />
         </TabsContent>
         <TabsContent value="epics">
           <ProjectEpicsTab projectId={project.id} />
