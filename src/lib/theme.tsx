@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import * as React from "react";
 
 type Theme = "light" | "dark";
 
@@ -7,19 +7,19 @@ interface ThemeContextType {
   toggleTheme: () => void;
 }
 
-const ThemeContext = createContext<ThemeContextType>({ theme: "light", toggleTheme: () => {} });
+const ThemeContext = React.createContext<ThemeContextType>({ theme: "light", toggleTheme: () => {} });
 
-export const useTheme = () => useContext(ThemeContext);
+export const useTheme = () => React.useContext(ThemeContext);
 
-export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>(() => {
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const [theme, setTheme] = React.useState<Theme>(() => {
     if (typeof window !== "undefined") {
       return (localStorage.getItem("jigacore-theme") as Theme) || "light";
     }
     return "light";
   });
 
-  useEffect(() => {
+  React.useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
     localStorage.setItem("jigacore-theme", theme);
   }, [theme]);
