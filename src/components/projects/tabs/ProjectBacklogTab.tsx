@@ -55,7 +55,16 @@ export function ProjectBacklogTab({ projectId }: { projectId: string }) {
 
   const [createOpen, setCreateOpen] = useState(false);
   const [selectedStoryId, setSelectedStoryId] = useState<string | null>(null);
-  const [newStory, setNewStory] = useState({ title: "", description: "", type: "story", priority: "medium", epic_id: "", assigned_to: "" });
+  const [newStory, setNewStory] = useState({ title: "", description: "", type: "story", priority: "medium", status: "backlog", story_points: "", epic_id: "", assigned_to: "", sprint_id: "" });
+
+  // Sprints
+  const { data: sprints } = useQuery({
+    queryKey: ["sprints", projectId],
+    queryFn: async () => {
+      const { data } = await supabase.from("sprints").select("id, name").eq("project_id", projectId).order("created_at");
+      return data ?? [];
+    },
+  });
 
   const handleCreate = async () => {
     if (!newStory.title.trim()) return;
@@ -65,11 +74,14 @@ export function ProjectBacklogTab({ projectId }: { projectId: string }) {
       description: newStory.description || null,
       type: newStory.type,
       priority: newStory.priority,
+      status: newStory.status,
+      story_points: newStory.story_points ? parseInt(newStory.story_points) : null,
       epic_id: newStory.epic_id || null,
       assigned_to: newStory.assigned_to || null,
+      sprint_id: newStory.sprint_id || null,
     });
     setCreateOpen(false);
-    setNewStory({ title: "", description: "", type: "story", priority: "medium", epic_id: "", assigned_to: "" });
+    setNewStory({ title: "", description: "", type: "story", priority: "medium", status: "backlog", story_points: "", epic_id: "", assigned_to: "", sprint_id: "" });
   };
 
   const handleInlinePointsChange = async (storyId: string, value: string) => {
