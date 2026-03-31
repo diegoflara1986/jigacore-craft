@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { ProjectOverviewTab } from "@/components/projects/tabs/ProjectOverviewTab";
 import { ProjectTeamTab } from "@/components/projects/tabs/ProjectTeamTab";
+import { ProjectEpicsTab } from "@/components/projects/tabs/ProjectEpicsTab";
+import { ProjectBacklogTab } from "@/components/projects/tabs/ProjectBacklogTab";
 
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
@@ -65,7 +67,7 @@ export default function ProjectDetail() {
           <ProjectOverviewTab project={project} members={members ?? []} stats={stats} progress={progress} />
         </TabsContent>
         <TabsContent value="backlog">
-          <div className="text-muted-foreground py-10 text-center">Backlog — Próximamente</div>
+          <ProjectBacklogTab projectId={project.id} />
         </TabsContent>
         <TabsContent value="sprints">
           <div className="text-muted-foreground py-10 text-center">Sprints — Próximamente</div>
@@ -74,7 +76,7 @@ export default function ProjectDetail() {
           <div className="text-muted-foreground py-10 text-center">Tablero Kanban — Próximamente</div>
         </TabsContent>
         <TabsContent value="epics">
-          <div className="text-muted-foreground py-10 text-center">Épicas — Próximamente</div>
+          <ProjectEpicsTab projectId={project.id} />
         </TabsContent>
         <TabsContent value="time">
           <div className="text-muted-foreground py-10 text-center">Registro de Tiempo — Próximamente</div>
