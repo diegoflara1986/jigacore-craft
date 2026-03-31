@@ -2,6 +2,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
+// Helper to access tables not yet in generated types
+const fromTable = (table: string) => (supabase as any).from(table);
+
 export interface EstimationSession {
   id: string;
   project_id: string;
@@ -28,8 +31,7 @@ export function useEstimationSessions(projectId: string | undefined) {
     queryKey: ["estimation-sessions", projectId],
     queryFn: async () => {
       if (!projectId) return [];
-      const { data, error } = await supabase
-        .from("estimation_sessions")
+      const { data, error } = await fromTable("estimation_sessions")
         .select("*")
         .eq("project_id", projectId)
         .order("created_at", { ascending: false });
@@ -45,8 +47,7 @@ export function useEstimationSession(sessionId: string | undefined) {
     queryKey: ["estimation-session", sessionId],
     queryFn: async () => {
       if (!sessionId) return null;
-      const { data, error } = await supabase
-        .from("estimation_sessions")
+      const { data, error } = await fromTable("estimation_sessions")
         .select("*")
         .eq("id", sessionId)
         .single();
@@ -61,15 +62,14 @@ export function useCreateEstimationSession() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (session: Omit<EstimationSession, "id" | "created_at">) => {
-      const { data, error } = await supabase
-        .from("estimation_sessions")
+      const { data, error } = await fromTable("estimation_sessions")
         .insert(session)
         .select()
         .single();
       if (error) throw error;
       return data as EstimationSession;
     },
-    onSuccess: (d) => {
+    onSuccess: (d: EstimationSession) => {
       qc.invalidateQueries({ queryKey: ["estimation-sessions", d.project_id] });
       toast({ title: "Sesión de estimación creada" });
     },
@@ -81,8 +81,7 @@ export function useUpdateEstimationSession() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<EstimationSession> & { id: string }) => {
-      const { data, error } = await supabase
-        .from("estimation_sessions")
+      const { data, error } = await fromTable("estimation_sessions")
         .update(updates)
         .eq("id", id)
         .select()
@@ -90,7 +89,7 @@ export function useUpdateEstimationSession() {
       if (error) throw error;
       return data as EstimationSession;
     },
-    onSuccess: (d) => {
+    onSuccess: (d: EstimationSession) => {
       qc.invalidateQueries({ queryKey: ["estimation-session", d.id] });
       qc.invalidateQueries({ queryKey: ["estimation-sessions", d.project_id] });
     },
@@ -103,8 +102,7 @@ export function useSessionEstimations(sessionId: string | undefined) {
     queryKey: ["session-estimations", sessionId],
     queryFn: async () => {
       if (!sessionId) return [];
-      const { data, error } = await supabase
-        .from("estimations")
+      const { data, error } = await fromTable("estimations")
         .select("*")
         .eq("session_id", sessionId)
         .order("created_at");
@@ -135,7 +133,6 @@ export function useCastVote() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ estimationId, userId, voteValue }: { estimationId: string; userId: string; voteValue: string }) => {
-      // Upsert: delete existing vote then insert
       await supabase.from("estimation_votes").delete().eq("estimation_id", estimationId).eq("user_id", userId);
       const { data, error } = await supabase
         .from("estimation_votes")
@@ -145,7 +142,7 @@ export function useCastVote() {
       if (error) throw error;
       return data;
     },
-    onSuccess: (d) => {
+    onSuccess: (d: any) => {
       qc.invalidateQueries({ queryKey: ["estimation-votes", d.estimation_id] });
     },
     onError: (e: any) => toast({ title: "Error al votar", description: e.message, variant: "destructive" }),

@@ -5,6 +5,8 @@ import { useCreateEstimationSession } from "@/hooks/useEstimationSessions";
 import { useUserStories } from "@/hooks/useUserStories";
 import { useSprints } from "@/hooks/useSprints";
 import { supabase } from "@/integrations/supabase/client";
+
+const fromTable = (table: string) => (supabase as any).from(table);
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -65,7 +67,7 @@ export function PlanningPokerModal({ projectId, open, onOpenChange }: Props) {
 
       // Create estimations for each selected story
       for (const storyId of selectedStoryIds) {
-        await supabase.from("estimations").insert({
+        await fromTable("estimations").insert({
           project_id: projectId,
           user_story_id: storyId,
           session_id: session.id,
