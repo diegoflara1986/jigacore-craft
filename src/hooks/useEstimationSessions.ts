@@ -4,7 +4,8 @@ import { toast } from "@/hooks/use-toast";
 
 // Helper to access tables not yet in generated types
 const fromTable = (table: string) => (supabase as any).from(table);
-  id: string;
+
+export interface EstimationSession {
   project_id: string;
   sprint_id: string | null;
   name: string;
