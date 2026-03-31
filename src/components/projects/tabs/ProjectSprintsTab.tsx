@@ -38,9 +38,41 @@ interface Props {
 export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
   const { data: sprints, isLoading } = useSprintsWithStats(projectId);
   const { data: backlogStories } = useUserStories(projectId, { status: undefined });
+  const { data: epics } = useEpics(projectId);
+  const { data: members } = useProjectMembers(projectId);
   const createSprint = useCreateSprint();
   const updateSprint = useUpdateSprint();
   const updateStory = useUpdateUserStory();
+  const createStory = useCreateUserStory();
+
+  const { data: sprintsList } = useQuery({
+    queryKey: ["sprints-list", projectId],
+    queryFn: async () => {
+      const { data } = await supabase.from("sprints").select("id, name").eq("project_id", projectId).order("created_at");
+      return data ?? [];
+    },
+  });
+
+  const TYPES = [
+    { value: "story", label: "Historia", icon: "📖" },
+    { value: "bug", label: "Bug", icon: "🐛" },
+    { value: "technical", label: "Técnica", icon: "⚙️" },
+    { value: "spike", label: "Spike", icon: "🔍" },
+    { value: "improvement", label: "Mejora", icon: "✨" },
+  ];
+  const PRIORITIES = [
+    { value: "critical", label: "Crítica" },
+    { value: "high", label: "Alta" },
+    { value: "medium", label: "Media" },
+    { value: "low", label: "Baja" },
+  ];
+  const STATUSES_HU = [
+    { value: "backlog", label: "Backlog" },
+    { value: "todo", label: "Por Hacer" },
+    { value: "in_progress", label: "En Progreso" },
+    { value: "in_review", label: "En Revisión" },
+    { value: "done", label: "Completado" },
+  ];
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editSprint, setEditSprint] = useState<SprintWithStats | null>(null);
@@ -48,6 +80,26 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
   const [completeReview, setCompleteReview] = useState<SprintWithStats | null>(null);
   const [newSprint, setNewSprint] = useState({ name: "", goal: "", start_date: undefined as Date | undefined, end_date: undefined as Date | undefined, capacity: "" });
   const [selectedBacklogIds, setSelectedBacklogIds] = useState<string[]>([]);
+  const [createHUOpen, setCreateHUOpen] = useState(false);
+  const [newStory, setNewStory] = useState({ title: "", description: "", type: "story", priority: "medium", status: "backlog", story_points: "", epic_id: "", assigned_to: "", sprint_id: "" });
+
+  const handleCreateHU = async () => {
+    if (!newStory.title.trim()) return;
+    await createStory.mutateAsync({
+      project_id: projectId,
+      title: newStory.title,
+      description: newStory.description || null,
+      type: newStory.type,
+      priority: newStory.priority,
+      status: newStory.status,
+      story_points: newStory.story_points ? parseInt(newStory.story_points) : null,
+      epic_id: newStory.epic_id || null,
+      assigned_to: newStory.assigned_to || null,
+      sprint_id: newStory.sprint_id || null,
+    });
+    setCreateHUOpen(false);
+    setNewStory({ title: "", description: "", type: "story", priority: "medium", status: "backlog", story_points: "", epic_id: "", assigned_to: "", sprint_id: "" });
+  };
 
   const activeSprint = sprints?.find((s) => s.status === "active");
   const otherSprints = sprints?.filter((s) => s.status !== "active") ?? [];
