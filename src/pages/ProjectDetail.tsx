@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { ProjectOverviewTab } from "@/components/projects/tabs/ProjectOverviewTab";
 import { ProjectTeamTab } from "@/components/projects/tabs/ProjectTeamTab";
+import { ProjectEpicsTab } from "@/components/projects/tabs/ProjectEpicsTab";
+import { ProjectBacklogTab } from "@/components/projects/tabs/ProjectBacklogTab";
 
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
