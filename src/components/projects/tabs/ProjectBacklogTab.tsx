@@ -251,6 +251,29 @@ export function ProjectBacklogTab({ projectId }: { projectId: string }) {
                 </Select>
               </div>
               <div className="space-y-2">
+                <Label>Estado</Label>
+                <Select value={newStory.status} onValueChange={(v) => setNewStory((p) => ({ ...p, status: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-2">
+                <Label>Story Points</Label>
+                <Input type="number" min={0} value={newStory.story_points} onChange={(e) => setNewStory((p) => ({ ...p, story_points: e.target.value }))} placeholder="0" />
+              </div>
+              <div className="space-y-2">
+                <Label>Sprint</Label>
+                <Select value={newStory.sprint_id || "none"} onValueChange={(v) => setNewStory((p) => ({ ...p, sprint_id: v === "none" ? "" : v }))}>
+                  <SelectTrigger><SelectValue placeholder="Sin sprint" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Sin sprint</SelectItem>
+                    {sprints?.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
                 <Label>Asignar a</Label>
                 <Select value={newStory.assigned_to || "none"} onValueChange={(v) => setNewStory((p) => ({ ...p, assigned_to: v === "none" ? "" : v }))}>
                   <SelectTrigger><SelectValue placeholder="Sin asignar" /></SelectTrigger>
