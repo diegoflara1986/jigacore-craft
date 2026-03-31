@@ -95,7 +95,7 @@ export default function PlanningPoker() {
     // Check consensus
     const numericVotes = votes?.filter((v) => !["?", "☕"].includes(v.vote_value)).map((v) => v.vote_value) ?? [];
     if (numericVotes.length > 1 && new Set(numericVotes).size === 1) {
-      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+      import("canvas-confetti").then((mod) => mod.default({ particleCount: 100, spread: 70, origin: { y: 0.6 } }));
     }
   };
 
