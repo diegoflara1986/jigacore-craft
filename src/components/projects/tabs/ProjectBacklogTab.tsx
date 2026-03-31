@@ -101,6 +101,9 @@ export function ProjectBacklogTab({ projectId }: { projectId: string }) {
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2 flex-wrap">
           <Button size="sm" onClick={() => setCreateOpen(true)}><Plus className="h-4 w-4 mr-1" />Agregar HU</Button>
+          <Button size="sm" variant="outline" onClick={() => setPlanningPokerOpen(true)}>
+            <Users className="h-4 w-4 mr-1" />Planning Poker
+          </Button>
         </div>
         <span className="text-sm text-muted-foreground">{stories?.length ?? 0} historias</span>
       </div>
