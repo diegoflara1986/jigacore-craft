@@ -19,7 +19,6 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Eye, RotateCcw, Save, Check, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
-import confetti from "canvas-confetti";
 
 const SCALES: Record<string, string[]> = {
   fibonacci: ["0", "1", "2", "3", "5", "8", "13", "21", "34", "?", "☕"],
