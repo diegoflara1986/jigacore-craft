@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useUserStories, useCreateUserStory, useUpdateUserStory, UserStory } from "@/hooks/useUserStories";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { useEpics } from "@/hooks/useEpics";
 import { useProjectMembers, ProjectMember } from "@/hooks/useProjects";
 import { Button } from "@/components/ui/button";
@@ -53,7 +55,16 @@ export function ProjectBacklogTab({ projectId }: { projectId: string }) {
 
   const [createOpen, setCreateOpen] = useState(false);
   const [selectedStoryId, setSelectedStoryId] = useState<string | null>(null);
-  const [newStory, setNewStory] = useState({ title: "", description: "", type: "story", priority: "medium", epic_id: "", assigned_to: "" });
+  const [newStory, setNewStory] = useState({ title: "", description: "", type: "story", priority: "medium", status: "backlog", story_points: "", epic_id: "", assigned_to: "", sprint_id: "" });
+
+  // Sprints
+  const { data: sprints } = useQuery({
+    queryKey: ["sprints", projectId],
+    queryFn: async () => {
+      const { data } = await supabase.from("sprints").select("id, name").eq("project_id", projectId).order("created_at");
+      return data ?? [];
+    },
+  });
 
   const handleCreate = async () => {
     if (!newStory.title.trim()) return;
@@ -63,11 +74,14 @@ export function ProjectBacklogTab({ projectId }: { projectId: string }) {
       description: newStory.description || null,
       type: newStory.type,
       priority: newStory.priority,
+      status: newStory.status,
+      story_points: newStory.story_points ? parseInt(newStory.story_points) : null,
       epic_id: newStory.epic_id || null,
       assigned_to: newStory.assigned_to || null,
+      sprint_id: newStory.sprint_id || null,
     });
     setCreateOpen(false);
-    setNewStory({ title: "", description: "", type: "story", priority: "medium", epic_id: "", assigned_to: "" });
+    setNewStory({ title: "", description: "", type: "story", priority: "medium", status: "backlog", story_points: "", epic_id: "", assigned_to: "", sprint_id: "" });
   };
 
   const handleInlinePointsChange = async (storyId: string, value: string) => {
@@ -233,6 +247,29 @@ export function ProjectBacklogTab({ projectId }: { projectId: string }) {
                   <SelectContent>
                     <SelectItem value="none">Sin épica</SelectItem>
                     {epics?.map((e) => <SelectItem key={e.id} value={e.id}>{e.title}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Estado</Label>
+                <Select value={newStory.status} onValueChange={(v) => setNewStory((p) => ({ ...p, status: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-2">
+                <Label>Story Points</Label>
+                <Input type="number" min={0} value={newStory.story_points} onChange={(e) => setNewStory((p) => ({ ...p, story_points: e.target.value }))} placeholder="0" />
+              </div>
+              <div className="space-y-2">
+                <Label>Sprint</Label>
+                <Select value={newStory.sprint_id || "none"} onValueChange={(v) => setNewStory((p) => ({ ...p, sprint_id: v === "none" ? "" : v }))}>
+                  <SelectTrigger><SelectValue placeholder="Sin sprint" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Sin sprint</SelectItem>
+                    {sprints?.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>

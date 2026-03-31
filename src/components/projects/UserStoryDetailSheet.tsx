@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Checkbox } from "@/components/ui/checkbox";
+
 import { Trash2, Plus, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -168,7 +168,7 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
                   <div className="space-y-1.5">
                     {acceptanceCriteria.map((c, i) => (
                       <div key={i} className="flex items-center gap-2 group">
-                        <Checkbox />
+                        <span className="text-muted-foreground">•</span>
                         <span className="text-sm text-foreground flex-1">{c}</span>
                         <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => removeCriterion(i)}>
                           <X className="h-3 w-3" />
