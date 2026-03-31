@@ -1,8 +1,13 @@
 import { useState } from "react";
 import { useSprintsWithStats, useCreateSprint, useUpdateSprint, SprintWithStats } from "@/hooks/useSprints";
-import { useUserStories, useUpdateUserStory } from "@/hooks/useUserStories";
+import { useUserStories, useUpdateUserStory, useCreateUserStory } from "@/hooks/useUserStories";
+import { useEpics } from "@/hooks/useEpics";
+import { useProjectMembers } from "@/hooks/useProjects";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -33,9 +38,41 @@ interface Props {
 export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
   const { data: sprints, isLoading } = useSprintsWithStats(projectId);
   const { data: backlogStories } = useUserStories(projectId, { status: undefined });
+  const { data: epics } = useEpics(projectId);
+  const { data: members } = useProjectMembers(projectId);
   const createSprint = useCreateSprint();
   const updateSprint = useUpdateSprint();
   const updateStory = useUpdateUserStory();
+  const createStory = useCreateUserStory();
+
+  const { data: sprintsList } = useQuery({
+    queryKey: ["sprints-list", projectId],
+    queryFn: async () => {
+      const { data } = await supabase.from("sprints").select("id, name").eq("project_id", projectId).order("created_at");
+      return data ?? [];
+    },
+  });
+
+  const TYPES = [
+    { value: "story", label: "Historia", icon: "📖" },
+    { value: "bug", label: "Bug", icon: "🐛" },
+    { value: "technical", label: "Técnica", icon: "⚙️" },
+    { value: "spike", label: "Spike", icon: "🔍" },
+    { value: "improvement", label: "Mejora", icon: "✨" },
+  ];
+  const PRIORITIES = [
+    { value: "critical", label: "Crítica" },
+    { value: "high", label: "Alta" },
+    { value: "medium", label: "Media" },
+    { value: "low", label: "Baja" },
+  ];
+  const STATUSES_HU = [
+    { value: "backlog", label: "Backlog" },
+    { value: "todo", label: "Por Hacer" },
+    { value: "in_progress", label: "En Progreso" },
+    { value: "in_review", label: "En Revisión" },
+    { value: "done", label: "Completado" },
+  ];
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editSprint, setEditSprint] = useState<SprintWithStats | null>(null);
@@ -43,6 +80,26 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
   const [completeReview, setCompleteReview] = useState<SprintWithStats | null>(null);
   const [newSprint, setNewSprint] = useState({ name: "", goal: "", start_date: undefined as Date | undefined, end_date: undefined as Date | undefined, capacity: "" });
   const [selectedBacklogIds, setSelectedBacklogIds] = useState<string[]>([]);
+  const [createHUOpen, setCreateHUOpen] = useState(false);
+  const [newStory, setNewStory] = useState({ title: "", description: "", type: "story", priority: "medium", status: "backlog", story_points: "", epic_id: "", assigned_to: "", sprint_id: "" });
+
+  const handleCreateHU = async () => {
+    if (!newStory.title.trim()) return;
+    await createStory.mutateAsync({
+      project_id: projectId,
+      title: newStory.title,
+      description: newStory.description || null,
+      type: newStory.type,
+      priority: newStory.priority,
+      status: newStory.status,
+      story_points: newStory.story_points ? parseInt(newStory.story_points) : null,
+      epic_id: newStory.epic_id || null,
+      assigned_to: newStory.assigned_to || null,
+      sprint_id: newStory.sprint_id || null,
+    });
+    setCreateHUOpen(false);
+    setNewStory({ title: "", description: "", type: "story", priority: "medium", status: "backlog", story_points: "", epic_id: "", assigned_to: "", sprint_id: "" });
+  };
 
   const activeSprint = sprints?.find((s) => s.status === "active");
   const otherSprints = sprints?.filter((s) => s.status !== "active") ?? [];
@@ -216,7 +273,10 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
     <div className="mt-4 space-y-6">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-foreground">Sprints</h3>
-        <Button size="sm" onClick={openCreate}><Plus className="h-4 w-4 mr-1" />Nuevo Sprint</Button>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" onClick={() => setCreateHUOpen(true)}><Plus className="h-4 w-4 mr-1" />Nueva HU</Button>
+          <Button size="sm" onClick={openCreate}><Plus className="h-4 w-4 mr-1" />Nuevo Sprint</Button>
+        </div>
       </div>
 
       {activeSprint && (
@@ -470,6 +530,88 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
               </DialogFooter>
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create HU Dialog */}
+      <Dialog open={createHUOpen} onOpenChange={setCreateHUOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader><DialogTitle>Nueva Historia de Usuario</DialogTitle></DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>Título *</Label>
+              <Input value={newStory.title} onChange={(e) => setNewStory((p) => ({ ...p, title: e.target.value }))} placeholder="Como [rol] quiero [acción]..." />
+            </div>
+            <div className="space-y-2">
+              <Label>Descripción</Label>
+              <Textarea value={newStory.description} onChange={(e) => setNewStory((p) => ({ ...p, description: e.target.value }))} rows={3} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Tipo</Label>
+                <Select value={newStory.type} onValueChange={(v) => setNewStory((p) => ({ ...p, type: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{TYPES.map((t) => <SelectItem key={t.value} value={t.value}>{t.icon} {t.label}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Prioridad</Label>
+                <Select value={newStory.priority} onValueChange={(v) => setNewStory((p) => ({ ...p, priority: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{PRIORITIES.map((p) => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Épica</Label>
+                <Select value={newStory.epic_id || "none"} onValueChange={(v) => setNewStory((p) => ({ ...p, epic_id: v === "none" ? "" : v }))}>
+                  <SelectTrigger><SelectValue placeholder="Sin épica" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Sin épica</SelectItem>
+                    {epics?.map((e) => <SelectItem key={e.id} value={e.id}>{e.title}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Estado</Label>
+                <Select value={newStory.status} onValueChange={(v) => setNewStory((p) => ({ ...p, status: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{STATUSES_HU.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-2">
+                <Label>Story Points</Label>
+                <Input type="number" min={0} value={newStory.story_points} onChange={(e) => setNewStory((p) => ({ ...p, story_points: e.target.value }))} placeholder="0" />
+              </div>
+              <div className="space-y-2">
+                <Label>Sprint</Label>
+                <Select value={newStory.sprint_id || "none"} onValueChange={(v) => setNewStory((p) => ({ ...p, sprint_id: v === "none" ? "" : v }))}>
+                  <SelectTrigger><SelectValue placeholder="Sin sprint" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Sin sprint</SelectItem>
+                    {sprintsList?.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Asignar a</Label>
+                <Select value={newStory.assigned_to || "none"} onValueChange={(v) => setNewStory((p) => ({ ...p, assigned_to: v === "none" ? "" : v }))}>
+                  <SelectTrigger><SelectValue placeholder="Sin asignar" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Sin asignar</SelectItem>
+                    {members?.map((m) => <SelectItem key={m.user_id} value={m.user_id}>{m.profiles?.full_name || m.profiles?.email}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateHUOpen(false)}>Cancelar</Button>
+            <Button onClick={handleCreateHU} disabled={!newStory.title.trim() || createStory.isPending}>Crear</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
