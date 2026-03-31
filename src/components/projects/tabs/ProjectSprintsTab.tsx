@@ -273,10 +273,7 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
     <div className="mt-4 space-y-6">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-foreground">Sprints</h3>
-        <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={() => setCreateHUOpen(true)}><Plus className="h-4 w-4 mr-1" />Nueva HU</Button>
-          <Button size="sm" onClick={openCreate}><Plus className="h-4 w-4 mr-1" />Nuevo Sprint</Button>
-        </div>
+        <Button size="sm" onClick={openCreate}><Plus className="h-4 w-4 mr-1" />Nuevo Sprint</Button>
       </div>
 
       {activeSprint && (
