@@ -67,7 +67,7 @@ export function PlanningPokerModal({ projectId, open, onOpenChange }: Props) {
 
       // Create estimations for each selected story
       for (const storyId of selectedStoryIds) {
-        await supabase.from("estimations").insert({
+        await fromTable("estimations").insert({
           project_id: projectId,
           user_story_id: storyId,
           session_id: session.id,
