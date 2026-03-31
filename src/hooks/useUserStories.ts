@@ -31,7 +31,7 @@ export function useUserStories(projectId: string | undefined, filters?: {
       if (!projectId) return [];
       let q = supabase
         .from("user_stories")
-        .select("*, epics(id, title, color), profiles:assigned_to(id, full_name, email, avatar_url), sprints(id, name)")
+        .select("*, epics(id, title, color), assigned_profile:profiles!user_stories_assigned_to_fkey(id, full_name, email, avatar_url), sprints(id, name)")
         .eq("project_id", projectId)
         .order("created_at", { ascending: false });
 
