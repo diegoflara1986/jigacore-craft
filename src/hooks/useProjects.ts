@@ -110,7 +110,23 @@ export function useCreateProject() {
 
   return useMutation({
     mutationFn: async (project: Partial<Project>) => {
-      if (!profile?.workspace_id) throw new Error("No workspace");
+      let workspaceId = profile?.workspace_id;
+
+      // Auto-create workspace if user doesn't have one
+      if (!workspaceId && profile) {
+        const { data: ws, error: wsError } = await supabase
+          .from("workspaces")
+          .insert({ name: `${profile.full_name || profile.email}'s Workspace` })
+          .select()
+          .single();
+        if (wsError) throw new Error("Error creando workspace: " + wsError.message);
+        workspaceId = ws.id;
+        // Link profile to workspace
+        await supabase.from("profiles").update({ workspace_id: ws.id }).eq("id", profile.id);
+      }
+
+      if (!workspaceId) throw new Error("No se pudo determinar el workspace");
+
       const { data, error } = await supabase
         .from("projects")
         .insert({
@@ -121,13 +137,20 @@ export function useCreateProject() {
           start_date: project.start_date,
           end_date: project.end_date,
           budget: project.budget,
-          workspace_id: profile.workspace_id,
-          created_by: profile.id,
+          workspace_id: workspaceId,
+          created_by: profile!.id,
         })
         .select()
         .single();
       if (error) throw error;
       return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      toast({ title: "Proyecto creado exitosamente" });
+    },
+    onError: (e: any) => {
+      toast({ title: "Error al crear proyecto", description: e.message, variant: "destructive" });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
