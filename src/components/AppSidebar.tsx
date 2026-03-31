@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 
 const mainNav = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Proyectos", url: "/projects", icon: FolderKanban },
+  { title: "Proyectos", url: "/proyectos", icon: FolderKanban },
   { title: "Mi Trabajo", url: "/my-work", icon: ClipboardList },
   { title: "Incidentes", url: "/incidents", icon: Bug },
   { title: "Reportes", url: "/reports", icon: BarChart3 },
