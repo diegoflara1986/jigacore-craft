@@ -18,6 +18,7 @@ import ReportIncident from "./pages/ReportIncident";
 import LookupIncident from "./pages/LookupIncident";
 import Incidents from "./pages/Incidents";
 import Settings from "./pages/Settings";
+import Reports from "./pages/Reports";
 
 const App = () => (
   <TooltipProvider>
