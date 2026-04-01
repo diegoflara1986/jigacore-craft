@@ -277,6 +277,14 @@ export function SettingsUsers() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Edit User Modal */}
+      <EditUserDialog
+        open={!!editUser}
+        onOpenChange={(open) => { if (!open) setEditUser(null); }}
+        user={editUser}
+        onSaved={() => qc.invalidateQueries({ queryKey: ["workspace-users"] })}
+      />
     </div>
   );
 }
