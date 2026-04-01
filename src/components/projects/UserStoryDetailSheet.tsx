@@ -37,6 +37,7 @@ const STATUSES = [
   { value: "todo", label: "Por Hacer" },
   { value: "in_progress", label: "En Progreso" },
   { value: "in_review", label: "En Revisión" },
+  { value: "qa", label: "En QA" },
   { value: "done", label: "Completado" },
 ];
 
