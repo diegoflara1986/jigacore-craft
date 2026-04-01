@@ -24,7 +24,6 @@ export default function ReportIncident() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState<{ ticketCode: string; email: string } | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [fileErrors, setFileErrors] = useState<string[]>([]);
 
   const [form, setForm] = useState({
     project_id: "", reporter_name: "", reported_by_email: "", title: "", description: "",
@@ -32,8 +31,6 @@ export default function ReportIncident() {
     severity: "media", category: "", version: "", browser_info: "",
   });
   const [acceptTerms, setAcceptTerms] = useState(false);
-  const [files, setFiles] = useState<File[]>([]);
-  const [previews, setPreviews] = useState<string[]>([]);
 
   const { data: projects } = useQuery({
     queryKey: ["public-projects"],
