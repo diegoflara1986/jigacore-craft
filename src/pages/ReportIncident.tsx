@@ -245,44 +245,11 @@ export default function ReportIncident() {
           </Field>
 
           {/* Capturas de pantalla */}
-          <Field label="Capturas de pantalla">
-            <div
-              className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-gray-400 transition-colors"
-              onDragOver={e => { e.preventDefault(); e.stopPropagation(); }}
-              onDrop={e => { e.preventDefault(); handleFiles(e.dataTransfer.files); }}
-              onClick={() => document.getElementById("file-input")?.click()}
-            >
-              <Upload className="h-8 w-8 mx-auto text-gray-400" />
-              <p className="text-sm text-gray-500 mt-2">Arrastra imágenes aquí o haz clic para seleccionar</p>
-              <p className="text-xs text-gray-400 mt-1">JPG, PNG, GIF, WEBP · Máx 5 imágenes · 10MB c/u</p>
-              <input id="file-input" type="file" accept="image/jpeg,image/png,image/gif,image/webp" multiple className="hidden" onChange={e => e.target.files && handleFiles(e.target.files)} />
-            </div>
-
-            {/* File validation errors */}
-            {fileErrors.length > 0 && (
-              <div className="mt-2 space-y-1">
-                {fileErrors.map((err, i) => (
-                  <div key={i} className="flex items-center gap-2 text-sm text-red-600">
-                    <AlertCircle className="h-4 w-4 shrink-0" />
-                    <span>{err}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {previews.length > 0 && (
-              <div className="flex gap-2 mt-3 flex-wrap">
-                {previews.map((p, i) => (
-                  <div key={i} className="relative h-20 w-20 rounded-lg overflow-hidden border">
-                    <img src={p} alt={`Captura ${i + 1}`} className="h-full w-full object-cover" />
-                    <button type="button" onClick={() => removeFile(i)} className="absolute top-0.5 right-0.5 bg-black/60 rounded-full p-0.5" aria-label="Eliminar imagen">
-                      <X className="h-3 w-3 text-white" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Field>
+          <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <p className="text-sm text-blue-700">
+              📎 Si necesitas adjuntar capturas de pantalla, el equipo interno podrá solicitarlas una vez revisado tu reporte.
+            </p>
+          </div>
 
           <div className="flex items-start gap-2">
             <Checkbox id="terms" checked={acceptTerms} onCheckedChange={v => setAcceptTerms(!!v)} className="mt-0.5" />
