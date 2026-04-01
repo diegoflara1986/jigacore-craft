@@ -12,11 +12,13 @@ export interface UserStory {
   priority: string;
   status: string;
   story_points: number | null;
+  story_number: number | null;
   epic_id: string | null;
   sprint_id: string | null;
   assigned_to: string | null;
   created_by: string | null;
   created_at: string;
+  deleted_at: string | null;
   epics?: { id: string; title: string; color: string | null } | null;
   assigned_profile?: { id: string; full_name: string | null; email: string; avatar_url: string | null } | null;
   sprints?: { id: string; name: string } | null;
