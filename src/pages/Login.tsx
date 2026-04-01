@@ -98,9 +98,8 @@ export default function Login() {
             <Link to="/forgot-password" className="text-accent hover:underline block">
               ¿Olvidaste tu contraseña?
             </Link>
-            <p className="text-muted-foreground">
-              ¿No tienes cuenta?{" "}
-              <Link to="/register" className="text-accent hover:underline">Crear cuenta</Link>
+            <p className="text-xs text-muted-foreground mt-2">
+              ¿No tienes cuenta? Solicita acceso a tu administrador
             </p>
           </div>
         </CardContent>

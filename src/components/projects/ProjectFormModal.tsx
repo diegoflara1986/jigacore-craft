@@ -78,6 +78,10 @@ export function ProjectFormModal({ open, onOpenChange, project }: Props) {
       start_date: form.start_date ? format(form.start_date, "yyyy-MM-dd") : null,
       end_date: form.end_date ? format(form.end_date, "yyyy-MM-dd") : null,
       budget: form.budget ? parseFloat(form.budget) : null,
+      currency: form.currency,
+      color: form.color,
+      git_url: form.git_url || null,
+      technologies: form.technologies.length > 0 ? form.technologies : null,
     };
     if (isEdit) {
       await updateProject.mutateAsync({ id: project!.id, ...payload });
