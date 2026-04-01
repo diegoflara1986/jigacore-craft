@@ -280,7 +280,7 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
               <div className="space-y-4">
                 <div className="space-y-1.5">
                   <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Estado</Label>
-                  <Select value={story.status} onValueChange={(v) => saveField("status", v)}>
+                  <Select value={story.status} onValueChange={(v) => saveField("status", v)} disabled={readOnly}>
                     <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                     <SelectContent>{STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
                   </Select>
