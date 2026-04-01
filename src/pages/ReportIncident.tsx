@@ -129,7 +129,7 @@ export default function ReportIncident() {
           </p>
           <div className="flex gap-3 mt-8">
             <Button onClick={() => navigate("/consultar-incidente")} className="bg-primary">Consultar estado de mi reporte</Button>
-            <Button variant="outline" onClick={() => { setSubmitted(null); setForm({ project_id: "", reporter_name: "", reported_by_email: "", title: "", description: "", steps_to_reproduce: "", expected_result: "", actual_result: "", severity: "media", category: "", version: "", browser_info: "" }); setFiles([]); setPreviews([]); setAcceptTerms(false); setFileErrors([]); }}>
+            <Button variant="outline" onClick={() => { setSubmitted(null); setForm({ project_id: "", reporter_name: "", reported_by_email: "", title: "", description: "", steps_to_reproduce: "", expected_result: "", actual_result: "", severity: "media", category: "", version: "", browser_info: "" }); setAcceptTerms(false); }}>
               Reportar otro incidente
             </Button>
           </div>
