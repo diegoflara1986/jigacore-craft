@@ -181,7 +181,7 @@ export default function PlanningPoker() {
           <div>
             <h1 className="text-lg font-bold text-foreground">{session.name}</h1>
             <p className="text-xs text-muted-foreground">
-              Escala: {session.scale_type === "fibonacci" ? "Fibonacci" : "T-Shirt"} · {storyIds.length} historias
+              Escala: Fibonacci · {storyIds.length} historias
             </p>
           </div>
         </div>
