@@ -7,7 +7,6 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Validate JWT from request
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "No autorizado" }), {
@@ -20,7 +19,6 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-    // Verify caller is admin
     const callerClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
@@ -32,7 +30,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Check caller role
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
     const { data: callerProfile } = await adminClient
       .from("profiles")
@@ -63,19 +60,36 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Create user with admin API (auto-confirms email)
-    const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-      user_metadata: { full_name: full_name || email },
-    });
+    // Check if user already exists
+    const { data: existingUsers } = await adminClient.auth.admin.listUsers();
+    const existingUser = existingUsers?.users?.find((u: any) => u.email === email);
 
-    if (createError) {
-      return new Response(JSON.stringify({ error: createError.message }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+    let userId: string;
+
+    if (existingUser) {
+      // User exists in auth — update password and confirm
+      await adminClient.auth.admin.updateUserById(existingUser.id, {
+        password,
+        email_confirm: true,
+        user_metadata: { full_name: full_name || email },
       });
+      userId = existingUser.id;
+    } else {
+      // Create new user
+      const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: { full_name: full_name || email },
+      });
+
+      if (createError) {
+        return new Response(JSON.stringify({ error: createError.message }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      userId = newUser.user.id;
     }
 
     // Update profile with role and workspace
@@ -86,10 +100,10 @@ Deno.serve(async (req) => {
         workspace_id: callerProfile.workspace_id,
         full_name: full_name || null,
       })
-      .eq("id", newUser.user.id);
+      .eq("id", userId);
 
     return new Response(
-      JSON.stringify({ success: true, user_id: newUser.user.id }),
+      JSON.stringify({ success: true, user_id: userId }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
