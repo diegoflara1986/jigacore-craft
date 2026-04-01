@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
 import { useCreateEstimationSession } from "@/hooks/useEstimationSessions";
 import { useUserStories } from "@/hooks/useUserStories";
-import { useEpics } from "@/hooks/useEpics";
+import { useProjectMembers } from "@/hooks/useProjects";
 import { supabase } from "@/integrations/supabase/client";
 
 const fromTable = (table: string) => (supabase as any).from(table);
@@ -11,9 +11,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "@/hooks/use-toast";
 
 const PRIORITIES: Record<string, string> = {
@@ -31,23 +31,17 @@ export function PlanningPokerModal({ projectId, open, onOpenChange }: Props) {
   const { user } = useAuth();
   const createSession = useCreateEstimationSession();
   const { data: stories } = useUserStories(projectId);
-  const { data: epics } = useEpics(projectId);
+  const { data: members } = useProjectMembers(projectId);
 
   const [name, setName] = useState("Planning Poker");
-  const [filterMode, setFilterMode] = useState<string>("all");
   const [selectedStoryIds, setSelectedStoryIds] = useState<string[]>([]);
+  const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
 
   // Stories without story points
   const unestimatedStories = useMemo(
-    () => stories?.filter((s) => s.story_points === null || s.story_points === 0) ?? [],
+    () => stories?.filter((s) => (s.story_points === null || s.story_points === 0) && !s.deleted_at) ?? [],
     [stories]
   );
-
-  // Filter by epic or show all
-  const filteredStories = useMemo(() => {
-    if (filterMode === "all") return unestimatedStories;
-    return unestimatedStories.filter((s) => s.epic_id === filterMode);
-  }, [unestimatedStories, filterMode]);
 
   const toggleStory = (id: string) => {
     setSelectedStoryIds((prev) =>
@@ -55,13 +49,19 @@ export function PlanningPokerModal({ projectId, open, onOpenChange }: Props) {
     );
   };
 
-  const selectAll = () => {
-    setSelectedStoryIds(filteredStories.map((s) => s.id));
+  const toggleMember = (id: string) => {
+    setSelectedMemberIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
   };
 
-  const deselectAll = () => {
-    setSelectedStoryIds([]);
-  };
+  const selectAllStories = () => setSelectedStoryIds(unestimatedStories.map((s) => s.id));
+  const deselectAllStories = () => setSelectedStoryIds([]);
+  const selectAllMembers = () => setSelectedMemberIds(members?.map((m) => m.user_id) ?? []);
+  const deselectAllMembers = () => setSelectedMemberIds([]);
+
+  const initials = (name: string | null) =>
+    name ? name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase() : "?";
 
   const handleCreate = async () => {
     if (!name.trim() || !selectedStoryIds.length || !user) return;
@@ -95,14 +95,6 @@ export function PlanningPokerModal({ projectId, open, onOpenChange }: Props) {
     }
   };
 
-  // Epics that have unestimated stories
-  const epicsWithStories = useMemo(() => {
-    if (!epics) return [];
-    return epics.filter((e) =>
-      unestimatedStories.some((s) => s.epic_id === e.id)
-    );
-  }, [epics, unestimatedStories]);
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
@@ -116,48 +108,28 @@ export function PlanningPokerModal({ projectId, open, onOpenChange }: Props) {
           </div>
 
           <div className="space-y-2">
-            <Label>Backlog / HU a estimar</Label>
-            <Select value={filterMode} onValueChange={(v) => { setFilterMode(v); setSelectedStoryIds([]); }}>
-              <SelectTrigger><SelectValue placeholder="Seleccionar filtro" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Backlog completo ({unestimatedStories.length} HU sin estimar)</SelectItem>
-                {epicsWithStories.map((e) => {
-                  const count = unestimatedStories.filter((s) => s.epic_id === e.id).length;
-                  return (
-                    <SelectItem key={e.id} value={e.id}>
-                      <span className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: e.color || undefined }} />
-                        {e.title} ({count} HU)
-                      </span>
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
             <Label>Escala de votación</Label>
             <p className="text-sm text-muted-foreground">Fibonacci (0, 1, 2, 3, 5, 8, 13, 21, 34, ?, ☕)</p>
           </div>
 
+          {/* Stories selection */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label>Historias a estimar</Label>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-muted-foreground">{selectedStoryIds.length} seleccionadas</span>
-                {filteredStories.length > 0 && (
-                  <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={selectedStoryIds.length === filteredStories.length ? deselectAll : selectAll}>
-                    {selectedStoryIds.length === filteredStories.length ? "Deseleccionar" : "Seleccionar"} todas
+                {unestimatedStories.length > 0 && (
+                  <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={selectedStoryIds.length === unestimatedStories.length ? deselectAllStories : selectAllStories}>
+                    {selectedStoryIds.length === unestimatedStories.length ? "Deseleccionar" : "Seleccionar"} todas
                   </Button>
                 )}
               </div>
             </div>
-            <div className="border border-border rounded-lg max-h-52 overflow-y-auto divide-y divide-border">
-              {filteredStories.length === 0 ? (
+            <div className="border border-border rounded-lg max-h-40 overflow-y-auto divide-y divide-border">
+              {unestimatedStories.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-4">No hay historias sin estimar</p>
               ) : (
-                filteredStories.map((s) => (
+                unestimatedStories.map((s) => (
                   <label key={s.id} className="flex items-center gap-3 px-3 py-2 hover:bg-muted/50 cursor-pointer">
                     <Checkbox
                       checked={selectedStoryIds.includes(s.id)}
@@ -165,14 +137,47 @@ export function PlanningPokerModal({ projectId, open, onOpenChange }: Props) {
                     />
                     <div className="flex-1 min-w-0">
                       <span className="text-sm font-medium text-foreground truncate block">{s.title}</span>
-                      <div className="flex gap-1.5 mt-0.5">
-                        <Badge variant="outline" className="text-[9px]">{PRIORITIES[s.priority] ?? s.priority}</Badge>
-                        {s.epics && (
-                          <Badge variant="outline" className="text-[9px]" style={{ borderColor: s.epics.color || undefined }}>
-                            {s.epics.title}
-                          </Badge>
-                        )}
-                      </div>
+                      <Badge variant="outline" className="text-[9px]">{PRIORITIES[s.priority] ?? s.priority}</Badge>
+                    </div>
+                  </label>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Participants selection */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label>Participantes</Label>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">{selectedMemberIds.length} seleccionados</span>
+                {(members?.length ?? 0) > 0 && (
+                  <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={selectedMemberIds.length === (members?.length ?? 0) ? deselectAllMembers : selectAllMembers}>
+                    {selectedMemberIds.length === (members?.length ?? 0) ? "Deseleccionar" : "Seleccionar"} todos
+                  </Button>
+                )}
+              </div>
+            </div>
+            <div className="border border-border rounded-lg max-h-40 overflow-y-auto divide-y divide-border">
+              {!members?.length ? (
+                <p className="text-sm text-muted-foreground text-center py-4">No hay miembros en el proyecto</p>
+              ) : (
+                members.map((m) => (
+                  <label key={m.user_id} className="flex items-center gap-3 px-3 py-2 hover:bg-muted/50 cursor-pointer">
+                    <Checkbox
+                      checked={selectedMemberIds.includes(m.user_id)}
+                      onCheckedChange={() => toggleMember(m.user_id)}
+                    />
+                    <Avatar className="h-6 w-6">
+                      <AvatarFallback className="text-[9px] bg-muted">
+                        {initials(m.profiles?.full_name ?? null)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm font-medium text-foreground truncate block">
+                        {m.profiles?.full_name || m.profiles?.email}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">{m.project_role}</span>
                     </div>
                   </label>
                 ))
