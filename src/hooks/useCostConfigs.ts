@@ -36,7 +36,13 @@ export function useUpsertCostConfig() {
         const { error } = await supabase.from("cost_configs").update({ hourly_rate: config.hourly_rate, currency: config.currency }).eq("id", config.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("cost_configs").insert(config);
+        const { error } = await supabase.from("cost_configs").insert({
+          project_id: config.project_id,
+          user_id: config.user_id ?? null,
+          role: config.role as any ?? null,
+          hourly_rate: config.hourly_rate,
+          currency: config.currency ?? "USD",
+        });
         if (error) throw error;
       }
     },
