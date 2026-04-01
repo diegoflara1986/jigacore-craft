@@ -13,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, Users } from "lucide-react";
+import { Plus, Search, Users, Trash2 } from "lucide-react";
 import { UserStoryDetailSheet } from "../UserStoryDetailSheet";
 import { PlanningPokerModal } from "../PlanningPokerModal";
 
@@ -47,7 +47,7 @@ function priorityBadge(p: string) {
 }
 
 export function ProjectBacklogTab({ projectId }: { projectId: string }) {
-  const [filters, setFilters] = useState<{ epicId?: string; type?: string; priority?: string; status?: string; assignedTo?: string; search?: string }>({});
+  const [filters, setFilters] = useState<{ epicId?: string; type?: string; priority?: string; status?: string; assignedTo?: string; search?: string; showDeleted?: boolean }>({});
   const { data: stories, isLoading } = useUserStories(projectId, filters);
   const { data: epics } = useEpics(projectId);
   const { data: members } = useProjectMembers(projectId);
@@ -150,6 +150,15 @@ export function ProjectBacklogTab({ projectId }: { projectId: string }) {
             {members?.map((m) => <SelectItem key={m.user_id} value={m.user_id}>{m.profiles?.full_name || m.profiles?.email}</SelectItem>)}
           </SelectContent>
         </Select>
+        <Button
+          size="sm"
+          variant={filters.showDeleted ? "default" : "outline"}
+          className="h-9"
+          onClick={() => setFilters((f) => ({ ...f, showDeleted: !f.showDeleted }))}
+        >
+          <Trash2 className="h-4 w-4 mr-1" />
+          {filters.showDeleted ? "Ver activas" : "Eliminadas"}
+        </Button>
       </div>
 
       {/* Table */}
@@ -162,6 +171,7 @@ export function ProjectBacklogTab({ projectId }: { projectId: string }) {
           <Table>
             <TableHeader>
               <TableRow>
+             <TableHead className="w-20">ID</TableHead>
                 <TableHead className="w-16">Tipo</TableHead>
                 <TableHead>Título</TableHead>
                 <TableHead className="w-28">Épica</TableHead>
@@ -173,11 +183,11 @@ export function ProjectBacklogTab({ projectId }: { projectId: string }) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {stories.map((s, idx) => (
-                <TableRow key={s.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedStoryId(s.id)}>
+              {stories.map((s) => (
+                <TableRow key={s.id} className={`cursor-pointer hover:bg-muted/50 ${s.deleted_at ? 'opacity-50' : ''}`} onClick={() => !s.deleted_at && setSelectedStoryId(s.id)}>
+                  <TableCell className="text-xs text-muted-foreground font-mono">HU-{String(s.story_number ?? 0).padStart(3, "0")}</TableCell>
                   <TableCell className="text-center text-base">{typeIcon(s.type)}</TableCell>
                   <TableCell>
-                    <span className="text-xs text-muted-foreground mr-2">HU-{String(idx + 1).padStart(3, "0")}</span>
                     <span className="font-medium text-foreground">{s.title}</span>
                   </TableCell>
                   <TableCell>

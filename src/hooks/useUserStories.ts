@@ -12,18 +12,20 @@ export interface UserStory {
   priority: string;
   status: string;
   story_points: number | null;
+  story_number: number | null;
   epic_id: string | null;
   sprint_id: string | null;
   assigned_to: string | null;
   created_by: string | null;
   created_at: string;
+  deleted_at: string | null;
   epics?: { id: string; title: string; color: string | null } | null;
   assigned_profile?: { id: string; full_name: string | null; email: string; avatar_url: string | null } | null;
   sprints?: { id: string; name: string } | null;
 }
 
 export function useUserStories(projectId: string | undefined, filters?: {
-  epicId?: string; type?: string; priority?: string; status?: string; assignedTo?: string; search?: string;
+  epicId?: string; type?: string; priority?: string; status?: string; assignedTo?: string; search?: string; showDeleted?: boolean;
 }) {
   return useQuery({
     queryKey: ["user-stories", projectId, filters],
@@ -33,7 +35,13 @@ export function useUserStories(projectId: string | undefined, filters?: {
         .from("user_stories")
         .select("*, epics(id, title, color), assigned_profile:profiles!user_stories_assigned_to_fkey(id, full_name, email, avatar_url), sprints(id, name)")
         .eq("project_id", projectId)
-        .order("created_at", { ascending: false });
+        .order("story_number", { ascending: true });
+
+      if (filters?.showDeleted) {
+        q = q.not("deleted_at", "is", null);
+      } else {
+        q = q.is("deleted_at", null);
+      }
 
       if (filters?.epicId) q = q.eq("epic_id", filters.epicId);
       if (filters?.type) q = q.eq("type", filters.type);
@@ -108,7 +116,7 @@ export function useDeleteUserStory() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, projectId }: { id: string; projectId: string }) => {
-      const { error } = await supabase.from("user_stories").delete().eq("id", id);
+      const { error } = await supabase.from("user_stories").update({ deleted_at: new Date().toISOString() }).eq("id", id);
       if (error) throw error;
       return projectId;
     },
