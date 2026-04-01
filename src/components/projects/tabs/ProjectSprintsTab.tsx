@@ -80,7 +80,8 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
   const [editSprint, setEditSprint] = useState<SprintWithStats | null>(null);
   const [startConfirm, setStartConfirm] = useState<SprintWithStats | null>(null);
   const [completeReview, setCompleteReview] = useState<SprintWithStats | null>(null);
-  const [newSprint, setNewSprint] = useState({ name: "", goal: "", start_date: undefined as Date | undefined, end_date: undefined as Date | undefined, capacity: "" });
+  const [incompleteHandled, setIncompleteHandled] = useState(false);
+  const [newSprint, setNewSprint] = useState({ name: "", goal: "", start_date: undefined as Date | undefined, end_date: undefined as Date | undefined });
   const [selectedBacklogIds, setSelectedBacklogIds] = useState<string[]>([]);
   const [createHUOpen, setCreateHUOpen] = useState(false);
   const [planningPokerOpen, setPlanningPokerOpen] = useState(false);
@@ -110,21 +111,20 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
 
   const openCreate = () => {
     const nextNum = (sprints?.length ?? 0) + 1;
-    setNewSprint({ name: `Sprint ${nextNum}`, goal: "", start_date: undefined, end_date: undefined, capacity: "" });
+    setNewSprint({ name: `Sprint ${nextNum}`, goal: "", start_date: undefined, end_date: undefined });
     setSelectedBacklogIds([]);
     setCreateOpen(true);
   };
 
   const handleCreate = async () => {
     if (!newSprint.name.trim()) return;
-    const capacityValue = newSprint.capacity ? parseInt(newSprint.capacity) : selectedPoints;
     const created = await createSprint.mutateAsync({
       project_id: projectId,
       name: newSprint.name,
       goal: newSprint.goal || null,
       start_date: newSprint.start_date ? format(newSprint.start_date, "yyyy-MM-dd") : null,
       end_date: newSprint.end_date ? format(newSprint.end_date, "yyyy-MM-dd") : null,
-      capacity: capacityValue,
+      capacity: selectedPoints,
     });
     for (const sid of selectedBacklogIds) {
       await updateStory.mutateAsync({ id: sid, sprint_id: created.id });
@@ -138,9 +138,7 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
       goal: sprint.goal || "",
       start_date: sprint.start_date ? new Date(sprint.start_date) : undefined,
       end_date: sprint.end_date ? new Date(sprint.end_date) : undefined,
-      capacity: sprint.capacity ? String(sprint.capacity) : "",
     });
-    // Pre-select stories already assigned to this sprint
     const assignedIds = backlogStories?.filter((s) => s.sprint_id === sprint.id).map((s) => s.id) ?? [];
     setSelectedBacklogIds(assignedIds);
     setEditSprint(sprint);
@@ -148,14 +146,13 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
 
   const handleEdit = async () => {
     if (!editSprint || !newSprint.name.trim()) return;
-    const capacityValue = newSprint.capacity ? parseInt(newSprint.capacity) : selectedPoints;
     await updateSprint.mutateAsync({
       id: editSprint.id,
       name: newSprint.name,
       goal: newSprint.goal || null,
       start_date: newSprint.start_date ? format(newSprint.start_date, "yyyy-MM-dd") : null,
       end_date: newSprint.end_date ? format(newSprint.end_date, "yyyy-MM-dd") : null,
-      capacity: capacityValue,
+      capacity: selectedPoints,
     });
     // Sync story assignments: add newly selected, remove deselected
     const currentlyAssigned = backlogStories?.filter((s) => s.sprint_id === editSprint.id).map((s) => s.id) ?? [];
@@ -176,7 +173,7 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
     setStartConfirm(null);
   };
 
-  const handleCompleteSprint = async (action: "next" | "backlog") => {
+  const handleMoveIncomplete = async (action: "next" | "backlog") => {
     if (!completeReview) return;
     const incompleteStories = backlogStories?.filter((s) => s.sprint_id === completeReview.id && s.status !== "done") ?? [];
     const nextSprint = sprints?.find((s) => s.status === "planning");
@@ -188,8 +185,14 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
         await updateStory.mutateAsync({ id: story.id, sprint_id: null });
       }
     }
+    setIncompleteHandled(true);
+  };
+
+  const handleFinalizeSprint = async () => {
+    if (!completeReview) return;
     await updateSprint.mutateAsync({ id: completeReview.id, status: "completed" });
     setCompleteReview(null);
+    setIncompleteHandled(false);
   };
 
   const toggleBacklogItem = (id: string) => {
@@ -348,8 +351,8 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
                 </Popover>
               </div>
               <div className="space-y-2">
-                <Label>Capacidad (SP) — Auto: {selectedPoints}</Label>
-                <Input type="number" min={0} value={newSprint.capacity || selectedPoints || ""} onChange={(e) => setNewSprint((p) => ({ ...p, capacity: e.target.value }))} placeholder={String(selectedPoints)} />
+                <Label>Capacidad (SP)</Label>
+                <Input type="number" value={selectedPoints} readOnly disabled className="bg-muted" />
               </div>
             </div>
 
@@ -434,8 +437,8 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
                 </Popover>
               </div>
               <div className="space-y-2">
-                <Label>Capacidad (SP) — Auto: {selectedPoints}</Label>
-                <Input type="number" min={0} value={newSprint.capacity || selectedPoints || ""} onChange={(e) => setNewSprint((p) => ({ ...p, capacity: e.target.value }))} placeholder={String(selectedPoints)} />
+                <Label>Capacidad (SP)</Label>
+                <Input type="number" value={selectedPoints} readOnly disabled className="bg-muted" />
               </div>
             </div>
 
@@ -523,7 +526,7 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
               </div>
             )}
 
-            {reviewIncomplete.length > 0 && (
+            {reviewIncomplete.length > 0 && !incompleteHandled && (
               <div className="space-y-2">
                 <Label className="text-xs text-muted-foreground">⏳ Incompletas ({reviewIncomplete.length})</Label>
                 <ul className="text-sm space-y-0.5">
@@ -531,17 +534,23 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
                 </ul>
                 <p className="text-sm text-muted-foreground">¿Qué hacer con las historias incompletas?</p>
                 <div className="flex gap-2">
-                  <Button size="sm" variant="outline" onClick={() => handleCompleteSprint("next")}>Mover al siguiente sprint</Button>
-                  <Button size="sm" variant="outline" onClick={() => handleCompleteSprint("backlog")}>Devolver al backlog</Button>
+                  <Button size="sm" variant="outline" onClick={() => handleMoveIncomplete("next")} disabled={updateStory.isPending}>Mover al siguiente sprint</Button>
+                  <Button size="sm" variant="outline" onClick={() => handleMoveIncomplete("backlog")} disabled={updateStory.isPending}>Devolver al backlog</Button>
                 </div>
               </div>
             )}
 
-            {reviewIncomplete.length === 0 && (
-              <DialogFooter>
-                <Button onClick={() => handleCompleteSprint("backlog")}>Finalizar Sprint</Button>
-              </DialogFooter>
+            {incompleteHandled && (
+              <p className="text-sm text-green-600">✅ Historias incompletas reasignadas correctamente.</p>
             )}
+
+            <Separator />
+            <DialogFooter>
+              <Button variant="outline" onClick={() => { setCompleteReview(null); setIncompleteHandled(false); }}>Cancelar</Button>
+              <Button onClick={handleFinalizeSprint} disabled={(reviewIncomplete.length > 0 && !incompleteHandled) || updateSprint.isPending}>
+                Finalizar Sprint
+              </Button>
+            </DialogFooter>
           </div>
         </DialogContent>
       </Dialog>
