@@ -77,7 +77,7 @@ export function ProjectTeamTab({ projectId, members }: { projectId: string; memb
                   <div className="flex items-center gap-3">
                     <span className="text-xs px-2 py-1 bg-muted rounded-md text-muted-foreground capitalize">{m.project_role.replace("_", " ")}</span>
                     <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive"
-                      onClick={() => removeMember.mutate({ id: m.id, project_id: projectId })}>
+                      onClick={() => guardAction("management", "remover un miembro del proyecto", () => removeMember.mutate({ id: m.id, project_id: projectId }))}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
