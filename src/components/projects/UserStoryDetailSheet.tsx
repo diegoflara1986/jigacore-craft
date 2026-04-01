@@ -226,9 +226,11 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
                       <div key={i} className="flex items-center gap-2 group">
                         <span className="text-muted-foreground">•</span>
                         <span className="text-sm text-foreground flex-1">{c}</span>
-                        <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => removeCriterion(i)}>
-                          <X className="h-3 w-3" />
-                        </Button>
+                        {!readOnly && (
+                          <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => removeCriterion(i)}>
+                            <X className="h-3 w-3" />
+                          </Button>
+                        )}
                       </div>
                     ))}
                   </div>
