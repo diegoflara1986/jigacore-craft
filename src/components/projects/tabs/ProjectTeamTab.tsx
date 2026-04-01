@@ -127,6 +127,7 @@ export function ProjectTeamTab({ projectId, members }: { projectId: string; memb
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <PermissionDeniedDialog open={denied.open} onOpenChange={closeDenied} actionLabel={denied.actionLabel} requiredRoleLabel={denied.requiredRoleLabel} allowedMembers={denied.allowedMembers} />
     </div>
   );
 }
