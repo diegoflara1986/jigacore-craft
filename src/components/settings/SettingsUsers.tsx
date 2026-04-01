@@ -14,8 +14,9 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { UserPlus, Search, MoreVertical, Eye, EyeOff } from "lucide-react";
+import { UserPlus, Search, MoreVertical, Eye, EyeOff, Pencil } from "lucide-react";
 import { Constants } from "@/integrations/supabase/types";
+import { EditUserDialog } from "./EditUserDialog";
 
 const ROLES = Constants.public.Enums.app_role;
 
