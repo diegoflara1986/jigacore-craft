@@ -1,195 +1,86 @@
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Switch } from "@/components/ui/switch";
-import { useSlaConfigs, useUpsertSlaConfig } from "@/hooks/useIncidents";
+import { useState } from "react";
 import { useAuth } from "@/lib/auth";
-import { supabase } from "@/integrations/supabase/client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Save } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+import { User, Bell, Palette, Building2, Users, Shield, Clock, FileText, Kanban, Tags, Puzzle, Box, Receipt, ClipboardList, Lock } from "lucide-react";
+import { SettingsProfile } from "@/components/settings/SettingsProfile";
+import { SettingsNotifications } from "@/components/settings/SettingsNotifications";
+import { SettingsAppearance } from "@/components/settings/SettingsAppearance";
+import { SettingsWorkspace } from "@/components/settings/SettingsWorkspace";
+import { SettingsUsers } from "@/components/settings/SettingsUsers";
+import { SettingsRoles } from "@/components/settings/SettingsRoles";
+import { SettingsSLA } from "@/components/settings/SettingsSLA";
+import { SettingsIntegrations } from "@/components/settings/SettingsIntegrations";
+import { SettingsAudit } from "@/components/settings/SettingsAudit";
 
-const DEFAULT_SLA: Record<string, { response: number; resolution: number }> = {
-  critica: { response: 2, resolution: 8 },
-  alta: { response: 8, resolution: 24 },
-  media: { response: 24, resolution: 72 },
-  baja: { response: 72, resolution: 168 },
-};
+type Section = "profile" | "notifications" | "appearance" | "workspace" | "users" | "roles" | "sla" | "integrations" | "audit";
 
-const SEV_LABELS: Record<string, string> = {
-  critica: "🔴 Crítica",
-  alta: "🟠 Alta",
-  media: "🟡 Media",
-  baja: "🟢 Baja",
-};
+const PERSONAL_ITEMS = [
+  { id: "profile" as Section, label: "Mi Perfil", icon: User },
+  { id: "notifications" as Section, label: "Mis Notificaciones", icon: Bell },
+  { id: "appearance" as Section, label: "Apariencia", icon: Palette },
+];
 
-const NOTIFICATION_TYPES = [
-  { key: "tarea_asignada", label: "Tarea asignada a mí", icon: "📋" },
-  { key: "mencion", label: "Me mencionaron en comentario", icon: "💬" },
-  { key: "cambio_estado", label: "Cambio de estado en mis tareas", icon: "🔄" },
-  { key: "sprint_iniciado", label: "Sprint iniciado", icon: "🚀" },
-  { key: "sprint_completado", label: "Sprint completado", icon: "✅" },
-  { key: "tarea_vencida", label: "Mis tareas vencidas", icon: "⏰" },
-  { key: "nuevo_incidente", label: "Nuevo incidente", icon: "🐛" },
-  { key: "presupuesto_alerta", label: "Alerta de presupuesto", icon: "💰" },
-  { key: "planning_poker", label: "Invitación a Planning Poker", icon: "🃏" },
+const WORKSPACE_ITEMS = [
+  { id: "workspace" as Section, label: "General", icon: Building2 },
+  { id: "users" as Section, label: "Gestión de Usuarios", icon: Users },
+  { id: "roles" as Section, label: "Roles y Permisos", icon: Shield },
+  { id: "sla" as Section, label: "SLA de Incidentes", icon: Clock },
+];
+
+const SYSTEM_ITEMS = [
+  { id: "integrations" as Section, label: "Integraciones", icon: Puzzle },
+  { id: "audit" as Section, label: "Auditoría", icon: ClipboardList },
 ];
 
 export default function Settings() {
-  const { profile, user } = useAuth();
-  const { data: configs } = useSlaConfigs();
-  const upsertSla = useUpsertSlaConfig();
-  const qc = useQueryClient();
+  const { profile } = useAuth();
+  const [section, setSection] = useState<Section>("profile");
+  const role = profile?.role ?? "developer";
+  const isAdmin = ["admin", "super_admin"].includes(role);
 
-  const { data: workspaceId } = useQuery({
-    queryKey: ["workspace-id"],
-    queryFn: async () => {
-      const { data } = await supabase.rpc("get_user_workspace_id");
-      return data as string;
-    },
-  });
-
-  const [sla, setSla] = useState<Record<string, { response: number; resolution: number }>>(DEFAULT_SLA);
-
-  useEffect(() => {
-    if (configs?.length) {
-      const map: Record<string, { response: number; resolution: number }> = { ...DEFAULT_SLA };
-      configs.forEach((c: any) => {
-        map[c.severity] = { response: c.response_hours, resolution: c.resolution_hours };
-      });
-      setSla(map);
-    }
-  }, [configs]);
-
-  const saveSla = () => {
-    if (!workspaceId) return;
-    const entries = Object.entries(sla).map(([severity, vals]) => ({
-      workspace_id: workspaceId,
-      severity,
-      response_hours: vals.response,
-      resolution_hours: vals.resolution,
-    }));
-    upsertSla.mutate(entries);
-  };
-
-  // Notification preferences
-  const { data: notifPrefs } = useQuery({
-    queryKey: ["notification-prefs", user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("notification_preferences")
-        .select("*")
-        .eq("user_id", user!.id);
-      if (error) throw error;
-      return data ?? [];
-    },
-    enabled: !!user?.id,
-  });
-
-  const prefsMap = (notifPrefs ?? []).reduce((acc: any, p: any) => {
-    acc[p.notification_type] = { in_app: p.in_app, by_email: p.by_email, id: p.id };
-    return acc;
-  }, {} as Record<string, { in_app: boolean; by_email: boolean; id: string }>);
-
-  const togglePref = useMutation({
-    mutationFn: async ({ type, field, value }: { type: string; field: "in_app" | "by_email"; value: boolean }) => {
-      const existing = prefsMap[type];
-      if (existing) {
-        const { error } = await supabase
-          .from("notification_preferences")
-          .update({ [field]: value })
-          .eq("id", existing.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from("notification_preferences")
-          .insert({ user_id: user!.id, notification_type: type, [field]: value });
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["notification-prefs"] }),
-    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
-  });
+  const SidebarGroup = ({ title, items }: { title: string; items: typeof PERSONAL_ITEMS }) => (
+    <div className="mb-4">
+      <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold px-3 mb-1">{title}</p>
+      {items.map(item => (
+        <button
+          key={item.id}
+          onClick={() => setSection(item.id)}
+          className={cn(
+            "w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-colors text-left",
+            section === item.id
+              ? "bg-primary/10 text-primary font-medium"
+              : "text-muted-foreground hover:bg-muted hover:text-foreground"
+          )}
+        >
+          <item.icon className="h-4 w-4 shrink-0" />
+          {item.label}
+        </button>
+      ))}
+    </div>
+  );
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <h1 className="text-2xl font-bold text-foreground">Configuración</h1>
+    <div className="flex gap-6 animate-fade-in min-h-[calc(100vh-8rem)]">
+      {/* Internal sidebar */}
+      <aside className="w-[220px] shrink-0 space-y-1">
+        <h2 className="text-lg font-bold text-foreground px-3 mb-4">Configuración</h2>
+        <SidebarGroup title="Personal" items={PERSONAL_ITEMS} />
+        {isAdmin && <SidebarGroup title="Workspace" items={WORKSPACE_ITEMS} />}
+        {isAdmin && <SidebarGroup title="Sistema" items={SYSTEM_ITEMS} />}
+      </aside>
 
-      {/* SLA Config */}
-      <Card>
-        <CardHeader><CardTitle>SLA de Incidentes</CardTitle></CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Severidad</TableHead>
-                <TableHead>Tiempo de Respuesta (horas)</TableHead>
-                <TableHead>Tiempo de Resolución (horas)</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {Object.entries(sla).map(([severity, vals]) => (
-                <TableRow key={severity}>
-                  <TableCell className="font-medium">{SEV_LABELS[severity] || severity}</TableCell>
-                  <TableCell>
-                    <Input type="number" min={1} className="w-24" value={vals.response}
-                      onChange={e => setSla(p => ({ ...p, [severity]: { ...p[severity], response: Number(e.target.value) } }))} />
-                  </TableCell>
-                  <TableCell>
-                    <Input type="number" min={1} className="w-24" value={vals.resolution}
-                      onChange={e => setSla(p => ({ ...p, [severity]: { ...p[severity], resolution: Number(e.target.value) } }))} />
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          <Button className="mt-4" onClick={saveSla} disabled={upsertSla.isPending}>
-            <Save className="h-4 w-4 mr-2" /> Guardar configuración SLA
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* Notification Preferences */}
-      <Card>
-        <CardHeader><CardTitle>Mis Notificaciones</CardTitle></CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Tipo de notificación</TableHead>
-                <TableHead className="text-center w-24">En App</TableHead>
-                <TableHead className="text-center w-24">Por Email</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {NOTIFICATION_TYPES.map(nt => {
-                const pref = prefsMap[nt.key];
-                return (
-                  <TableRow key={nt.key}>
-                    <TableCell className="font-medium">
-                      <span className="mr-2">{nt.icon}</span>{nt.label}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Switch
-                        checked={pref?.in_app ?? true}
-                        onCheckedChange={(v) => togglePref.mutate({ type: nt.key, field: "in_app", value: v })}
-                      />
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Switch
-                        checked={pref?.by_email ?? false}
-                        onCheckedChange={(v) => togglePref.mutate({ type: nt.key, field: "by_email", value: v })}
-                      />
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      {/* Content */}
+      <main className="flex-1 min-w-0">
+        {section === "profile" && <SettingsProfile />}
+        {section === "notifications" && <SettingsNotifications />}
+        {section === "appearance" && <SettingsAppearance />}
+        {section === "workspace" && <SettingsWorkspace />}
+        {section === "users" && <SettingsUsers />}
+        {section === "roles" && <SettingsRoles />}
+        {section === "sla" && <SettingsSLA />}
+        {section === "integrations" && <SettingsIntegrations />}
+        {section === "audit" && <SettingsAudit />}
+      </main>
     </div>
   );
 }
