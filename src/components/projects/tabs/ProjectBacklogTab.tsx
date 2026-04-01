@@ -49,9 +49,12 @@ function priorityBadge(p: string) {
   return pr ? <span className={`inline-block h-2.5 w-2.5 rounded-full ${pr.color} mr-1.5`} /> : null;
 }
 
-export function ProjectBacklogTab({ projectId }: { projectId: string }) {
+export function ProjectBacklogTab({ projectId, estimationOnly = false }: { projectId: string; estimationOnly?: boolean }) {
   const [filters, setFilters] = useState<{ epicId?: string; type?: string; priority?: string; status?: string; assignedTo?: string; search?: string; showDeleted?: boolean }>({});
-  const { data: stories, isLoading } = useUserStories(projectId, filters);
+  const { data: allStories, isLoading } = useUserStories(projectId, filters);
+  const stories = estimationOnly
+    ? allStories?.filter((s) => (s.story_points === null || s.story_points === 0) && !s.deleted_at)
+    : allStories;
   const { data: epics } = useEpics(projectId);
   const { data: members } = useProjectMembers(projectId);
   const createStory = useCreateUserStory();
@@ -107,7 +110,9 @@ export function ProjectBacklogTab({ projectId }: { projectId: string }) {
       {/* Actions */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2 flex-wrap">
-          <Button size="sm" onClick={() => guardAction("team", "crear una historia de usuario", () => setCreateOpen(true))}><Plus className="h-4 w-4 mr-1" />Agregar HU</Button>
+          {!estimationOnly && (
+            <Button size="sm" onClick={() => guardAction("team", "crear una historia de usuario", () => setCreateOpen(true))}><Plus className="h-4 w-4 mr-1" />Agregar HU</Button>
+          )}
           <Button size="sm" variant="outline" onClick={() => guardAction("team", "iniciar Planning Poker", () => setPlanningPokerOpen(true))}>
             <Users className="h-4 w-4 mr-1" />Planning Poker
           </Button>

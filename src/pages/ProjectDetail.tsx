@@ -148,7 +148,7 @@ export default function ProjectDetail() {
         <ProjectBacklogTab projectId={project.id} />
       )}
       {activeTab === "estimation" && (
-        <ProjectBacklogTab projectId={project.id} />
+        <ProjectBacklogTab projectId={project.id} estimationOnly />
       )}
       {activeTab === "epics" && (
         <ProjectEpicsTab projectId={project.id} />
