@@ -144,6 +144,11 @@ export function SettingsProfile() {
               <Input value={jobTitle} onChange={e => setJobTitle(e.target.value)} placeholder="ej: Senior Developer" />
             </div>
             <div>
+              <Label>Rol</Label>
+              <Input value={profile?.role ?? "developer"} disabled className="bg-muted capitalize" />
+              <p className="text-xs text-muted-foreground mt-1">Solo un administrador puede cambiar tu rol</p>
+            </div>
+            <div>
               <Label>Email</Label>
               <Input value={profile?.email ?? ""} disabled className="bg-muted" />
               <p className="text-xs text-muted-foreground mt-1">El email no se puede cambiar</p>
