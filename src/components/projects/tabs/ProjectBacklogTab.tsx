@@ -47,7 +47,7 @@ function priorityBadge(p: string) {
 }
 
 export function ProjectBacklogTab({ projectId }: { projectId: string }) {
-  const [filters, setFilters] = useState<{ epicId?: string; type?: string; priority?: string; status?: string; assignedTo?: string; search?: string }>({});
+  const [filters, setFilters] = useState<{ epicId?: string; type?: string; priority?: string; status?: string; assignedTo?: string; search?: string; showDeleted?: boolean }>({});
   const { data: stories, isLoading } = useUserStories(projectId, filters);
   const { data: epics } = useEpics(projectId);
   const { data: members } = useProjectMembers(projectId);
