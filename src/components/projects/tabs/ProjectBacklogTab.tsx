@@ -59,14 +59,24 @@ export function ProjectBacklogTab({ projectId }: { projectId: string }) {
   const [selectedStoryId, setSelectedStoryId] = useState<string | null>(null);
   const [newStory, setNewStory] = useState({ title: "", description: "", type: "story", priority: "medium", status: "backlog", story_points: "", epic_id: "", assigned_to: "", sprint_id: "" });
 
-  // Sprints
+  // Sprints (include status for read-only logic)
   const { data: sprints } = useQuery({
     queryKey: ["sprints", projectId],
     queryFn: async () => {
-      const { data } = await supabase.from("sprints").select("id, name").eq("project_id", projectId).order("created_at");
+      const { data } = await supabase.from("sprints").select("id, name, status").eq("project_id", projectId).order("created_at");
       return data ?? [];
     },
   });
+
+  const isStoryReadOnly = (s: UserStory) => {
+    if (s.deleted_at) return true;
+    if (s.status === "done") return true;
+    if (s.sprint_id) {
+      const sprint = sprints?.find(sp => sp.id === s.sprint_id);
+      if (sprint && sprint.status === "active") return true;
+    }
+    return false;
+  };
 
   const handleCreate = async () => {
     if (!newStory.title.trim()) return;
