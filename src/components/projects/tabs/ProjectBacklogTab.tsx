@@ -13,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, Users } from "lucide-react";
+import { Plus, Search, Users, Trash2 } from "lucide-react";
 import { UserStoryDetailSheet } from "../UserStoryDetailSheet";
 import { PlanningPokerModal } from "../PlanningPokerModal";
 
