@@ -167,7 +167,7 @@ export default function PlanningPoker() {
   const initials = (name: string | null) => name ? name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase() : "?";
 
   const getStoryStatus = (storyId: string) => {
-    if (session?.current_story_id === storyId) return "estimating";
+    if (activeStoryId === storyId) return "estimating";
     if (storyEstimations[storyId] !== undefined) return "estimated";
     return "pending";
   };
