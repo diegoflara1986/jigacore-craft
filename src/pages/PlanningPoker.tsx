@@ -39,16 +39,24 @@ export default function PlanningPoker() {
   const [revealed, setRevealed] = useState(false);
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
   const [storyEstimations, setStoryEstimations] = useState<Record<string, number | null>>({});
+  const [activeStoryId, setActiveStoryId] = useState<string | null>(null);
 
-  // Current estimation
+  // Initialize activeStoryId from session
+  useEffect(() => {
+    if (session?.current_story_id && !activeStoryId) {
+      setActiveStoryId(session.current_story_id);
+    }
+  }, [session?.current_story_id]);
+
+  // Current estimation based on local state
   const currentEstimation = useMemo(
-    () => estimations?.find((e) => e.user_story_id === session?.current_story_id),
-    [estimations, session?.current_story_id]
+    () => estimations?.find((e) => e.user_story_id === activeStoryId),
+    [estimations, activeStoryId]
   );
 
   const { data: votes, refetch: refetchVotes } = useEstimationVotes(currentEstimation?.id);
   const castVote = useCastVote();
-  const { data: currentStory } = useUserStory(session?.current_story_id ?? undefined);
+  const { data: currentStory } = useUserStory(activeStoryId ?? undefined);
 
   // Stories in session
   const storyIds = useMemo(() => estimations?.map((e) => e.user_story_id) ?? [], [estimations]);
