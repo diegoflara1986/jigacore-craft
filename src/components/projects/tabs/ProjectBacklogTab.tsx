@@ -184,7 +184,7 @@ export function ProjectBacklogTab({ projectId }: { projectId: string }) {
             </TableHeader>
             <TableBody>
               {stories.map((s) => (
-                <TableRow key={s.id} className={`cursor-pointer hover:bg-muted/50 ${s.deleted_at ? 'opacity-50' : ''}`} onClick={() => !s.deleted_at && setSelectedStoryId(s.id)}>
+                <TableRow key={s.id} className={`cursor-pointer hover:bg-muted/50 ${s.deleted_at ? 'opacity-50' : ''}`} onClick={() => setSelectedStoryId(s.id)}>
                   <TableCell className="text-xs text-muted-foreground font-mono">HU-{String(s.story_number ?? 0).padStart(3, "0")}</TableCell>
                   <TableCell className="text-center text-base">{typeIcon(s.type)}</TableCell>
                   <TableCell>
