@@ -13,8 +13,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { AlertTriangle, Bug, CheckCircle2, Clock, Search, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { AlertTriangle, Bug, CheckCircle2, Clock, Search, X, ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { IncidentDetailSheet } from "@/components/incidents/IncidentDetailSheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from "@/lib/auth";
+import { toast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 const STATUSES = ["nuevo", "asignado", "en revisión", "en desarrollo", "en qa", "resuelto", "cerrado"];
 const SEVERITIES = ["critica", "alta", "media", "baja"];
