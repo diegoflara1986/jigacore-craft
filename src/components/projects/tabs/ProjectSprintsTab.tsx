@@ -147,14 +147,13 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
 
   const handleEdit = async () => {
     if (!editSprint || !newSprint.name.trim()) return;
-    const capacityValue = newSprint.capacity ? parseInt(newSprint.capacity) : selectedPoints;
     await updateSprint.mutateAsync({
       id: editSprint.id,
       name: newSprint.name,
       goal: newSprint.goal || null,
       start_date: newSprint.start_date ? format(newSprint.start_date, "yyyy-MM-dd") : null,
       end_date: newSprint.end_date ? format(newSprint.end_date, "yyyy-MM-dd") : null,
-      capacity: capacityValue,
+      capacity: selectedPoints,
     });
     // Sync story assignments: add newly selected, remove deselected
     const currentlyAssigned = backlogStories?.filter((s) => s.sprint_id === editSprint.id).map((s) => s.id) ?? [];
