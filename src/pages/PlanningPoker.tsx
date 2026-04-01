@@ -390,7 +390,7 @@ export default function PlanningPoker() {
         </div>
 
         {/* Right: Participants */}
-        <div className="col-span-12 md:col-span-3">
+        <div className="col-span-12 md:col-span-4">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm">Participantes ({members?.length ?? 0})</CardTitle>
