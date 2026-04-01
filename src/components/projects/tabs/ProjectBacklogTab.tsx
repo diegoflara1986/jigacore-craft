@@ -315,6 +315,7 @@ export function ProjectBacklogTab({ projectId }: { projectId: string }) {
         onOpenChange={(open) => { if (!open) setSelectedStoryId(null); }}
         epics={epics ?? []}
         members={members ?? []}
+        readOnly={!!stories?.find(s => s.id === selectedStoryId)?.deleted_at}
       />
 
       <PlanningPokerModal projectId={projectId} open={planningPokerOpen} onOpenChange={setPlanningPokerOpen} />
