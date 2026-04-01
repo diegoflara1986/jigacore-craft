@@ -235,7 +235,7 @@ export default function PlanningPoker() {
         </div>
 
         {/* Center: Voting area */}
-        <div className="col-span-12 md:col-span-6 space-y-4">
+        <div className="col-span-12 md:col-span-8 space-y-4">
           {currentStory ? (
             <>
               {/* Story info */}
