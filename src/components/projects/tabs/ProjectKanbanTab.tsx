@@ -52,6 +52,7 @@ export function ProjectKanbanTab({ projectId }: Props) {
   const { data: members } = useProjectMembers(projectId);
   const updateStory = useUpdateUserStory();
   const createStory = useCreateUserStory();
+  const { guardAction, denied, closeDenied } = usePermissions(projectId);
 
   const activeSprint = sprints?.find((s) => s.status === "active");
   const [selectedSprintId, setSelectedSprintId] = useState<string | undefined>(undefined);
