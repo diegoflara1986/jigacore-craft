@@ -369,6 +369,23 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
+
+    <AlertDialog open={showCompleteConfirm} onOpenChange={setShowCompleteConfirm}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>¿Marcar como Completado?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Una vez completada, la historia "{story?.title}" quedará bloqueada y no se podrá editar ni mover. ¿Está seguro?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction onClick={() => { saveField("status", "done"); setShowCompleteConfirm(false); }}>
+            Completar
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
     </>
   );
 }
