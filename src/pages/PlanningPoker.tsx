@@ -196,44 +196,46 @@ export default function PlanningPoker() {
       </div>
 
       <div className="grid grid-cols-12 gap-4">
-        {/* Left: Story list */}
-        <div className="col-span-12 md:col-span-3 space-y-2">
+        {/* Top: Story list - full width */}
+        <div className="col-span-12 space-y-2">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Historias a estimar</CardTitle>
+              <CardTitle className="text-sm">Historias a estimar ({sessionStories.length})</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-1 max-h-[60vh] overflow-y-auto">
-              {sessionStories.map((s) => {
-                const status = getStoryStatus(s.id);
-                return (
-                  <button
-                    key={s.id}
-                    onClick={() => handleSelectStory(s.id)}
-                    className={cn(
-                      "w-full text-left p-2 rounded-md text-sm transition-colors",
-                      status === "estimating" && "bg-primary/10 border border-primary/30",
-                      status === "estimated" && "bg-muted/50",
-                      status === "pending" && "hover:bg-muted/50"
-                    )}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span>
-                        {status === "estimating" ? "🎯" : status === "estimated" ? "✅" : "⏳"}
-                      </span>
-                      <span className="truncate flex-1 text-foreground">{s.title}</span>
-                      {storyEstimations[s.id] !== undefined && (
-                        <Badge variant="secondary" className="text-[10px]">{storyEstimations[s.id]} SP</Badge>
+            <CardContent className="space-y-1 max-h-48 overflow-y-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1">
+                {sessionStories.map((s) => {
+                  const status = getStoryStatus(s.id);
+                  return (
+                    <button
+                      key={s.id}
+                      onClick={() => handleSelectStory(s.id)}
+                      className={cn(
+                        "w-full text-left p-2.5 rounded-md text-sm transition-colors",
+                        status === "estimating" && "bg-primary/10 border border-primary/30",
+                        status === "estimated" && "bg-muted/50",
+                        status === "pending" && "hover:bg-muted/50"
                       )}
-                    </div>
-                  </button>
-                );
-              })}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="shrink-0">
+                          {status === "estimating" ? "🎯" : status === "estimated" ? "✅" : "⏳"}
+                        </span>
+                        <span className="flex-1 text-foreground line-clamp-2">{s.title}</span>
+                        {storyEstimations[s.id] !== undefined && (
+                          <Badge variant="secondary" className="text-[10px] shrink-0">{storyEstimations[s.id]} SP</Badge>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </CardContent>
           </Card>
         </div>
 
         {/* Center: Voting area */}
-        <div className="col-span-12 md:col-span-6 space-y-4">
+        <div className="col-span-12 md:col-span-8 space-y-4">
           {currentStory ? (
             <>
               {/* Story info */}
@@ -388,7 +390,7 @@ export default function PlanningPoker() {
         </div>
 
         {/* Right: Participants */}
-        <div className="col-span-12 md:col-span-3">
+        <div className="col-span-12 md:col-span-4">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm">Participantes ({members?.length ?? 0})</CardTitle>
