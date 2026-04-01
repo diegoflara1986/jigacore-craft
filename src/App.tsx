@@ -18,6 +18,7 @@ import ReportIncident from "./pages/ReportIncident";
 import LookupIncident from "./pages/LookupIncident";
 import Incidents from "./pages/Incidents";
 import Settings from "./pages/Settings";
+import Reports from "./pages/Reports";
 
 const App = () => (
   <TooltipProvider>
@@ -38,7 +39,7 @@ const App = () => (
           <Route path="/proyectos/:id/planning-poker/:sessionId" element={<AppLayout><PlanningPoker /></AppLayout>} />
           <Route path="/my-work" element={<AppLayout><MyWork /></AppLayout>} />
           <Route path="/incidents" element={<AppLayout><Incidents /></AppLayout>} />
-          <Route path="/reports" element={<AppLayout><div className="text-foreground">Reportes - Próximamente</div></AppLayout>} />
+          <Route path="/reports" element={<AppLayout><Reports /></AppLayout>} />
           <Route path="/settings" element={<AppLayout><Settings /></AppLayout>} />
           <Route path="*" element={<NotFound />} />
         </Routes>

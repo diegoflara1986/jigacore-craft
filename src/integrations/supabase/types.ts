@@ -731,6 +731,54 @@ export type Database = {
           },
         ]
       }
+      sprint_retrospectives: {
+        Row: {
+          action_items: string | null
+          created_at: string
+          id: string
+          project_id: string
+          sprint_id: string
+          to_improve: string | null
+          updated_at: string
+          went_well: string | null
+        }
+        Insert: {
+          action_items?: string | null
+          created_at?: string
+          id?: string
+          project_id: string
+          sprint_id: string
+          to_improve?: string | null
+          updated_at?: string
+          went_well?: string | null
+        }
+        Update: {
+          action_items?: string | null
+          created_at?: string
+          id?: string
+          project_id?: string
+          sprint_id?: string
+          to_improve?: string | null
+          updated_at?: string
+          went_well?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sprint_retrospectives_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sprint_retrospectives_sprint_id_fkey"
+            columns: ["sprint_id"]
+            isOneToOne: true
+            referencedRelation: "sprints"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sprints: {
         Row: {
           capacity: number | null
