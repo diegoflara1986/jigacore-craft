@@ -96,16 +96,17 @@ export function useCreateUserStory() {
 export function useUpdateUserStory() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...updates }: Partial<UserStory> & { id: string }) => {
-      const { data, error } = await supabase.from("user_stories").update(updates).eq("id", id).select().maybeSingle();
+    mutationFn: async ({ id, ...updates }: Partial<UserStory> & { id: string; _projectId?: string }) => {
+      const { error } = await supabase.from("user_stories").update(updates).eq("id", id);
       if (error) throw error;
-      return data;
+      return { id };
     },
-    onSuccess: (d) => {
-      qc.invalidateQueries({ queryKey: ["user-stories", d.project_id] });
-      qc.invalidateQueries({ queryKey: ["user-story", d.id] });
-      qc.invalidateQueries({ queryKey: ["project-stats", d.project_id] });
-      qc.invalidateQueries({ queryKey: ["epics", d.project_id] });
+    onSuccess: (_d, variables) => {
+      qc.invalidateQueries({ queryKey: ["user-stories"] });
+      qc.invalidateQueries({ queryKey: ["user-story", variables.id] });
+      qc.invalidateQueries({ queryKey: ["project-stats"] });
+      qc.invalidateQueries({ queryKey: ["epics"] });
+      qc.invalidateQueries({ queryKey: ["user-stories-for-sprints"] });
       toast({ title: "Historia actualizada" });
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),

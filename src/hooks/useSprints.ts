@@ -90,12 +90,13 @@ export function useUpdateSprint() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<Sprint> & { id: string }) => {
-      const { data, error } = await supabase.from("sprints").update(updates).eq("id", id).select().single();
+      const { error } = await supabase.from("sprints").update(updates).eq("id", id);
       if (error) throw error;
-      return data;
+      return { id };
     },
-    onSuccess: (d) => {
-      qc.invalidateQueries({ queryKey: ["sprints", d.project_id] });
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["sprints"] });
+      qc.invalidateQueries({ queryKey: ["sprints-list"] });
       toast({ title: "Sprint actualizado" });
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),

@@ -489,7 +489,7 @@ export function ProjectKanbanTab({ projectId }: Props) {
 
         <Button size="sm" variant={viewMode === "board" ? "default" : "outline"} onClick={() => setViewMode("board")} className="h-8 text-xs">Tablero</Button>
         <Button size="sm" variant={viewMode === "swimlane" ? "default" : "outline"} onClick={() => setViewMode("swimlane")} className="h-8 text-xs">
-          <Users className="h-3.5 w-3.5 mr-1" />Swimlanes
+          <Users className="h-3.5 w-3.5 mr-1" />Responsable
         </Button>
       </div>
 
