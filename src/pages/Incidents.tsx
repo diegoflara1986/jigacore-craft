@@ -13,8 +13,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { AlertTriangle, Bug, CheckCircle2, Clock, Search, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { AlertTriangle, Bug, CheckCircle2, Clock, Search, X, ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { IncidentDetailSheet } from "@/components/incidents/IncidentDetailSheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from "@/lib/auth";
+import { toast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 const STATUSES = ["nuevo", "asignado", "en revisión", "en desarrollo", "en qa", "resuelto", "cerrado"];
 const SEVERITIES = ["critica", "alta", "media", "baja"];
@@ -106,7 +112,10 @@ export default function Incidents() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <h1 className="text-2xl font-bold text-foreground">Incidentes</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-foreground">Incidentes</h1>
+        <CreateIncidentButton projects={projects ?? []} onCreated={(id) => setSelectedId(id)} />
+      </div>
 
       {/* Metric cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -223,5 +232,101 @@ function FilterSelect({ label, value, onChange, options }: { label: string; valu
         </SelectContent>
       </Select>
     </div>
+  );
+}
+
+function CreateIncidentButton({ projects, onCreated }: { projects: { id: string; name: string }[]; onCreated: (id: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState({ title: "", description: "", severity: "media", category: "", project_id: "" });
+  const [loading, setLoading] = useState(false);
+  const { profile } = useAuth();
+  const qc = useQueryClient();
+
+  const handleCreate = async () => {
+    if (!form.title.trim() || !form.project_id) {
+      toast({ title: "Título y proyecto son requeridos", variant: "destructive" });
+      return;
+    }
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.from("incidents").insert({
+        title: form.title,
+        description: form.description || null,
+        severity: form.severity,
+        category: form.category || null,
+        project_id: form.project_id,
+        status: "nuevo",
+      }).select("id").single();
+      if (error) throw error;
+      toast({ title: "Incidente creado correctamente" });
+      qc.invalidateQueries({ queryKey: ["incidents"] });
+      qc.invalidateQueries({ queryKey: ["incident-stats"] });
+      setOpen(false);
+      setForm({ title: "", description: "", severity: "media", category: "", project_id: "" });
+      if (data) onCreated(data.id);
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <Button onClick={() => setOpen(true)}>
+        <Plus className="h-4 w-4 mr-1" /> Crear Incidente
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader><DialogTitle>Nuevo Incidente</DialogTitle></DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>Proyecto *</Label>
+              <Select value={form.project_id} onValueChange={v => setForm(f => ({ ...f, project_id: v }))}>
+                <SelectTrigger><SelectValue placeholder="Seleccionar proyecto" /></SelectTrigger>
+                <SelectContent>
+                  {projects.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Título *</Label>
+              <Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Descripción breve del incidente" />
+            </div>
+            <div className="space-y-2">
+              <Label>Descripción</Label>
+              <Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={3} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Severidad</Label>
+                <Select value={form.severity} onValueChange={v => setForm(f => ({ ...f, severity: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {SEVERITIES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Categoría</Label>
+                <Select value={form.category || "none"} onValueChange={v => setForm(f => ({ ...f, category: v === "none" ? "" : v }))}>
+                  <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Sin categoría</SelectItem>
+                    {CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
+            <Button onClick={handleCreate} disabled={loading}>
+              {loading ? "Creando..." : "Crear Incidente"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

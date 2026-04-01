@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,8 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { UserPlus, Search, MoreVertical } from "lucide-react";
+import { UserPlus, Search, MoreVertical, Eye, EyeOff } from "lucide-react";
 import { Constants } from "@/integrations/supabase/types";
 
 const ROLES = Constants.public.Enums.app_role;
@@ -24,9 +25,10 @@ export function SettingsUsers() {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("active");
-  const [showInvite, setShowInvite] = useState(false);
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState("developer");
+  const [showCreate, setShowCreate] = useState(false);
+  const [createForm, setCreateForm] = useState({ email: "", password: "", full_name: "", role: "developer" });
+  const [creating, setCreating] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const { data: users } = useQuery({
     queryKey: ["workspace-users"],
@@ -74,6 +76,40 @@ export function SettingsUsers() {
     }
   };
 
+  const handleCreateUser = async () => {
+    if (!createForm.email || !createForm.password || !createForm.role) {
+      toast({ title: "Todos los campos son requeridos", variant: "destructive" });
+      return;
+    }
+    if (createForm.password.length < 6) {
+      toast({ title: "La contraseña debe tener al menos 6 caracteres", variant: "destructive" });
+      return;
+    }
+    setCreating(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await supabase.functions.invoke("create-user", {
+        body: {
+          email: createForm.email,
+          password: createForm.password,
+          role: createForm.role,
+          full_name: createForm.full_name || null,
+        },
+      });
+      if (res.error) throw new Error(res.error.message);
+      if (res.data?.error) throw new Error(res.data.error);
+      toast({ title: "Usuario creado correctamente", description: `${createForm.email} puede iniciar sesión ahora.` });
+      qc.invalidateQueries({ queryKey: ["workspace-users"] });
+      setShowCreate(false);
+      setCreateForm({ email: "", password: "", full_name: "", role: "developer" });
+      setShowPassword(false);
+    } catch (e: any) {
+      toast({ title: "Error al crear usuario", description: e.message, variant: "destructive" });
+    } finally {
+      setCreating(false);
+    }
+  };
+
   const initials = (name: string | null) => name ? name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) : "U";
 
   return (
@@ -83,8 +119,8 @@ export function SettingsUsers() {
           <h2 className="text-xl font-bold text-foreground">Gestión de Usuarios</h2>
           <p className="text-sm text-muted-foreground">{users?.filter(u => u.is_active !== false).length ?? 0} usuarios activos</p>
         </div>
-        <Button onClick={() => setShowInvite(true)} className="bg-accent text-accent-foreground hover:bg-accent/90">
-          <UserPlus className="h-4 w-4 mr-1" /> Invitar Usuario
+        <Button onClick={() => setShowCreate(true)} className="bg-accent text-accent-foreground hover:bg-accent/90">
+          <UserPlus className="h-4 w-4 mr-1" /> Crear Usuario
         </Button>
       </div>
 
@@ -181,19 +217,43 @@ export function SettingsUsers() {
         </CardContent>
       </Card>
 
-      {/* Invite Modal */}
-      <Dialog open={showInvite} onOpenChange={setShowInvite}>
+      {/* Create User Modal */}
+      <Dialog open={showCreate} onOpenChange={setShowCreate}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Invitar al Workspace</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Crear Nuevo Usuario</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">Email(s)</label>
-              <Input value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="email@ejemplo.com" />
-              <p className="text-xs text-muted-foreground mt-1">Separa múltiples emails con comas</p>
+            <div className="space-y-2">
+              <Label>Nombre completo</Label>
+              <Input value={createForm.full_name} onChange={e => setCreateForm(f => ({ ...f, full_name: e.target.value }))} placeholder="Juan Pérez" />
             </div>
-            <div>
-              <label className="text-sm font-medium">Rol</label>
-              <Select value={inviteRole} onValueChange={setInviteRole}>
+            <div className="space-y-2">
+              <Label>Email *</Label>
+              <Input type="email" value={createForm.email} onChange={e => setCreateForm(f => ({ ...f, email: e.target.value }))} placeholder="usuario@ejemplo.com" />
+            </div>
+            <div className="space-y-2">
+              <Label>Contraseña *</Label>
+              <div className="relative">
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  value={createForm.password}
+                  onChange={e => setCreateForm(f => ({ ...f, password: e.target.value }))}
+                  placeholder="Mínimo 6 caracteres"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-1 top-0.5 h-8 w-8"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">El usuario podrá iniciar sesión inmediatamente con estas credenciales</p>
+            </div>
+            <div className="space-y-2">
+              <Label>Rol *</Label>
+              <Select value={createForm.role} onValueChange={v => setCreateForm(f => ({ ...f, role: v }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {ROLES.filter(r => r !== "super_admin").map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
@@ -202,9 +262,9 @@ export function SettingsUsers() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowInvite(false)}>Cancelar</Button>
-            <Button onClick={() => { toast({ title: "Invitación enviada (pendiente de configurar email)" }); setShowInvite(false); }}>
-              Enviar Invitación
+            <Button variant="outline" onClick={() => setShowCreate(false)}>Cancelar</Button>
+            <Button onClick={handleCreateUser} disabled={creating}>
+              {creating ? "Creando..." : "Crear Usuario"}
             </Button>
           </DialogFooter>
         </DialogContent>
