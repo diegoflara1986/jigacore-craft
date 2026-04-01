@@ -234,12 +234,14 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
                       </div>
                     ))}
                   </div>
-                  <div className="flex gap-2">
-                    <Input value={newCriterion} onChange={(e) => setNewCriterion(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && addCriterion()}
-                      placeholder="Agregar criterio..." className="h-8 text-sm" />
-                    <Button size="sm" variant="outline" onClick={addCriterion} className="h-8"><Plus className="h-3 w-3" /></Button>
-                  </div>
+                  {!readOnly && (
+                    <div className="flex gap-2">
+                      <Input value={newCriterion} onChange={(e) => setNewCriterion(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && addCriterion()}
+                        placeholder="Agregar criterio..." className="h-8 text-sm" />
+                      <Button size="sm" variant="outline" onClick={addCriterion} className="h-8"><Plus className="h-3 w-3" /></Button>
+                    </div>
+                  )}
                 </div>
 
                 <Separator />
