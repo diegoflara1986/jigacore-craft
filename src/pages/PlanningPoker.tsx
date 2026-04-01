@@ -39,16 +39,24 @@ export default function PlanningPoker() {
   const [revealed, setRevealed] = useState(false);
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
   const [storyEstimations, setStoryEstimations] = useState<Record<string, number | null>>({});
+  const [activeStoryId, setActiveStoryId] = useState<string | null>(null);
 
-  // Current estimation
+  // Initialize activeStoryId from session
+  useEffect(() => {
+    if (session?.current_story_id && !activeStoryId) {
+      setActiveStoryId(session.current_story_id);
+    }
+  }, [session?.current_story_id]);
+
+  // Current estimation based on local state
   const currentEstimation = useMemo(
-    () => estimations?.find((e) => e.user_story_id === session?.current_story_id),
-    [estimations, session?.current_story_id]
+    () => estimations?.find((e) => e.user_story_id === activeStoryId),
+    [estimations, activeStoryId]
   );
 
   const { data: votes, refetch: refetchVotes } = useEstimationVotes(currentEstimation?.id);
   const castVote = useCastVote();
-  const { data: currentStory } = useUserStory(session?.current_story_id ?? undefined);
+  const { data: currentStory } = useUserStory(activeStoryId ?? undefined);
 
   // Stories in session
   const storyIds = useMemo(() => estimations?.map((e) => e.user_story_id) ?? [], [estimations]);
@@ -108,22 +116,21 @@ export default function PlanningPoker() {
   };
 
   const handleAcceptPoints = async (points: number) => {
-    if (!session?.current_story_id) return;
-    await updateStory.mutateAsync({ id: session.current_story_id, story_points: points });
-    setStoryEstimations((prev) => ({ ...prev, [session.current_story_id!]: points }));
+    if (!activeStoryId) return;
+    await updateStory.mutateAsync({ id: activeStoryId, story_points: points });
+    setStoryEstimations((prev) => ({ ...prev, [activeStoryId]: points }));
     // Move to next unestimated story
-    const currentIdx = storyIds.indexOf(session.current_story_id);
-    const nextId = storyIds.find((id, i) => i > currentIdx && !storyEstimations[id]);
+    const currentIdx = storyIds.indexOf(activeStoryId);
+    const nextId = storyIds.find((id, i) => i > currentIdx && !storyEstimations[id] && id !== activeStoryId);
     if (nextId) {
-      await updateSession.mutateAsync({ id: session.id, current_story_id: nextId });
+      setActiveStoryId(nextId);
     }
     setRevealed(false);
     setSelectedCard(null);
   };
 
-  const handleSelectStory = async (storyId: string) => {
-    if (!session) return;
-    await updateSession.mutateAsync({ id: session.id, current_story_id: storyId });
+  const handleSelectStory = (storyId: string) => {
+    setActiveStoryId(storyId);
     setRevealed(false);
     setSelectedCard(null);
   };
@@ -160,7 +167,7 @@ export default function PlanningPoker() {
   const initials = (name: string | null) => name ? name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase() : "?";
 
   const getStoryStatus = (storyId: string) => {
-    if (session?.current_story_id === storyId) return "estimating";
+    if (activeStoryId === storyId) return "estimating";
     if (storyEstimations[storyId] !== undefined) return "estimated";
     return "pending";
   };
