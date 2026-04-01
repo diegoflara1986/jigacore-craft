@@ -22,6 +22,7 @@ export function ProjectTeamTab({ projectId, members }: { projectId: string; memb
   const [userSearch, setUserSearch] = useState("");
   const addMember = useAddProjectMember();
   const removeMember = useRemoveProjectMember();
+  const { guardAction, denied, closeDenied } = usePermissions(projectId);
 
   const { data: workspaceUsers } = useQuery({
     queryKey: ["workspace-users"],
