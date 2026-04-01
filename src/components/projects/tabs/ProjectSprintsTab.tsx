@@ -173,7 +173,7 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
     setStartConfirm(null);
   };
 
-  const handleCompleteSprint = async (action: "next" | "backlog") => {
+  const handleMoveIncomplete = async (action: "next" | "backlog") => {
     if (!completeReview) return;
     const incompleteStories = backlogStories?.filter((s) => s.sprint_id === completeReview.id && s.status !== "done") ?? [];
     const nextSprint = sprints?.find((s) => s.status === "planning");
@@ -185,8 +185,14 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
         await updateStory.mutateAsync({ id: story.id, sprint_id: null });
       }
     }
+    setIncompleteHandled(true);
+  };
+
+  const handleFinalizeSprint = async () => {
+    if (!completeReview) return;
     await updateSprint.mutateAsync({ id: completeReview.id, status: "completed" });
     setCompleteReview(null);
+    setIncompleteHandled(false);
   };
 
   const toggleBacklogItem = (id: string) => {
