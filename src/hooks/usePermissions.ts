@@ -28,13 +28,14 @@ export function usePermissions(projectId?: string) {
   const userRole = profile?.role ?? "external_user";
 
   const hasPermission = (level: PermissionLevel): boolean => {
-    return ROLE_GROUPS[level].includes(userRole);
+    return (ROLE_GROUPS[level] as readonly string[]).includes(userRole);
   };
 
   const getMembersWithPermission = (level: PermissionLevel): ProjectMember[] => {
     if (!members) return [];
+    const roles = ROLE_GROUPS[level] as readonly string[];
     return members.filter(
-      (m) => m.profiles && ROLE_GROUPS[level].includes(m.profiles.role)
+      (m) => m.profiles && roles.includes(m.profiles.role)
     );
   };
 
