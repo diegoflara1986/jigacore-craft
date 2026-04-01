@@ -130,14 +130,55 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
     qc.invalidateQueries({ queryKey: ["story-comments", storyId] });
   };
 
-  const handleDelete = async () => {
+  const canDelete = () => {
+    if (!story) return false;
+    if (story.status === "done") return false;
+    if (story.sprint_id) {
+      const sprint = sprints?.find(s => s.id === story.sprint_id);
+      if (sprint && (sprint as any).status === "active") return false;
+    }
+    return true;
+  };
+
+  const getDeleteBlockReason = () => {
+    if (!story) return "";
+    if (story.status === "done") return "No se puede eliminar una HU completada.";
+    if (story.sprint_id) {
+      const sprint = sprints?.find(s => s.id === story.sprint_id);
+      if (sprint && (sprint as any).status === "active") return "No se puede eliminar una HU que está en un sprint activo.";
+    }
+    return "";
+  };
+
+  const handleDeleteClick = () => {
+    if (!canDelete()) {
+      toast({ title: "No permitido", description: getDeleteBlockReason(), variant: "destructive" });
+      return;
+    }
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteConfirm = async () => {
     if (!story) return;
     await deleteStory.mutateAsync({ id: story.id, projectId });
+    setShowDeleteConfirm(false);
     onOpenChange(false);
   };
 
-  const initials = (name: string | null) => name ? name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() : "?";
-
+  const handleDuplicate = async () => {
+    if (!story) return;
+    await createStory.mutateAsync({
+      project_id: projectId,
+      title: `${story.title} (copia)`,
+      description: story.description,
+      acceptance_criteria: story.acceptance_criteria,
+      type: story.type,
+      priority: story.priority,
+      status: "backlog",
+      epic_id: story.epic_id,
+      assigned_to: story.assigned_to,
+    });
+  };
   if (!open) return null;
 
   return (
