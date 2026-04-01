@@ -116,7 +116,7 @@ export function useDeleteUserStory() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, projectId }: { id: string; projectId: string }) => {
-      const { error } = await supabase.from("user_stories").delete().eq("id", id);
+      const { error } = await supabase.from("user_stories").update({ deleted_at: new Date().toISOString() }).eq("id", id);
       if (error) throw error;
       return projectId;
     },
