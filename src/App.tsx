@@ -13,6 +13,7 @@ import NotFound from "./pages/NotFound";
 import Projects from "./pages/Projects";
 import ProjectDetail from "./pages/ProjectDetail";
 import PlanningPoker from "./pages/PlanningPoker";
+import MyWork from "./pages/MyWork";
 
 const App = () => (
   <TooltipProvider>
