@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { usePageTitle } from "@/hooks/usePageTitle";
 import { useAuth } from "@/lib/auth";
 import { useTimeLogs, useDeleteTimeLog } from "@/hooks/useTimeLogs";
 import { ManualTimeLogModal } from "@/components/timer/ManualTimeLogModal";
