@@ -1,5 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useUserStories, useUpdateUserStory, useCreateUserStory, UserStory } from "@/hooks/useUserStories";
+import { usePermissions } from "@/hooks/usePermissions";
+import { PermissionDeniedDialog } from "@/components/PermissionDeniedDialog";
 import { useSprintsWithStats } from "@/hooks/useSprints";
 import { useEpics } from "@/hooks/useEpics";
 import { useProjectMembers } from "@/hooks/useProjects";

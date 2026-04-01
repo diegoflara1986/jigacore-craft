@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useUserStories, useCreateUserStory, useUpdateUserStory, UserStory } from "@/hooks/useUserStories";
+import { usePermissions } from "@/hooks/usePermissions";
+import { PermissionDeniedDialog } from "@/components/PermissionDeniedDialog";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEpics } from "@/hooks/useEpics";

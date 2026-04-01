@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { ProjectMember, useAddProjectMember, useRemoveProjectMember } from "@/hooks/useProjects";
+import { usePermissions } from "@/hooks/usePermissions";
+import { PermissionDeniedDialog } from "@/components/PermissionDeniedDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";

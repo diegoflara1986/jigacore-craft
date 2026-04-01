@@ -3,6 +3,8 @@ import { useSprintsWithStats, useCreateSprint, useUpdateSprint, SprintWithStats 
 import { useUserStories, useUpdateUserStory, useCreateUserStory } from "@/hooks/useUserStories";
 import { useEpics } from "@/hooks/useEpics";
 import { useProjectMembers } from "@/hooks/useProjects";
+import { usePermissions } from "@/hooks/usePermissions";
+import { PermissionDeniedDialog } from "@/components/PermissionDeniedDialog";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";

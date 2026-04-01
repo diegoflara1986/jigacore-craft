@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useEpics, useCreateEpic, useUpdateEpic, useDeleteEpic, EpicWithProgress } from "@/hooks/useEpics";
+import { usePermissions } from "@/hooks/usePermissions";
+import { PermissionDeniedDialog } from "@/components/PermissionDeniedDialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
