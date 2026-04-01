@@ -534,6 +534,7 @@ export function ProjectKanbanTab({ projectId }: Props) {
         epics={epics ?? []}
         members={members ?? []}
       />
+      <PermissionDeniedDialog open={denied.open} onOpenChange={closeDenied} actionLabel={denied.actionLabel} requiredRoleLabel={denied.requiredRoleLabel} allowedMembers={denied.allowedMembers} />
     </div>
   );
 }
