@@ -47,9 +47,10 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   epics: EpicWithProgress[];
   members: ProjectMember[];
+  readOnly?: boolean;
 }
 
-export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, epics, members }: Props) {
+export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, epics, members, readOnly = false }: Props) {
   const { data: story, isLoading } = useUserStory(storyId ?? undefined);
   const updateStory = useUpdateUserStory();
   const deleteStory = useDeleteUserStory();
