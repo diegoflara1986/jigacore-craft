@@ -47,6 +47,7 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
   const updateSprint = useUpdateSprint();
   const updateStory = useUpdateUserStory();
   const createStory = useCreateUserStory();
+  const { guardAction, denied, closeDenied } = usePermissions(projectId);
 
   const { data: sprintsList } = useQuery({
     queryKey: ["sprints-list", projectId],
