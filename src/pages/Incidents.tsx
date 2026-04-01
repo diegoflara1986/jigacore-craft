@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { useIncidents, useIncidentStats, useSlaConfigs, Incident } from "@/hooks/useIncidents";
 import { useQuery } from "@tanstack/react-query";
+import { usePageTitle } from "@/hooks/usePageTitle";
+import { EmptyState } from "@/components/EmptyState";
+import { TableSkeleton } from "@/components/TableSkeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
