@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useUserStory, useUpdateUserStory, useDeleteUserStory } from "@/hooks/useUserStories";
+import { useUserStory, useUpdateUserStory, useDeleteUserStory, useCreateUserStory } from "@/hooks/useUserStories";
 import { EpicWithProgress } from "@/hooks/useEpics";
 import { ProjectMember } from "@/hooks/useProjects";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -11,11 +11,13 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
-import { Trash2, Plus, X } from "lucide-react";
+import { Trash2, Plus, X, Copy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
+import { toast } from "@/hooks/use-toast";
 
 const TYPES = [
   { value: "story", label: "📖 Historia" },
@@ -51,8 +53,10 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
   const { data: story, isLoading } = useUserStory(storyId ?? undefined);
   const updateStory = useUpdateUserStory();
   const deleteStory = useDeleteUserStory();
+  const createStory = useCreateUserStory();
   const { profile } = useAuth();
   const qc = useQueryClient();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -79,7 +83,7 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
   const { data: sprints } = useQuery({
     queryKey: ["sprints", projectId],
     queryFn: async () => {
-      const { data } = await supabase.from("sprints").select("id, name").eq("project_id", projectId).order("created_at");
+      const { data } = await supabase.from("sprints").select("id, name, status").eq("project_id", projectId).order("created_at");
       return data ?? [];
     },
   });
@@ -126,17 +130,61 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
     qc.invalidateQueries({ queryKey: ["story-comments", storyId] });
   };
 
-  const handleDelete = async () => {
+  const canDelete = () => {
+    if (!story) return false;
+    if (story.status === "done") return false;
+    if (story.sprint_id) {
+      const sprint = sprints?.find(s => s.id === story.sprint_id);
+      if (sprint && (sprint as any).status === "active") return false;
+    }
+    return true;
+  };
+
+  const getDeleteBlockReason = () => {
+    if (!story) return "";
+    if (story.status === "done") return "No se puede eliminar una HU completada.";
+    if (story.sprint_id) {
+      const sprint = sprints?.find(s => s.id === story.sprint_id);
+      if (sprint && (sprint as any).status === "active") return "No se puede eliminar una HU que está en un sprint activo.";
+    }
+    return "";
+  };
+
+  const handleDeleteClick = () => {
+    if (!canDelete()) {
+      toast({ title: "No permitido", description: getDeleteBlockReason(), variant: "destructive" });
+      return;
+    }
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteConfirm = async () => {
     if (!story) return;
     await deleteStory.mutateAsync({ id: story.id, projectId });
+    setShowDeleteConfirm(false);
     onOpenChange(false);
   };
 
+  const handleDuplicate = async () => {
+    if (!story) return;
+    await createStory.mutateAsync({
+      project_id: projectId,
+      title: `${story.title} (copia)`,
+      description: story.description,
+      acceptance_criteria: story.acceptance_criteria,
+      type: story.type,
+      priority: story.priority,
+      status: "backlog",
+      epic_id: story.epic_id,
+      assigned_to: story.assigned_to,
+    });
+  };
   const initials = (name: string | null) => name ? name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() : "?";
 
   if (!open) return null;
 
   return (
+    <>
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="sm:max-w-2xl w-full overflow-y-auto">
         {isLoading || !story ? (
@@ -145,8 +193,13 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
           <div className="space-y-6">
             <SheetHeader>
               <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">{TYPES.find(t => t.value === story.type)?.label}</span>
-                <Button variant="ghost" size="icon" className="h-7 w-7 ml-auto text-destructive" onClick={handleDelete}><Trash2 className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={handleDeleteClick} title="Eliminar">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleDuplicate} title="Duplicar">
+                  <Copy className="h-4 w-4" />
+                </Button>
+                <span className="text-sm text-muted-foreground ml-2">{TYPES.find(t => t.value === story.type)?.label}</span>
               </div>
               <Input value={title} onChange={(e) => setTitle(e.target.value)} onBlur={saveTitle}
                 className="text-lg font-semibold border-none p-0 h-auto focus-visible:ring-0 shadow-none" />
@@ -282,5 +335,23 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
         )}
       </SheetContent>
     </Sheet>
+
+    <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>¿Eliminar historia de usuario?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Esta acción no se puede deshacer. Se eliminará permanentemente la historia "{story?.title}".
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            Eliminar
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
