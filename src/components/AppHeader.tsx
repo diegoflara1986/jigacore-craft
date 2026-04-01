@@ -1,4 +1,4 @@
-import { Bell, Search, Moon, Sun, LogOut, Menu } from "lucide-react";
+import { Bell, Search, Moon, Sun, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -8,6 +8,7 @@ import {
 import { useAuth } from "@/lib/auth";
 import { useTheme } from "@/lib/theme";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { GlobalTimer } from "@/components/timer/GlobalTimer";
 
 export function AppHeader() {
   const { profile, signOut } = useAuth();
@@ -27,6 +28,8 @@ export function AppHeader() {
       </div>
 
       <div className="flex items-center gap-2">
+        <GlobalTimer />
+
         <Button variant="ghost" size="icon" onClick={toggleTheme} className="text-muted-foreground">
           {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </Button>
