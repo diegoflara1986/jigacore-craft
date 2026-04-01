@@ -535,11 +535,15 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
               </div>
             )}
 
-            {reviewIncomplete.length === 0 && (
-              <DialogFooter>
-                <Button onClick={() => handleCompleteSprint("backlog")}>Finalizar Sprint</Button>
-              </DialogFooter>
-            )}
+            <Separator />
+            <DialogFooter>
+              {reviewIncomplete.length > 0 && (
+                <p className="text-xs text-muted-foreground mr-auto self-center">Selecciona una acción para las HU incompletas antes de finalizar</p>
+              )}
+              <Button onClick={() => handleCompleteSprint("backlog")} disabled={reviewIncomplete.length > 0}>
+                Finalizar Sprint
+              </Button>
+            </DialogFooter>
           </div>
         </DialogContent>
       </Dialog>
