@@ -54,7 +54,7 @@ export function ProjectTeamTab({ projectId, members }: { projectId: string; memb
       <Card className="border-border">
         <CardHeader className="flex flex-row items-center justify-between pb-3">
           <CardTitle className="text-base">Equipo del Proyecto</CardTitle>
-          <Button size="sm" onClick={() => setAddOpen(true)} className="bg-accent text-accent-foreground hover:bg-accent/90">
+          <Button size="sm" onClick={() => guardAction("management", "agregar un miembro al proyecto", () => setAddOpen(true))} className="bg-accent text-accent-foreground hover:bg-accent/90">
             <Plus className="h-4 w-4 mr-1" />Agregar Miembro
           </Button>
         </CardHeader>
