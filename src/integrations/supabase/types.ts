@@ -766,6 +766,7 @@ export type Database = {
           assigned_to: string | null
           created_at: string
           created_by: string | null
+          deleted_at: string | null
           description: string | null
           epic_id: string | null
           id: string
@@ -773,6 +774,7 @@ export type Database = {
           project_id: string
           sprint_id: string | null
           status: string
+          story_number: number | null
           story_points: number | null
           title: string
           type: string
@@ -782,6 +784,7 @@ export type Database = {
           assigned_to?: string | null
           created_at?: string
           created_by?: string | null
+          deleted_at?: string | null
           description?: string | null
           epic_id?: string | null
           id?: string
@@ -789,6 +792,7 @@ export type Database = {
           project_id: string
           sprint_id?: string | null
           status?: string
+          story_number?: number | null
           story_points?: number | null
           title: string
           type?: string
@@ -798,6 +802,7 @@ export type Database = {
           assigned_to?: string | null
           created_at?: string
           created_by?: string | null
+          deleted_at?: string | null
           description?: string | null
           epic_id?: string | null
           id?: string
@@ -805,6 +810,7 @@ export type Database = {
           project_id?: string
           sprint_id?: string | null
           status?: string
+          story_number?: number | null
           story_points?: number | null
           title?: string
           type?: string
