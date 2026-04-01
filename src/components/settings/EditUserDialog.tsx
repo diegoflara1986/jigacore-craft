@@ -107,7 +107,7 @@ export function EditUserDialog({ open, onOpenChange, user, onSaved }: EditUserDi
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Mínimo 6 caracteres"
+                placeholder="Mín. 8 caracteres, 1 mayúscula, 1 número"
               />
               <Button
                 type="button"

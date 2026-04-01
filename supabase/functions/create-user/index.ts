@@ -127,8 +127,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (password.length < 6) {
-      return new Response(JSON.stringify({ error: "La contraseña debe tener al menos 6 caracteres" }), {
+    const hasMin = password.length >= 8;
+    const hasUpper = /[A-Z]/.test(password);
+    const hasNum = /[0-9]/.test(password);
+    if (!hasMin || !hasUpper || !hasNum) {
+      return new Response(JSON.stringify({ error: "La contraseña debe tener mínimo 8 caracteres, al menos una mayúscula y al menos un número" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
