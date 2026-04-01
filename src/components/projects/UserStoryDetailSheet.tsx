@@ -294,7 +294,7 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Tipo</Label>
-                  <Select value={story.type} onValueChange={(v) => saveField("type", v)}>
+                  <Select value={story.type} onValueChange={(v) => saveField("type", v)} disabled={readOnly}>
                     <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                     <SelectContent>{TYPES.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
                   </Select>
