@@ -194,9 +194,11 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
           <div className="space-y-6">
             <SheetHeader>
               <div className="flex items-center gap-2">
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={handleDeleteClick} title="Eliminar">
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                {!readOnly && (
+                  <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={handleDeleteClick} title="Eliminar">
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleDuplicate} title="Duplicar">
                   <Copy className="h-4 w-4" />
                 </Button>
