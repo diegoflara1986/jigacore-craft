@@ -56,6 +56,7 @@ export function ProjectBacklogTab({ projectId }: { projectId: string }) {
   const { data: members } = useProjectMembers(projectId);
   const createStory = useCreateUserStory();
   const updateStory = useUpdateUserStory();
+  const { guardAction, denied, closeDenied } = usePermissions(projectId);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [planningPokerOpen, setPlanningPokerOpen] = useState(false);
