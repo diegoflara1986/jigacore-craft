@@ -214,8 +214,25 @@ export function ProjectBacklogTab({ projectId }: { projectId: string }) {
                     </span>
                   </TableCell>
                   <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
-                    <Input type="number" className="h-7 w-14 text-center text-xs mx-auto" value={s.story_points ?? ""}
-                      onChange={(e) => handleInlinePointsChange(s.id, e.target.value)} min={0} />
+                    <Input
+                      type="number"
+                      className="h-7 w-14 text-center text-xs mx-auto [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      value={s.story_points ?? ""}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === "") {
+                          updateStory.mutateAsync({ id: s.id, story_points: null });
+                        } else {
+                          const num = parseInt(val);
+                          if (!isNaN(num) && num >= 0 && num <= 50) {
+                            updateStory.mutateAsync({ id: s.id, story_points: num });
+                          }
+                        }
+                      }}
+                      min={0}
+                      max={50}
+                      disabled={isStoryReadOnly(s)}
+                    />
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">{s.sprints?.name ?? "—"}</TableCell>
                   <TableCell>
