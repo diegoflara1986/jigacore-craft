@@ -55,7 +55,7 @@ export function IncidentDetailSheet({ incidentId, onClose }: { incidentId: strin
   const { data: members } = useQuery({
     queryKey: ["workspace-members-detail"],
     queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("id, full_name, email, avatar_url");
+      const { data } = await supabase.from("profiles_safe_view").select("id, full_name, email, avatar_url");
       return data ?? [];
     },
     enabled: !!incidentId,

@@ -97,40 +97,39 @@ export default function ReportIncident() {
     if (!validate()) return;
     setSubmitting(true);
     try {
-      // Step 1: Create incident record FIRST to get ticket_code
-      const { data, error } = await supabase.from("incidents").insert({
-        project_id: form.project_id,
-        title: form.title,
-        description: form.description,
-        steps_to_reproduce: form.steps_to_reproduce || null,
-        expected_result: form.expected_result || null,
-        actual_result: form.actual_result || null,
-        severity: form.severity,
-        category: form.category,
-        status: "nuevo",
-        reported_by_email: form.reported_by_email,
-        reporter_name: form.reporter_name,
-        version: form.version || null,
-        browser_info: form.browser_info || null,
-      } as any).select("ticket_code").single();
-
-      if (error) throw error;
-
-      const ticketCode = data.ticket_code!;
-
-      // Step 2: Upload images using ticket code as folder path
-      for (const file of files) {
-        // Sanitize filename
-        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-        const path = `${ticketCode}/${Date.now()}-${safeName}`;
-        const { error: uploadError } = await supabase.storage
-          .from("incident-attachments")
-          .upload(path, file, { contentType: file.type });
-
-        if (uploadError) {
-          console.error("Upload error:", uploadError.message);
+      // Use edge function for public incident creation (no direct DB access)
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/report-incident`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({
+            project_id: form.project_id,
+            title: form.title,
+            description: form.description,
+            steps_to_reproduce: form.steps_to_reproduce || null,
+            expected_result: form.expected_result || null,
+            actual_result: form.actual_result || null,
+            severity: form.severity,
+            category: form.category,
+            reported_by_email: form.reported_by_email,
+            reporter_name: form.reporter_name,
+            version: form.version || null,
+            browser_info: form.browser_info || null,
+          }),
         }
-      }
+      );
+
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Error al enviar");
+
+      const ticketCode = result.ticket_code;
+
+      // Note: File uploads removed for anonymous users (storage requires auth)
+      // Files can be attached later by authenticated team members
 
       setSubmitted({ ticketCode, email: form.reported_by_email });
     } catch (err: any) {

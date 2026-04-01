@@ -27,7 +27,7 @@ export function ProjectTeamTab({ projectId, members }: { projectId: string; memb
   const { data: workspaceUsers } = useQuery({
     queryKey: ["workspace-users"],
     queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("id, full_name, email, avatar_url");
+      const { data } = await supabase.from("profiles_safe_view").select("id, full_name, email, avatar_url");
       return data ?? [];
     },
   });
