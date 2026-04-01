@@ -47,6 +47,7 @@ export function ProjectEpicsTab({ projectId }: { projectId: string }) {
   const createEpic = useCreateEpic();
   const updateEpic = useUpdateEpic();
   const deleteEpic = useDeleteEpic();
+  const { guardAction, denied, closeDenied } = usePermissions(projectId);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingEpic, setEditingEpic] = useState<EpicWithProgress | null>(null);
