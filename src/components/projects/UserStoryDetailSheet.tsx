@@ -53,8 +53,10 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
   const { data: story, isLoading } = useUserStory(storyId ?? undefined);
   const updateStory = useUpdateUserStory();
   const deleteStory = useDeleteUserStory();
+  const createStory = useCreateUserStory();
   const { profile } = useAuth();
   const qc = useQueryClient();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
