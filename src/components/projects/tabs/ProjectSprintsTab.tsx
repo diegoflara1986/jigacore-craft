@@ -223,10 +223,10 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
             <div className="flex gap-1.5">
               {sprint.status === "planning" && (
                 <>
-                  <Button size="sm" variant="ghost" onClick={() => openEdit(sprint)}>
+                  <Button size="sm" variant="ghost" onClick={() => guardAction("lead", "editar un sprint", () => openEdit(sprint))}>
                     <Pencil className="h-3.5 w-3.5 mr-1" />Editar
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => setStartConfirm(sprint)}>
+                  <Button size="sm" variant="outline" onClick={() => guardAction("lead", "iniciar un sprint", () => setStartConfirm(sprint))}>
                     <Play className="h-3.5 w-3.5 mr-1" />Iniciar
                   </Button>
                 </>
@@ -238,7 +238,7 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
                       <LayoutDashboard className="h-3.5 w-3.5 mr-1" />Ver Tablero
                     </Button>
                   )}
-                  <Button size="sm" onClick={() => setCompleteReview(sprint)}>
+                  <Button size="sm" onClick={() => guardAction("lead", "completar un sprint", () => setCompleteReview(sprint))}>
                     <CheckCircle2 className="h-3.5 w-3.5 mr-1" />Completar
                   </Button>
                 </>
