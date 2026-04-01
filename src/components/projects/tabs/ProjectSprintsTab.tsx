@@ -526,7 +526,7 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
               </div>
             )}
 
-            {reviewIncomplete.length > 0 && (
+            {reviewIncomplete.length > 0 && !incompleteHandled && (
               <div className="space-y-2">
                 <Label className="text-xs text-muted-foreground">⏳ Incompletas ({reviewIncomplete.length})</Label>
                 <ul className="text-sm space-y-0.5">
@@ -534,18 +534,20 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
                 </ul>
                 <p className="text-sm text-muted-foreground">¿Qué hacer con las historias incompletas?</p>
                 <div className="flex gap-2">
-                  <Button size="sm" variant="outline" onClick={() => handleCompleteSprint("next")}>Mover al siguiente sprint</Button>
-                  <Button size="sm" variant="outline" onClick={() => handleCompleteSprint("backlog")}>Devolver al backlog</Button>
+                  <Button size="sm" variant="outline" onClick={() => handleMoveIncomplete("next")} disabled={updateStory.isPending}>Mover al siguiente sprint</Button>
+                  <Button size="sm" variant="outline" onClick={() => handleMoveIncomplete("backlog")} disabled={updateStory.isPending}>Devolver al backlog</Button>
                 </div>
               </div>
             )}
 
+            {incompleteHandled && (
+              <p className="text-sm text-green-600">✅ Historias incompletas reasignadas correctamente.</p>
+            )}
+
             <Separator />
             <DialogFooter>
-              {reviewIncomplete.length > 0 && (
-                <p className="text-xs text-muted-foreground mr-auto self-center">Selecciona una acción para las HU incompletas antes de finalizar</p>
-              )}
-              <Button onClick={() => handleCompleteSprint("backlog")} disabled={reviewIncomplete.length > 0}>
+              <Button variant="outline" onClick={() => { setCompleteReview(null); setIncompleteHandled(false); }}>Cancelar</Button>
+              <Button onClick={handleFinalizeSprint} disabled={(reviewIncomplete.length > 0 && !incompleteHandled) || updateSprint.isPending}>
                 Finalizar Sprint
               </Button>
             </DialogFooter>
