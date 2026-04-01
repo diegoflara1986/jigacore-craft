@@ -38,61 +38,102 @@ Deno.serve(async (req) => {
       .single();
 
     if (!callerProfile || !["admin", "super_admin"].includes(callerProfile.role)) {
-      return new Response(JSON.stringify({ error: "Solo administradores pueden crear usuarios" }), {
+      return new Response(JSON.stringify({ error: "Solo administradores pueden gestionar usuarios" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const { email, password, role, full_name } = await req.json();
+    const body = await req.json();
+    const { action } = body;
+
+    // ========== UPDATE USER ==========
+    if (action === "update") {
+      const { user_id, role, full_name, password } = body;
+      if (!user_id) {
+        return new Response(JSON.stringify({ error: "user_id es requerido" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Ensure target is in same workspace
+      const { data: targetProfile } = await adminClient
+        .from("profiles")
+        .select("workspace_id")
+        .eq("id", user_id)
+        .single();
+
+      if (!targetProfile || targetProfile.workspace_id !== callerProfile.workspace_id) {
+        return new Response(JSON.stringify({ error: "Usuario no pertenece a tu workspace" }), {
+          status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Update auth password if provided
+      if (password && password.length > 0) {
+        if (password.length < 6) {
+          return new Response(JSON.stringify({ error: "La contraseña debe tener al menos 6 caracteres" }), {
+            status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        const { error: pwError } = await adminClient.auth.admin.updateUserById(user_id, { password });
+        if (pwError) {
+          return new Response(JSON.stringify({ error: pwError.message }), {
+            status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      }
+
+      // Update profile fields
+      const updates: Record<string, unknown> = {};
+      if (role) updates.role = role;
+      if (full_name !== undefined) updates.full_name = full_name || null;
+
+      if (Object.keys(updates).length > 0) {
+        await adminClient.from("profiles").update(updates).eq("id", user_id);
+      }
+
+      return new Response(
+        JSON.stringify({ success: true }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // ========== CREATE USER ==========
+    const { email, password, role, full_name } = body;
 
     if (!email || !password || !role) {
       return new Response(JSON.stringify({ error: "Email, contraseña y rol son requeridos" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     if (password.length < 6) {
       return new Response(JSON.stringify({ error: "La contraseña debe tener al menos 6 caracteres" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Check if user already exists
-    const { data: existingUsers } = await adminClient.auth.admin.listUsers();
-    const existingUser = existingUsers?.users?.find((u: any) => u.email === email);
+    // Create new user — if email exists Supabase will return error
+    const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: { full_name: full_name || email },
+    });
 
-    let userId: string;
-
-    if (existingUser) {
-      // User exists in auth — update password and confirm
-      await adminClient.auth.admin.updateUserById(existingUser.id, {
-        password,
-        email_confirm: true,
-        user_metadata: { full_name: full_name || email },
-      });
-      userId = existingUser.id;
-    } else {
-      // Create new user
-      const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-        user_metadata: { full_name: full_name || email },
-      });
-
-      if (createError) {
-        return new Response(JSON.stringify({ error: createError.message }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+    if (createError) {
+      // Friendly message for duplicate email
+      if (createError.message.includes("already been registered")) {
+        return new Response(JSON.stringify({ error: "Ya existe un usuario registrado con este correo electrónico" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      userId = newUser.user.id;
+      return new Response(JSON.stringify({ error: createError.message }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    // Update profile with role and workspace
     await adminClient
       .from("profiles")
       .update({
@@ -100,10 +141,10 @@ Deno.serve(async (req) => {
         workspace_id: callerProfile.workspace_id,
         full_name: full_name || null,
       })
-      .eq("id", userId);
+      .eq("id", newUser.user.id);
 
     return new Response(
-      JSON.stringify({ success: true, user_id: userId }),
+      JSON.stringify({ success: true, user_id: newUser.user.id }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {

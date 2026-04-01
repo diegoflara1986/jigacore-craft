@@ -14,8 +14,9 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { UserPlus, Search, MoreVertical, Eye, EyeOff } from "lucide-react";
+import { UserPlus, Search, MoreVertical, Eye, EyeOff, Pencil } from "lucide-react";
 import { Constants } from "@/integrations/supabase/types";
+import { EditUserDialog } from "./EditUserDialog";
 
 const ROLES = Constants.public.Enums.app_role;
 
@@ -29,6 +30,8 @@ export function SettingsUsers() {
   const [createForm, setCreateForm] = useState({ email: "", password: "", full_name: "", role: "developer" });
   const [creating, setCreating] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [editUser, setEditUser] = useState<{ id: string; full_name: string | null; role: string; email: string } | null>(null);
+  const isAdmin = profile?.role === "admin" || profile?.role === "super_admin";
 
   const { data: users } = useQuery({
     queryKey: ["workspace-users"],
@@ -197,8 +200,13 @@ export function SettingsUsers() {
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon" className="h-7 w-7"><MoreVertical className="h-4 w-4" /></Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          {u.is_active !== false ? (
+                         <DropdownMenuContent align="end">
+                           {isAdmin && (
+                             <DropdownMenuItem onClick={() => setEditUser({ id: u.id, full_name: u.full_name, role: u.role, email: u.email })}>
+                               <Pencil className="h-3.5 w-3.5 mr-2" /> Editar usuario
+                             </DropdownMenuItem>
+                           )}
+                           {u.is_active !== false ? (
                             <DropdownMenuItem onClick={() => toggleActive(u.id, false)} className="text-destructive">Desactivar usuario</DropdownMenuItem>
                           ) : (
                             <DropdownMenuItem onClick={() => toggleActive(u.id, true)}>Reactivar usuario</DropdownMenuItem>
@@ -269,6 +277,14 @@ export function SettingsUsers() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Edit User Modal */}
+      <EditUserDialog
+        open={!!editUser}
+        onOpenChange={(open) => { if (!open) setEditUser(null); }}
+        user={editUser}
+        onSaved={() => qc.invalidateQueries({ queryKey: ["workspace-users"] })}
+      />
     </div>
   );
 }
