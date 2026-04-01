@@ -117,13 +117,14 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
 
   const handleCreate = async () => {
     if (!newSprint.name.trim()) return;
+    const capacityValue = newSprint.capacity ? parseInt(newSprint.capacity) : selectedPoints;
     const created = await createSprint.mutateAsync({
       project_id: projectId,
       name: newSprint.name,
       goal: newSprint.goal || null,
       start_date: newSprint.start_date ? format(newSprint.start_date, "yyyy-MM-dd") : null,
       end_date: newSprint.end_date ? format(newSprint.end_date, "yyyy-MM-dd") : null,
-      capacity: newSprint.capacity ? parseInt(newSprint.capacity) : 0,
+      capacity: capacityValue,
     });
     for (const sid of selectedBacklogIds) {
       await updateStory.mutateAsync({ id: sid, sprint_id: created.id });
