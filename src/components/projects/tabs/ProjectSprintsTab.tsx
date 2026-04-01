@@ -111,7 +111,7 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
 
   const openCreate = () => {
     const nextNum = (sprints?.length ?? 0) + 1;
-    setNewSprint({ name: `Sprint ${nextNum}`, goal: "", start_date: undefined, end_date: undefined, capacity: "" });
+    setNewSprint({ name: `Sprint ${nextNum}`, goal: "", start_date: undefined, end_date: undefined });
     setSelectedBacklogIds([]);
     setCreateOpen(true);
   };
