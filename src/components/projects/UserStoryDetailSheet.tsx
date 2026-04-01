@@ -83,7 +83,7 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
   const { data: sprints } = useQuery({
     queryKey: ["sprints", projectId],
     queryFn: async () => {
-      const { data } = await supabase.from("sprints").select("id, name").eq("project_id", projectId).order("created_at");
+      const { data } = await supabase.from("sprints").select("id, name, status").eq("project_id", projectId).order("created_at");
       return data ?? [];
     },
   });
