@@ -10,6 +10,8 @@ import { ProjectEpicsTab } from "@/components/projects/tabs/ProjectEpicsTab";
 import { ProjectBacklogTab } from "@/components/projects/tabs/ProjectBacklogTab";
 import { ProjectSprintsTab } from "@/components/projects/tabs/ProjectSprintsTab";
 import { ProjectKanbanTab } from "@/components/projects/tabs/ProjectKanbanTab";
+import { ProjectTimeTab } from "@/components/projects/tabs/ProjectTimeTab";
+import { ProjectCostsTab } from "@/components/projects/tabs/ProjectCostsTab";
 
 export default function ProjectDetail() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -83,10 +85,10 @@ export default function ProjectDetail() {
           <ProjectEpicsTab projectId={project.id} />
         </TabsContent>
         <TabsContent value="time">
-          <div className="text-muted-foreground py-10 text-center">Registro de Tiempo — Próximamente</div>
+          <ProjectTimeTab projectId={project.id} />
         </TabsContent>
         <TabsContent value="costs">
-          <div className="text-muted-foreground py-10 text-center">Costos — Próximamente</div>
+          <ProjectCostsTab projectId={project.id} />
         </TabsContent>
         <TabsContent value="settings">
           <ProjectTeamTab projectId={project.id} members={members ?? []} />
