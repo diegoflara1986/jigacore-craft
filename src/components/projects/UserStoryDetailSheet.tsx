@@ -213,8 +213,8 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
               <div className="space-y-5">
                 <div className="space-y-2">
                   <Label className="text-xs text-muted-foreground">Descripción</Label>
-                  <Textarea value={description} onChange={(e) => setDescription(e.target.value)} onBlur={saveDescription}
-                    rows={4} placeholder="Como [rol] quiero [acción] para [beneficio]" />
+                  <Textarea value={description} onChange={(e) => !readOnly && setDescription(e.target.value)} onBlur={saveDescription}
+                    rows={4} placeholder="Como [rol] quiero [acción] para [beneficio]" readOnly={readOnly} />
                 </div>
 
                 <Separator />
