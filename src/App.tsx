@@ -14,6 +14,10 @@ import Projects from "./pages/Projects";
 import ProjectDetail from "./pages/ProjectDetail";
 import PlanningPoker from "./pages/PlanningPoker";
 import MyWork from "./pages/MyWork";
+import ReportIncident from "./pages/ReportIncident";
+import LookupIncident from "./pages/LookupIncident";
+import Incidents from "./pages/Incidents";
+import Settings from "./pages/Settings";
 
 const App = () => (
   <TooltipProvider>
@@ -26,14 +30,16 @@ const App = () => (
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/reportar-incidente" element={<ReportIncident />} />
+          <Route path="/consultar-incidente" element={<LookupIncident />} />
           <Route path="/" element={<AppLayout><Index /></AppLayout>} />
           <Route path="/proyectos" element={<AppLayout><Projects /></AppLayout>} />
           <Route path="/proyectos/:id" element={<AppLayout><ProjectDetail /></AppLayout>} />
           <Route path="/proyectos/:id/planning-poker/:sessionId" element={<AppLayout><PlanningPoker /></AppLayout>} />
           <Route path="/my-work" element={<AppLayout><MyWork /></AppLayout>} />
-          <Route path="/incidents" element={<AppLayout><div className="text-foreground">Incidentes - Próximamente</div></AppLayout>} />
+          <Route path="/incidents" element={<AppLayout><Incidents /></AppLayout>} />
           <Route path="/reports" element={<AppLayout><div className="text-foreground">Reportes - Próximamente</div></AppLayout>} />
-          <Route path="/settings" element={<AppLayout><div className="text-foreground">Configuración - Próximamente</div></AppLayout>} />
+          <Route path="/settings" element={<AppLayout><Settings /></AppLayout>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </AuthProvider>
