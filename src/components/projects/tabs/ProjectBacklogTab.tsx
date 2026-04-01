@@ -113,47 +113,65 @@ export function ProjectBacklogTab({ projectId }: { projectId: string }) {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-2">
-        <div className="relative">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Buscar..." className="pl-8 h-9 w-48" value={filters.search ?? ""}
-            onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value || undefined }))} />
+      <div className="flex flex-wrap gap-3">
+        <div className="space-y-1">
+          <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Buscar</Label>
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input placeholder="Buscar..." className="pl-8 h-9 w-48" value={filters.search ?? ""}
+              onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value || undefined }))} />
+          </div>
         </div>
-        <Select value={filters.epicId ?? "all"} onValueChange={(v) => setFilters((f) => ({ ...f, epicId: v === "all" ? undefined : v }))}>
-          <SelectTrigger className="h-9 w-36"><SelectValue placeholder="Épica" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todas las épicas</SelectItem>
-            {epics?.map((e) => <SelectItem key={e.id} value={e.id}>{e.title}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={filters.type ?? "all"} onValueChange={(v) => setFilters((f) => ({ ...f, type: v === "all" ? undefined : v }))}>
-          <SelectTrigger className="h-9 w-32"><SelectValue placeholder="Tipo" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos</SelectItem>
-            {TYPES.map((t) => <SelectItem key={t.value} value={t.value}>{t.icon} {t.label}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={filters.priority ?? "all"} onValueChange={(v) => setFilters((f) => ({ ...f, priority: v === "all" ? undefined : v }))}>
-          <SelectTrigger className="h-9 w-32"><SelectValue placeholder="Prioridad" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todas</SelectItem>
-            {PRIORITIES.map((p) => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={filters.status ?? "all"} onValueChange={(v) => setFilters((f) => ({ ...f, status: v === "all" ? undefined : v }))}>
-          <SelectTrigger className="h-9 w-36"><SelectValue placeholder="Estado" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos</SelectItem>
-            {STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={filters.assignedTo ?? "all"} onValueChange={(v) => setFilters((f) => ({ ...f, assignedTo: v === "all" ? undefined : v }))}>
-          <SelectTrigger className="h-9 w-36"><SelectValue placeholder="Asignado" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos</SelectItem>
-            {members?.map((m) => <SelectItem key={m.user_id} value={m.user_id}>{m.profiles?.full_name || m.profiles?.email}</SelectItem>)}
-          </SelectContent>
-        </Select>
+        <div className="space-y-1">
+          <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Épica</Label>
+          <Select value={filters.epicId ?? "all"} onValueChange={(v) => setFilters((f) => ({ ...f, epicId: v === "all" ? undefined : v }))}>
+            <SelectTrigger className="h-9 w-36"><SelectValue placeholder="Épica" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas las épicas</SelectItem>
+              {epics?.map((e) => <SelectItem key={e.id} value={e.id}>{e.title}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1">
+          <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Tipo</Label>
+          <Select value={filters.type ?? "all"} onValueChange={(v) => setFilters((f) => ({ ...f, type: v === "all" ? undefined : v }))}>
+            <SelectTrigger className="h-9 w-32"><SelectValue placeholder="Tipo" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              {TYPES.map((t) => <SelectItem key={t.value} value={t.value}>{t.icon} {t.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1">
+          <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Prioridad</Label>
+          <Select value={filters.priority ?? "all"} onValueChange={(v) => setFilters((f) => ({ ...f, priority: v === "all" ? undefined : v }))}>
+            <SelectTrigger className="h-9 w-32"><SelectValue placeholder="Prioridad" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas</SelectItem>
+              {PRIORITIES.map((p) => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1">
+          <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Estado</Label>
+          <Select value={filters.status ?? "all"} onValueChange={(v) => setFilters((f) => ({ ...f, status: v === "all" ? undefined : v }))}>
+            <SelectTrigger className="h-9 w-36"><SelectValue placeholder="Estado" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              {STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1">
+          <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Asignado</Label>
+          <Select value={filters.assignedTo ?? "all"} onValueChange={(v) => setFilters((f) => ({ ...f, assignedTo: v === "all" ? undefined : v }))}>
+            <SelectTrigger className="h-9 w-36"><SelectValue placeholder="Asignado" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              {members?.map((m) => <SelectItem key={m.user_id} value={m.user_id}>{m.profiles?.full_name || m.profiles?.email}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
         <Button
           size="sm"
           variant={filters.showDeleted ? "default" : "outline"}
