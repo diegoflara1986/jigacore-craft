@@ -42,6 +42,7 @@ function timeAgo(dateStr: string) {
 }
 
 export default function MyWork() {
+  usePageTitle("Mi Trabajo");
   const { profile, user } = useAuth();
   const timer = useTimer();
   const [weekOffset, setWeekOffset] = useState(0);

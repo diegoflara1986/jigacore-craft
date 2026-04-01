@@ -33,6 +33,7 @@ const priorityColors: Record<string, string> = {
 };
 
 export default function Dashboard() {
+  usePageTitle("Dashboard");
   const { profile } = useAuth();
 
   const { data: projects } = useQuery({
