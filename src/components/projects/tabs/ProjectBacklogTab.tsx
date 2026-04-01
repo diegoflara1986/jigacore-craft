@@ -171,6 +171,7 @@ export function ProjectBacklogTab({ projectId }: { projectId: string }) {
           <Table>
             <TableHeader>
               <TableRow>
+             <TableHead className="w-20">ID</TableHead>
                 <TableHead className="w-16">Tipo</TableHead>
                 <TableHead>Título</TableHead>
                 <TableHead className="w-28">Épica</TableHead>
