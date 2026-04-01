@@ -491,15 +491,18 @@ export function ProjectKanbanTab({ projectId }: Props) {
         </div>
 
         {viewMode === "board" && (
-          <Select value={groupBy} onValueChange={(v) => setGroupBy(v as any)}>
-            <SelectTrigger className="h-8 w-28 text-xs"><SelectValue placeholder="Agrupar" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">Sin agrupar</SelectItem>
-              <SelectItem value="epic">Por Épica</SelectItem>
-              <SelectItem value="assigned">Por Asignado</SelectItem>
-              <SelectItem value="priority">Por Prioridad</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="space-y-0.5">
+            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Agrupar</span>
+            <Select value={groupBy} onValueChange={(v) => setGroupBy(v as any)}>
+              <SelectTrigger className="h-8 w-28 text-xs"><SelectValue placeholder="Agrupar" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Sin agrupar</SelectItem>
+                <SelectItem value="epic">Por Épica</SelectItem>
+                <SelectItem value="assigned">Por Asignado</SelectItem>
+                <SelectItem value="priority">Por Prioridad</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         )}
 
         <Button size="sm" variant={viewMode === "board" ? "default" : "outline"} onClick={() => setViewMode("board")} className="h-8 text-xs">Tablero</Button>
