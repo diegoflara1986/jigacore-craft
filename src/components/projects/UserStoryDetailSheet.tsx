@@ -287,7 +287,7 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Prioridad</Label>
-                  <Select value={story.priority} onValueChange={(v) => saveField("priority", v)}>
+                  <Select value={story.priority} onValueChange={(v) => saveField("priority", v)} disabled={readOnly}>
                     <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                     <SelectContent>{PRIORITIES.map((p) => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}</SelectContent>
                   </Select>
