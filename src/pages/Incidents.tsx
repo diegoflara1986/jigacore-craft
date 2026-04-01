@@ -53,6 +53,7 @@ function SlaIndicator({ incident, slaConfigs }: { incident: Incident; slaConfigs
 }
 
 export default function Incidents() {
+  usePageTitle("Incidentes");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [severityFilter, setSeverityFilter] = useState<string>("all");
