@@ -265,12 +265,14 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
                       </div>
                     ))}
                   </div>
-                  <div className="flex gap-2">
-                    <Input value={commentText} onChange={(e) => setCommentText(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && addComment()}
-                      placeholder="Escribe un comentario..." className="h-8 text-sm" />
-                    <Button size="sm" onClick={addComment} className="h-8" disabled={!commentText.trim()}>Enviar</Button>
-                  </div>
+                  {!readOnly && (
+                    <div className="flex gap-2">
+                      <Input value={commentText} onChange={(e) => setCommentText(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && addComment()}
+                        placeholder="Escribe un comentario..." className="h-8 text-sm" />
+                      <Button size="sm" onClick={addComment} className="h-8" disabled={!commentText.trim()}>Enviar</Button>
+                    </div>
+                  )}
                 </div>
               </div>
 
