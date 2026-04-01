@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useUserStory, useUpdateUserStory, useDeleteUserStory } from "@/hooks/useUserStories";
+import { useUserStory, useUpdateUserStory, useDeleteUserStory, useCreateUserStory } from "@/hooks/useUserStories";
 import { EpicWithProgress } from "@/hooks/useEpics";
 import { ProjectMember } from "@/hooks/useProjects";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -11,11 +11,13 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
-import { Trash2, Plus, X } from "lucide-react";
+import { Trash2, Plus, X, Copy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
+import { toast } from "@/hooks/use-toast";
 
 const TYPES = [
   { value: "story", label: "📖 Historia" },
