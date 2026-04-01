@@ -96,7 +96,7 @@ export function ProjectEpicsTab({ projectId }: { projectId: string }) {
     <div className="mt-4 space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-medium text-muted-foreground">{epics?.length ?? 0} épicas</h3>
-        <Button size="sm" onClick={openCreate}><Plus className="h-4 w-4 mr-1" />Nueva Épica</Button>
+        <Button size="sm" onClick={() => guardAction("lead", "crear una épica", openCreate)}><Plus className="h-4 w-4 mr-1" />Nueva Épica</Button>
       </div>
 
       {!epics?.length ? (
