@@ -188,7 +188,7 @@ export function PlanningPokerModal({ projectId, open, onOpenChange }: Props) {
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={handleCreate} disabled={!name.trim() || !selectedStoryIds.length || createSession.isPending}>
+          <Button onClick={handleCreate} disabled={!name.trim() || !selectedStoryIds.length || !selectedMemberIds.length || createSession.isPending}>
             Crear sesión
           </Button>
         </DialogFooter>

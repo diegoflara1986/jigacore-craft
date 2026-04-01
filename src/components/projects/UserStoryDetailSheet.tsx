@@ -37,6 +37,7 @@ const STATUSES = [
   { value: "todo", label: "Por Hacer" },
   { value: "in_progress", label: "En Progreso" },
   { value: "in_review", label: "En Revisión" },
+  { value: "qa", label: "En QA" },
   { value: "done", label: "Completado" },
 ];
 
@@ -58,6 +59,7 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
   const { profile } = useAuth();
   const qc = useQueryClient();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -280,7 +282,13 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
               <div className="space-y-4">
                 <div className="space-y-1.5">
                   <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Estado</Label>
-                  <Select value={story.status} onValueChange={(v) => saveField("status", v)} disabled={readOnly}>
+                  <Select value={story.status} onValueChange={(v) => {
+                    if (v === "done") {
+                      setShowCompleteConfirm(true);
+                    } else {
+                      saveField("status", v);
+                    }
+                  }} disabled={readOnly}>
                     <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                     <SelectContent>{STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
                   </Select>
@@ -357,6 +365,23 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
           <AlertDialogCancel>Cancelar</AlertDialogCancel>
           <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
             Eliminar
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+
+    <AlertDialog open={showCompleteConfirm} onOpenChange={setShowCompleteConfirm}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>¿Marcar como Completado?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Una vez completada, la historia "{story?.title}" quedará bloqueada y no se podrá editar ni mover. ¿Está seguro?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction onClick={() => { saveField("status", "done"); setShowCompleteConfirm(false); }}>
+            Completar
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

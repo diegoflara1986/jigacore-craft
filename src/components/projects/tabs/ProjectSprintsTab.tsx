@@ -72,6 +72,7 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
     { value: "todo", label: "Por Hacer" },
     { value: "in_progress", label: "En Progreso" },
     { value: "in_review", label: "En Revisión" },
+    { value: "qa", label: "En QA" },
     { value: "done", label: "Completado" },
   ];
 
@@ -116,13 +117,14 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
 
   const handleCreate = async () => {
     if (!newSprint.name.trim()) return;
+    const capacityValue = newSprint.capacity ? parseInt(newSprint.capacity) : selectedPoints;
     const created = await createSprint.mutateAsync({
       project_id: projectId,
       name: newSprint.name,
       goal: newSprint.goal || null,
       start_date: newSprint.start_date ? format(newSprint.start_date, "yyyy-MM-dd") : null,
       end_date: newSprint.end_date ? format(newSprint.end_date, "yyyy-MM-dd") : null,
-      capacity: newSprint.capacity ? parseInt(newSprint.capacity) : 0,
+      capacity: capacityValue,
     });
     for (const sid of selectedBacklogIds) {
       await updateStory.mutateAsync({ id: sid, sprint_id: created.id });
@@ -146,13 +148,14 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
 
   const handleEdit = async () => {
     if (!editSprint || !newSprint.name.trim()) return;
+    const capacityValue = newSprint.capacity ? parseInt(newSprint.capacity) : selectedPoints;
     await updateSprint.mutateAsync({
       id: editSprint.id,
       name: newSprint.name,
       goal: newSprint.goal || null,
       start_date: newSprint.start_date ? format(newSprint.start_date, "yyyy-MM-dd") : null,
       end_date: newSprint.end_date ? format(newSprint.end_date, "yyyy-MM-dd") : null,
-      capacity: newSprint.capacity ? parseInt(newSprint.capacity) : 0,
+      capacity: capacityValue,
     });
     // Sync story assignments: add newly selected, remove deselected
     const currentlyAssigned = backlogStories?.filter((s) => s.sprint_id === editSprint.id).map((s) => s.id) ?? [];
@@ -345,8 +348,8 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
                 </Popover>
               </div>
               <div className="space-y-2">
-                <Label>Capacidad (SP)</Label>
-                <Input type="number" min={0} value={newSprint.capacity} onChange={(e) => setNewSprint((p) => ({ ...p, capacity: e.target.value }))} placeholder="0" />
+                <Label>Capacidad (SP) — Auto: {selectedPoints}</Label>
+                <Input type="number" min={0} value={newSprint.capacity || selectedPoints || ""} onChange={(e) => setNewSprint((p) => ({ ...p, capacity: e.target.value }))} placeholder={String(selectedPoints)} />
               </div>
             </div>
 
@@ -431,8 +434,8 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
                 </Popover>
               </div>
               <div className="space-y-2">
-                <Label>Capacidad (SP)</Label>
-                <Input type="number" min={0} value={newSprint.capacity} onChange={(e) => setNewSprint((p) => ({ ...p, capacity: e.target.value }))} placeholder="0" />
+                <Label>Capacidad (SP) — Auto: {selectedPoints}</Label>
+                <Input type="number" min={0} value={newSprint.capacity || selectedPoints || ""} onChange={(e) => setNewSprint((p) => ({ ...p, capacity: e.target.value }))} placeholder={String(selectedPoints)} />
               </div>
             </div>
 
