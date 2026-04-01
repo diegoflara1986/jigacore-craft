@@ -179,9 +179,12 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
       assigned_to: story.assigned_to,
     });
   };
+  const initials = (name: string | null) => name ? name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() : "?";
+
   if (!open) return null;
 
   return (
+    <>
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="sm:max-w-2xl w-full overflow-y-auto">
         {isLoading || !story ? (
@@ -190,8 +193,13 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
           <div className="space-y-6">
             <SheetHeader>
               <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">{TYPES.find(t => t.value === story.type)?.label}</span>
-                <Button variant="ghost" size="icon" className="h-7 w-7 ml-auto text-destructive" onClick={handleDelete}><Trash2 className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={handleDeleteClick} title="Eliminar">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleDuplicate} title="Duplicar">
+                  <Copy className="h-4 w-4" />
+                </Button>
+                <span className="text-sm text-muted-foreground ml-2">{TYPES.find(t => t.value === story.type)?.label}</span>
               </div>
               <Input value={title} onChange={(e) => setTitle(e.target.value)} onBlur={saveTitle}
                 className="text-lg font-semibold border-none p-0 h-auto focus-visible:ring-0 shadow-none" />
