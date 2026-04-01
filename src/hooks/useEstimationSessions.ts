@@ -87,11 +87,11 @@ export function useUpdateEstimationSession() {
         .select()
         .maybeSingle();
       if (error) throw error;
-      return data as EstimationSession;
+      return { ...updates, id, _original: data } as any;
     },
-    onSuccess: (d: EstimationSession) => {
-      qc.invalidateQueries({ queryKey: ["estimation-session", d.id] });
-      qc.invalidateQueries({ queryKey: ["estimation-sessions", d.project_id] });
+    onSuccess: (_d: any, variables: Partial<EstimationSession> & { id: string }) => {
+      qc.invalidateQueries({ queryKey: ["estimation-session", variables.id] });
+      qc.invalidateQueries({ queryKey: ["estimation-sessions"] });
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
