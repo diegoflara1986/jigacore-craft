@@ -110,20 +110,7 @@ export function PlanningPokerModal({ projectId, open, onOpenChange }: Props) {
 
           <div className="space-y-2">
             <Label>Escala de votación</Label>
-            <RadioGroup value={scaleType} onValueChange={setScaleType} className="flex gap-4">
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="fibonacci" id="fibonacci" />
-                <Label htmlFor="fibonacci" className="text-sm font-normal cursor-pointer">
-                  Fibonacci (0, 1, 2, 3, 5, 8, 13, 21, 34, ?, ☕)
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="tshirt" id="tshirt" />
-                <Label htmlFor="tshirt" className="text-sm font-normal cursor-pointer">
-                  T-Shirt (XS, S, M, L, XL, XXL, ?, ☕)
-                </Label>
-              </div>
-            </RadioGroup>
+            <p className="text-sm text-muted-foreground">Fibonacci (0, 1, 2, 3, 5, 8, 13, 21, 34, ?, ☕)</p>
           </div>
 
           <div className="space-y-2">

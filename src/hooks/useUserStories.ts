@@ -89,7 +89,7 @@ export function useUpdateUserStory() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<UserStory> & { id: string }) => {
-      const { data, error } = await supabase.from("user_stories").update(updates).eq("id", id).select().single();
+      const { data, error } = await supabase.from("user_stories").update(updates).eq("id", id).select().maybeSingle();
       if (error) throw error;
       return data;
     },

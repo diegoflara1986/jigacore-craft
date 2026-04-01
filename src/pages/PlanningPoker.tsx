@@ -22,7 +22,6 @@ import { cn } from "@/lib/utils";
 
 const SCALES: Record<string, string[]> = {
   fibonacci: ["0", "1", "2", "3", "5", "8", "13", "21", "34", "?", "☕"],
-  tshirt: ["XS", "S", "M", "L", "XL", "XXL", "?", "☕"],
 };
 
 export default function PlanningPoker() {
@@ -182,7 +181,7 @@ export default function PlanningPoker() {
           <div>
             <h1 className="text-lg font-bold text-foreground">{session.name}</h1>
             <p className="text-xs text-muted-foreground">
-              Escala: {session.scale_type === "fibonacci" ? "Fibonacci" : "T-Shirt"} · {storyIds.length} historias
+              Escala: Fibonacci · {storyIds.length} historias
             </p>
           </div>
         </div>
