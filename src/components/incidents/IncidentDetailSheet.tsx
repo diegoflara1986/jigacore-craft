@@ -111,7 +111,7 @@ export function IncidentDetailSheet({ incidentId, onClose }: { incidentId: strin
       priority: incident.severity === "critica" ? "critical" : incident.severity === "alta" ? "high" : incident.severity === "baja" ? "low" : "medium",
       status: "backlog",
       created_by: profile?.id,
-    }).select("story_number").single();
+    }).select("id, story_number").single();
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
     await updateIncident.mutateAsync({ id: incident.id, linked_user_story_id: data.id } as any);
     toast({ title: `Bug HU-${data.story_number} creado en el backlog` });
