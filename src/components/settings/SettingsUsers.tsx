@@ -30,6 +30,8 @@ export function SettingsUsers() {
   const [createForm, setCreateForm] = useState({ email: "", password: "", full_name: "", role: "developer" });
   const [creating, setCreating] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [editUser, setEditUser] = useState<{ id: string; full_name: string | null; role: string; email: string } | null>(null);
+  const isAdmin = profile?.role === "admin" || profile?.role === "super_admin";
 
   const { data: users } = useQuery({
     queryKey: ["workspace-users"],
