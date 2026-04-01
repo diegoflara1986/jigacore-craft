@@ -211,6 +211,7 @@ export function ProjectEpicsTab({ projectId }: { projectId: string }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <PermissionDeniedDialog open={denied.open} onOpenChange={closeDenied} actionLabel={denied.actionLabel} requiredRoleLabel={denied.requiredRoleLabel} allowedMembers={denied.allowedMembers} />
     </div>
   );
 }
