@@ -66,10 +66,18 @@ export function SettingsProfile() {
         full_name: fullName, job_title: jobTitle, avatar_url: avatarUrl,
       }).eq("id", user.id);
       if (error) throw error;
-      toast({ title: "Perfil actualizado" });
+
+      // Refetch profile data and update local state
+      const { data: freshProfile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
+      if (freshProfile) {
+        setFullName(freshProfile.full_name ?? "");
+        setJobTitle(freshProfile.job_title ?? "");
+        setAvatarPreview(null);
+        setAvatarFile(null);
+      }
+
+      toast({ title: "Perfil actualizado correctamente" });
       qc.invalidateQueries({ queryKey: ["profile"] });
-      // Reload profile in auth context
-      window.location.reload();
     } catch (e: any) {
       toast({ title: "Error", description: e.message, variant: "destructive" });
     } finally {

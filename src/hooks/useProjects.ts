@@ -124,6 +124,10 @@ export function useCreateProject() {
           start_date: project.start_date,
           end_date: project.end_date,
           budget: project.budget,
+          currency: project.currency || "USD",
+          color: project.color || "#1E3A5F",
+          git_url: project.git_url,
+          technologies: project.technologies,
           workspace_id: workspaceId,
           created_by: profile!.id,
         })
