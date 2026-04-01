@@ -888,7 +888,10 @@ export type Database = {
         Returns: Database["public"]["Enums"]["app_role"]
       }
       get_user_workspace_id: { Args: never; Returns: string }
+      has_admin_role: { Args: { _user_id: string }; Returns: boolean }
+      has_lead_role: { Args: { _user_id: string }; Returns: boolean }
       has_management_role: { Args: { _user_id: string }; Returns: boolean }
+      has_team_role: { Args: { _user_id: string }; Returns: boolean }
       update_user_role: {
         Args: {
           new_role: Database["public"]["Enums"]["app_role"]
