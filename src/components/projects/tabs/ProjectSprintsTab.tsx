@@ -138,9 +138,7 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
       goal: sprint.goal || "",
       start_date: sprint.start_date ? new Date(sprint.start_date) : undefined,
       end_date: sprint.end_date ? new Date(sprint.end_date) : undefined,
-      capacity: sprint.capacity ? String(sprint.capacity) : "",
     });
-    // Pre-select stories already assigned to this sprint
     const assignedIds = backlogStories?.filter((s) => s.sprint_id === sprint.id).map((s) => s.id) ?? [];
     setSelectedBacklogIds(assignedIds);
     setEditSprint(sprint);
