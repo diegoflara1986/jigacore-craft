@@ -341,7 +341,7 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
         <AlertDialogHeader>
           <AlertDialogTitle>¿Eliminar historia de usuario?</AlertDialogTitle>
           <AlertDialogDescription>
-            Esta acción no se puede deshacer. Se eliminará permanentemente la historia "{story?.title}".
+            La historia "{story?.title}" será marcada como eliminada. Podrás verla en el filtro de "Eliminadas" del backlog.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
