@@ -204,8 +204,8 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
                 </Button>
                 <span className="text-sm text-muted-foreground ml-2">{TYPES.find(t => t.value === story.type)?.label}</span>
               </div>
-              <Input value={title} onChange={(e) => setTitle(e.target.value)} onBlur={saveTitle}
-                className="text-lg font-semibold border-none p-0 h-auto focus-visible:ring-0 shadow-none" />
+                <Input value={title} onChange={(e) => !readOnly && setTitle(e.target.value)} onBlur={saveTitle}
+                  className="text-lg font-semibold border-none p-0 h-auto focus-visible:ring-0 shadow-none" readOnly={readOnly} />
             </SheetHeader>
 
             <div className="grid grid-cols-1 md:grid-cols-[1fr_200px] gap-6">
