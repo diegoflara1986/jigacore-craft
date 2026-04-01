@@ -150,6 +150,15 @@ export function ProjectBacklogTab({ projectId }: { projectId: string }) {
             {members?.map((m) => <SelectItem key={m.user_id} value={m.user_id}>{m.profiles?.full_name || m.profiles?.email}</SelectItem>)}
           </SelectContent>
         </Select>
+        <Button
+          size="sm"
+          variant={filters.showDeleted ? "default" : "outline"}
+          className="h-9"
+          onClick={() => setFilters((f) => ({ ...f, showDeleted: !f.showDeleted }))}
+        >
+          <Trash2 className="h-4 w-4 mr-1" />
+          {filters.showDeleted ? "Ver activas" : "Eliminadas"}
+        </Button>
       </div>
 
       {/* Table */}
