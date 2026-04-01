@@ -22,7 +22,6 @@ import { cn } from "@/lib/utils";
 
 const SCALES: Record<string, string[]> = {
   fibonacci: ["0", "1", "2", "3", "5", "8", "13", "21", "34", "?", "☕"],
-  tshirt: ["XS", "S", "M", "L", "XL", "XXL", "?", "☕"],
 };
 
 export default function PlanningPoker() {
