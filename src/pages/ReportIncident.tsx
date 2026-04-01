@@ -46,33 +46,7 @@ export default function ReportIncident() {
     if (errors[field]) setErrors(p => { const n = { ...p }; delete n[field]; return n; });
   };
 
-  const handleFiles = useCallback((newFiles: FileList | File[]) => {
-    const errs: string[] = [];
-    const valid: File[] = [];
 
-    Array.from(newFiles).forEach(f => {
-      if (!ALLOWED_TYPES.includes(f.type)) {
-        errs.push(`"${f.name}" no es un tipo permitido. Solo JPG, PNG, GIF, WEBP.`);
-        return;
-      }
-      if (f.size > MAX_FILE_SIZE) {
-        errs.push(`"${f.name}" supera el límite de 10MB`);
-        return;
-      }
-      valid.push(f);
-    });
-
-    setFileErrors(errs);
-    const combined = [...files, ...valid].slice(0, 5);
-    setFiles(combined);
-    setPreviews(combined.map(f => URL.createObjectURL(f)));
-  }, [files]);
-
-  const removeFile = (idx: number) => {
-    setFiles(p => p.filter((_, i) => i !== idx));
-    setPreviews(p => p.filter((_, i) => i !== idx));
-    setFileErrors([]);
-  };
 
   const validate = () => {
     const e: Record<string, string> = {};
