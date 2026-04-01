@@ -91,7 +91,7 @@ export default function Incidents() {
   const { data: members } = useQuery({
     queryKey: ["workspace-members"],
     queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("id, full_name, email");
+      const { data } = await supabase.from("profiles_safe_view").select("id, full_name, email");
       return data ?? [];
     },
   });

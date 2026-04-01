@@ -48,7 +48,7 @@ export function GlobalSearch() {
         supabase.from("projects").select("id, name, status").ilike("name", q).limit(3),
         supabase.from("user_stories").select("id, title, story_number, projects(name, id)").ilike("title", q).is("deleted_at", null).limit(3),
         supabase.from("incidents").select("id, title, ticket_code, severity, project_id").or(`title.ilike.${q},ticket_code.ilike.${q}`).limit(3),
-        isAdmin ? supabase.from("profiles").select("id, full_name, email, role").or(`full_name.ilike.${q},email.ilike.${q}`).limit(3) : Promise.resolve({ data: [] }),
+        isAdmin ? supabase.from("profiles_safe_view").select("id, full_name, email, role").or(`full_name.ilike.${q},email.ilike.${q}`).limit(3) : Promise.resolve({ data: [] }),
       ]);
 
       setResults({

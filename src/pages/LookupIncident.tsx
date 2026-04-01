@@ -47,24 +47,8 @@ export default function LookupIncident() {
         const incident = data[0] as PublicIncident;
         setResult(incident);
 
-        // Load attachments using signed URLs (bucket is private)
-        const ticketCode = incident.ticket_code;
-        const { data: files } = await supabase.storage
-          .from("incident-attachments")
-          .list(ticketCode, { limit: 10 });
-
-        if (files && files.length > 0) {
-          const signedUrls: string[] = [];
-          for (const file of files) {
-            const { data: signedData } = await supabase.storage
-              .from("incident-attachments")
-              .createSignedUrl(`${ticketCode}/${file.name}`, 3600); // 1 hour expiration
-            if (signedData?.signedUrl) {
-              signedUrls.push(signedData.signedUrl);
-            }
-          }
-          setAttachments(signedUrls);
-        }
+        // Attachments are only viewable by authenticated team members
+        // Anonymous lookup only shows incident status
       } else {
         setNotFound(true);
       }
