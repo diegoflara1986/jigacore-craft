@@ -22,7 +22,11 @@ Deno.serve(async (req) => {
     const callerClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
-    const { data: { user: caller } } = await callerClient.auth.getUser();
+
+    const {
+      data: { user: caller },
+    } = await callerClient.auth.getUser();
+
     if (!caller) {
       return new Response(JSON.stringify({ error: "No autorizado" }), {
         status: 401,
@@ -47,16 +51,16 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const { action } = body;
 
-    // ========== UPDATE USER ==========
     if (action === "update") {
       const { user_id, role, full_name, password } = body;
+
       if (!user_id) {
         return new Response(JSON.stringify({ error: "user_id es requerido" }), {
-          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
-      // Ensure target is in same workspace
       const { data: targetProfile } = await adminClient
         .from("profiles")
         .select("workspace_id")
@@ -65,56 +69,68 @@ Deno.serve(async (req) => {
 
       if (!targetProfile || targetProfile.workspace_id !== callerProfile.workspace_id) {
         return new Response(JSON.stringify({ error: "Usuario no pertenece a tu workspace" }), {
-          status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
-      // Update auth password if provided
       if (password && password.length > 0) {
         if (password.length < 6) {
           return new Response(JSON.stringify({ error: "La contraseña debe tener al menos 6 caracteres" }), {
-            status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
+
         const { error: pwError } = await adminClient.auth.admin.updateUserById(user_id, { password });
         if (pwError) {
           return new Response(JSON.stringify({ error: pwError.message }), {
-            status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
       }
 
-      // Update profile fields
       const updates: Record<string, unknown> = {};
       if (role) updates.role = role;
       if (full_name !== undefined) updates.full_name = full_name || null;
 
       if (Object.keys(updates).length > 0) {
-        await adminClient.from("profiles").update(updates).eq("id", user_id);
+        const { error: profileUpdateError } = await adminClient
+          .from("profiles")
+          .update(updates)
+          .eq("id", user_id);
+
+        if (profileUpdateError) {
+          return new Response(JSON.stringify({ error: profileUpdateError.message }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
       }
 
-      return new Response(
-        JSON.stringify({ success: true }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    // ========== CREATE USER ==========
     const { email, password, role, full_name } = body;
 
     if (!email || !password || !role) {
       return new Response(JSON.stringify({ error: "Email, contraseña y rol son requeridos" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     if (password.length < 6) {
       return new Response(JSON.stringify({ error: "La contraseña debe tener al menos 6 caracteres" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Create new user — if email exists Supabase will return error
     const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
       email,
       password,
@@ -123,18 +139,27 @@ Deno.serve(async (req) => {
     });
 
     if (createError) {
-      // Friendly message for duplicate email
       if (createError.message.includes("already been registered")) {
-        return new Response(JSON.stringify({ error: "Ya existe un usuario registrado con este correo electrónico" }), {
-          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return new Response(
+          JSON.stringify({
+            success: false,
+            code: "email_already_exists",
+            error: "Ya existe un usuario registrado con este correo electrónico",
+          }),
+          {
+            status: 200,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
       }
+
       return new Response(JSON.stringify({ error: createError.message }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    await adminClient
+    const { error: profileError } = await adminClient
       .from("profiles")
       .update({
         role,
@@ -143,14 +168,24 @@ Deno.serve(async (req) => {
       })
       .eq("id", newUser.user.id);
 
-    return new Response(
-      JSON.stringify({ success: true, user_id: newUser.user.id }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 500,
+    if (profileError) {
+      return new Response(JSON.stringify({ error: profileError.message }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    return new Response(JSON.stringify({ success: true, user_id: newUser.user.id }), {
+      status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
+  } catch (err) {
+    return new Response(
+      JSON.stringify({ error: err instanceof Error ? err.message : "Unexpected error" }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
   }
 });
