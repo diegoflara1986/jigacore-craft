@@ -96,13 +96,6 @@ export function ProjectBacklogTab({ projectId }: { projectId: string }) {
     setNewStory({ title: "", description: "", type: "story", priority: "medium", status: "backlog", story_points: "", epic_id: "", assigned_to: "", sprint_id: "" });
   };
 
-  const handleInlinePointsChange = async (storyId: string, value: string) => {
-    const pts = parseInt(value);
-    if (!isNaN(pts) && pts >= 0) {
-      await updateStory.mutateAsync({ id: storyId, story_points: pts });
-    }
-  };
-
   const initials = (name: string | null) => name ? name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() : "?";
 
   return (
