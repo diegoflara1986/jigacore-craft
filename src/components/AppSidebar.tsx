@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, FolderKanban, ClipboardList, Bug,
-  BarChart3, Settings, Hexagon, ChevronLeft
+  BarChart3, Settings, Hexagon, ChevronLeft, Bell
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
