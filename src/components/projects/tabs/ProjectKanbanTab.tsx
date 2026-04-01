@@ -422,14 +422,17 @@ export function ProjectKanbanTab({ projectId }: Props) {
       )}
 
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-2">
-        <Select value={sprintId ?? "none"} onValueChange={(v) => setSelectedSprintId(v === "none" ? undefined : v)}>
-          <SelectTrigger className="h-9 w-48"><SelectValue placeholder="Sprint" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">Sin sprint</SelectItem>
-            {sprints?.map((s) => <SelectItem key={s.id} value={s.id}>{s.name} {s.status === "active" ? "⚡" : ""}</SelectItem>)}
-          </SelectContent>
-        </Select>
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="space-y-0.5">
+          <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Sprint</span>
+          <Select value={sprintId ?? "none"} onValueChange={(v) => setSelectedSprintId(v === "none" ? undefined : v)}>
+            <SelectTrigger className="h-9 w-48"><SelectValue placeholder="Sprint" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Sin sprint</SelectItem>
+              {sprints?.map((s) => <SelectItem key={s.id} value={s.id}>{s.name} {s.status === "active" ? "⚡" : ""}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
 
         {selectedSprint && daysLeft !== null && selectedSprint.start_date && selectedSprint.end_date && (
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/50 rounded-md px-2 py-1">
