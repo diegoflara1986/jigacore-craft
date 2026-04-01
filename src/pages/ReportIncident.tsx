@@ -1,5 +1,5 @@
-import { useState, useCallback } from "react";
-import { Hexagon, CheckCircle2, Upload, X, AlertCircle } from "lucide-react";
+import { useState } from "react";
+import { Hexagon, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,8 +18,6 @@ const SEVERITY_OPTIONS = [
 ];
 
 const CATEGORIES = ["Bug de sistema", "Error de interfaz", "Problema de rendimiento", "Error de datos", "Problema de seguridad", "Otro"];
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 export default function ReportIncident() {
   const navigate = useNavigate();
