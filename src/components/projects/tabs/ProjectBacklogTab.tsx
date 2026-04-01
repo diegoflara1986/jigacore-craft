@@ -110,7 +110,9 @@ export function ProjectBacklogTab({ projectId, estimationOnly = false }: { proje
       {/* Actions */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2 flex-wrap">
-          <Button size="sm" onClick={() => guardAction("team", "crear una historia de usuario", () => setCreateOpen(true))}><Plus className="h-4 w-4 mr-1" />Agregar HU</Button>
+          {!estimationOnly && (
+            <Button size="sm" onClick={() => guardAction("team", "crear una historia de usuario", () => setCreateOpen(true))}><Plus className="h-4 w-4 mr-1" />Agregar HU</Button>
+          )}
           <Button size="sm" variant="outline" onClick={() => guardAction("team", "iniciar Planning Poker", () => setPlanningPokerOpen(true))}>
             <Users className="h-4 w-4 mr-1" />Planning Poker
           </Button>
