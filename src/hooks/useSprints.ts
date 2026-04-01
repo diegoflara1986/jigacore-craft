@@ -97,6 +97,7 @@ export function useUpdateSprint() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["sprints"] });
       qc.invalidateQueries({ queryKey: ["sprints-list"] });
+      qc.invalidateQueries({ queryKey: ["user-stories-for-sprints"] });
       toast({ title: "Sprint actualizado" });
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
