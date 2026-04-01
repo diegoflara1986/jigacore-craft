@@ -322,54 +322,156 @@ export type Database = {
           },
         ]
       }
+      incident_history: {
+        Row: {
+          created_at: string
+          field_name: string
+          id: string
+          incident_id: string
+          new_value: string | null
+          old_value: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          field_name: string
+          id?: string
+          incident_id: string
+          new_value?: string | null
+          old_value?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          field_name?: string
+          id?: string
+          incident_id?: string
+          new_value?: string | null
+          old_value?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incident_history_incident_id_fkey"
+            columns: ["incident_id"]
+            isOneToOne: false
+            referencedRelation: "incidents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incident_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      incident_notes: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          incident_id: string
+          is_internal: boolean
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          incident_id: string
+          is_internal?: boolean
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          incident_id?: string
+          is_internal?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incident_notes_incident_id_fkey"
+            columns: ["incident_id"]
+            isOneToOne: false
+            referencedRelation: "incidents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incident_notes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       incidents: {
         Row: {
           actual_result: string | null
           assigned_to: string | null
+          browser_info: string | null
           category: string | null
           created_at: string
           description: string | null
           expected_result: string | null
           id: string
+          linked_user_story_id: string | null
           project_id: string
           reported_by_email: string | null
+          reporter_name: string | null
           severity: string
           status: string
           steps_to_reproduce: string | null
           ticket_code: string | null
           title: string
+          updated_at: string | null
+          version: string | null
         }
         Insert: {
           actual_result?: string | null
           assigned_to?: string | null
+          browser_info?: string | null
           category?: string | null
           created_at?: string
           description?: string | null
           expected_result?: string | null
           id?: string
+          linked_user_story_id?: string | null
           project_id: string
           reported_by_email?: string | null
+          reporter_name?: string | null
           severity?: string
           status?: string
           steps_to_reproduce?: string | null
           ticket_code?: string | null
           title: string
+          updated_at?: string | null
+          version?: string | null
         }
         Update: {
           actual_result?: string | null
           assigned_to?: string | null
+          browser_info?: string | null
           category?: string | null
           created_at?: string
           description?: string | null
           expected_result?: string | null
           id?: string
+          linked_user_story_id?: string | null
           project_id?: string
           reported_by_email?: string | null
+          reporter_name?: string | null
           severity?: string
           status?: string
           steps_to_reproduce?: string | null
           ticket_code?: string | null
           title?: string
+          updated_at?: string | null
+          version?: string | null
         }
         Relationships: [
           {
@@ -377,6 +479,13 @@ export type Database = {
             columns: ["assigned_to"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incidents_linked_user_story_id_fkey"
+            columns: ["linked_user_story_id"]
+            isOneToOne: false
+            referencedRelation: "user_stories"
             referencedColumns: ["id"]
           },
           {
@@ -580,6 +689,41 @@ export type Database = {
           },
           {
             foreignKeyName: "projects_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sla_configs: {
+        Row: {
+          created_at: string
+          id: string
+          resolution_hours: number
+          response_hours: number
+          severity: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          resolution_hours?: number
+          response_hours?: number
+          severity: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          resolution_hours?: number
+          response_hours?: number
+          severity?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sla_configs_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
@@ -889,6 +1033,13 @@ export type Database = {
     }
     Functions: {
       ensure_user_workspace: { Args: never; Returns: string }
+      get_active_projects_public: {
+        Args: never
+        Returns: {
+          id: string
+          name: string
+        }[]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -898,6 +1049,17 @@ export type Database = {
       has_lead_role: { Args: { _user_id: string }; Returns: boolean }
       has_management_role: { Args: { _user_id: string }; Returns: boolean }
       has_team_role: { Args: { _user_id: string }; Returns: boolean }
+      lookup_incident_public: {
+        Args: { p_ticket_code: string }
+        Returns: {
+          created_at: string
+          severity: string
+          status: string
+          ticket_code: string
+          title: string
+          updated_at: string
+        }[]
+      }
       update_user_role: {
         Args: {
           new_role: Database["public"]["Enums"]["app_role"]
