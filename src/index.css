@@ -117,4 +117,21 @@
   .sidebar-gradient {
     background: linear-gradient(180deg, hsl(213, 52%, 18%) 0%, hsl(213, 52%, 12%) 100%);
   }
+
+  .hover-lift {
+    @apply transition-all duration-200;
+  }
+  .hover-lift:hover {
+    @apply shadow-md;
+    transform: translateY(-2px);
+  }
+}
+
+/* Responsive: full-screen modals on mobile */
+@media (max-width: 640px) {
+  [role="dialog"] {
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+    border-radius: 0 !important;
+  }
 }
