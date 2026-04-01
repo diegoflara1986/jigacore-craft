@@ -432,8 +432,8 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
                 </Popover>
               </div>
               <div className="space-y-2">
-                <Label>Capacidad (SP)</Label>
-                <Input type="number" min={0} value={newSprint.capacity} onChange={(e) => setNewSprint((p) => ({ ...p, capacity: e.target.value }))} placeholder="0" />
+                <Label>Capacidad (SP) — Auto: {selectedPoints}</Label>
+                <Input type="number" min={0} value={newSprint.capacity || selectedPoints || ""} onChange={(e) => setNewSprint((p) => ({ ...p, capacity: e.target.value }))} placeholder={String(selectedPoints)} />
               </div>
             </div>
 
