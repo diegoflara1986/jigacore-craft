@@ -45,8 +45,15 @@ export function EditUserDialog({ open, onOpenChange, user, onSaved }: EditUserDi
         full_name: fullName,
       };
       if (password.length > 0) {
-        if (password.length < 6) {
-          toast({ title: "La contraseña debe tener al menos 6 caracteres", variant: "destructive" });
+        const hasMinLength = password.length >= 8;
+        const hasUppercase = /[A-Z]/.test(password);
+        const hasNumber = /[0-9]/.test(password);
+        if (!hasMinLength || !hasUppercase || !hasNumber) {
+          const errors: string[] = [];
+          if (!hasMinLength) errors.push("mínimo 8 caracteres");
+          if (!hasUppercase) errors.push("al menos una mayúscula");
+          if (!hasNumber) errors.push("al menos un número");
+          toast({ title: "Contraseña no válida", description: `Debe tener: ${errors.join(", ")}`, variant: "destructive" });
           setSaving(false);
           return;
         }
@@ -100,7 +107,7 @@ export function EditUserDialog({ open, onOpenChange, user, onSaved }: EditUserDi
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Mínimo 6 caracteres"
+                placeholder="Mín. 8 caracteres, 1 mayúscula, 1 número"
               />
               <Button
                 type="button"
