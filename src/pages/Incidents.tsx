@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { useIncidents, useIncidentStats, useSlaConfigs, Incident } from "@/hooks/useIncidents";
 import { useQuery } from "@tanstack/react-query";
+import { usePageTitle } from "@/hooks/usePageTitle";
+import { EmptyState } from "@/components/EmptyState";
+import { TableSkeleton } from "@/components/TableSkeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -50,6 +53,7 @@ function SlaIndicator({ incident, slaConfigs }: { incident: Incident; slaConfigs
 }
 
 export default function Incidents() {
+  usePageTitle("Incidentes");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [severityFilter, setSeverityFilter] = useState<string>("all");
@@ -147,9 +151,9 @@ export default function Incidents() {
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow><TableCell colSpan={8} className="text-center py-8"><span className="h-5 w-5 border-2 border-primary border-t-transparent rounded-full animate-spin inline-block" /></TableCell></TableRow>
+                <TableRow><TableCell colSpan={8}><TableSkeleton rows={5} cols={8} /></TableCell></TableRow>
               ) : !incidents.length ? (
-                <TableRow><TableCell colSpan={8} className="text-center py-8 text-muted-foreground">No se encontraron incidentes</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8}><EmptyState type="incidents" /></TableCell></TableRow>
               ) : incidents.map(inc => (
                 <TableRow key={inc.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedId(inc.id)}>
                   <TableCell><span className="font-mono text-xs font-semibold text-primary">{inc.ticket_code}</span></TableCell>

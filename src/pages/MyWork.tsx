@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { usePageTitle } from "@/hooks/usePageTitle";
 import { useAuth } from "@/lib/auth";
 import { useTimeLogs, useDeleteTimeLog } from "@/hooks/useTimeLogs";
 import { ManualTimeLogModal } from "@/components/timer/ManualTimeLogModal";
@@ -41,6 +42,7 @@ function timeAgo(dateStr: string) {
 }
 
 export default function MyWork() {
+  usePageTitle("Mi Trabajo");
   const { profile, user } = useAuth();
   const timer = useTimer();
   const [weekOffset, setWeekOffset] = useState(0);

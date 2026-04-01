@@ -1,5 +1,6 @@
 import { useAuth } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { usePageTitle } from "@/hooks/usePageTitle";
 import { Badge } from "@/components/ui/badge";
 import {
   FolderKanban, CheckCircle2, Clock, ListTodo,
@@ -32,6 +33,7 @@ const priorityColors: Record<string, string> = {
 };
 
 export default function Dashboard() {
+  usePageTitle("Dashboard");
   const { profile } = useAuth();
 
   const { data: projects } = useQuery({
