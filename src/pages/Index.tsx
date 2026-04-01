@@ -2,12 +2,14 @@ import { useAuth } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
-  FolderKanban, CheckCircle2, Clock, ListTodo,
-  Bell
+  FolderKanban, CheckCircle2, Clock, ListTodo, Bell
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 function MetricCard({ title, value, icon: Icon, color }: { title: string; value: string | number; icon: any; color: string }) {
   return (
@@ -32,9 +34,19 @@ const priorityColors: Record<string, string> = {
   low: "bg-muted text-muted-foreground",
 };
 
+const statusConfig: Record<string, { label: string; color: string }> = {
+  active: { label: "Activo", color: "bg-success text-success-foreground" },
+  paused: { label: "En Pausa", color: "bg-warning text-warning-foreground" },
+  planning: { label: "Planificación", color: "bg-info text-info-foreground" },
+  completed: { label: "Completado", color: "bg-muted text-muted-foreground" },
+  cancelled: { label: "Cancelado", color: "bg-destructive text-destructive-foreground" },
+  archived: { label: "Archivado", color: "bg-muted text-muted-foreground" },
+};
+
 export default function Dashboard() {
   usePageTitle("Dashboard");
   const { profile } = useAuth();
+  const navigate = useNavigate();
 
   const { data: projects } = useQuery({
     queryKey: ["projects-count"],
@@ -77,14 +89,35 @@ export default function Dashboard() {
   });
 
   const { data: recentProjects } = useQuery({
-    queryKey: ["recent-projects"],
+    queryKey: ["recent-projects-enriched"],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data: projs } = await supabase
         .from("projects")
         .select("*")
+        .neq("status", "archived")
         .order("created_at", { ascending: false })
         .limit(5);
-      return data ?? [];
+      if (!projs?.length) return [];
+
+      // Enrich each project with stats, members, active sprint
+      const enriched = await Promise.all(projs.map(async (p) => {
+        const [storiesRes, membersRes, sprintRes] = await Promise.all([
+          supabase.from("user_stories").select("status").eq("project_id", p.id).is("deleted_at", null),
+          supabase.from("project_members").select("id, profiles(full_name)").eq("project_id", p.id).limit(5),
+          supabase.from("sprints").select("name").eq("project_id", p.id).eq("status", "active").limit(1),
+        ]);
+        const stories = storiesRes.data ?? [];
+        const total = stories.length;
+        const completed = stories.filter(s => s.status === "done").length;
+        const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
+        return {
+          ...p,
+          progress,
+          members: (membersRes.data ?? []) as any[],
+          activeSprint: sprintRes.data?.[0]?.name ?? null,
+        };
+      }));
+      return enriched;
     },
   });
 
@@ -95,6 +128,8 @@ export default function Dashboard() {
     return "Buenas noches";
   };
 
+  const initials = (name: string | null) => name ? name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() : "?";
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
@@ -104,7 +139,6 @@ export default function Dashboard() {
         <p className="text-muted-foreground text-sm mt-1">Aquí tienes un resumen de tu trabajo</p>
       </div>
 
-      {/* Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard title="Proyectos Activos" value={projects ?? 0} icon={FolderKanban} color="bg-primary/10 text-primary" />
         <MetricCard title="Mis Tareas en Sprint" value={myTasks?.length ?? 0} icon={ListTodo} color="bg-accent/10 text-accent" />
@@ -113,11 +147,8 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Pending Tasks */}
         <Card className="lg:col-span-2 border-border">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Mis Tareas Pendientes</CardTitle>
-          </CardHeader>
+          <CardHeader className="pb-3"><CardTitle className="text-lg">Mis Tareas Pendientes</CardTitle></CardHeader>
           <CardContent>
             {!myTasks?.length ? (
               <p className="text-muted-foreground text-sm py-8 text-center">No tienes tareas pendientes 🎉</p>
@@ -130,14 +161,8 @@ export default function Dashboard() {
                       <p className="text-xs text-muted-foreground">{task.projects?.name}</p>
                     </div>
                     <div className="flex items-center gap-2 ml-2">
-                      <Badge className={priorityColors[task.priority] || "bg-muted text-muted-foreground"} variant="secondary">
-                        {task.priority}
-                      </Badge>
-                      {task.due_date && (
-                        <span className="text-xs text-muted-foreground whitespace-nowrap">
-                          {new Date(task.due_date).toLocaleDateString("es")}
-                        </span>
-                      )}
+                      <Badge className={priorityColors[task.priority] || "bg-muted text-muted-foreground"} variant="secondary">{task.priority}</Badge>
+                      {task.due_date && <span className="text-xs text-muted-foreground whitespace-nowrap">{new Date(task.due_date).toLocaleDateString("es")}</span>}
                     </div>
                   </div>
                 ))}
@@ -146,12 +171,9 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Notifications */}
         <Card className="border-border">
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Bell className="h-4 w-4" /> Notificaciones
-            </CardTitle>
+            <CardTitle className="text-lg flex items-center gap-2"><Bell className="h-4 w-4" /> Notificaciones</CardTitle>
           </CardHeader>
           <CardContent>
             {!notifications?.length ? (
@@ -170,28 +192,70 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Recent Projects */}
+      {/* Recent Projects - enriched */}
       <Card className="border-border">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg">Proyectos Recientes</CardTitle>
-        </CardHeader>
+        <CardHeader className="pb-3"><CardTitle className="text-lg">Proyectos Recientes</CardTitle></CardHeader>
         <CardContent>
           {!recentProjects?.length ? (
             <p className="text-muted-foreground text-sm py-8 text-center">Aún no hay proyectos creados</p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {recentProjects.map((p: any) => (
-                <div key={p.id} className="p-4 rounded-xl border border-border bg-card hover:shadow-md transition-shadow">
-                  <h3 className="font-semibold text-foreground">{p.name}</h3>
-                  <p className="text-xs text-muted-foreground mt-1">{p.client_name || "Sin cliente"}</p>
-                  <div className="mt-3 flex items-center gap-2">
-                    <Badge variant="outline" className="text-xs">{p.status}</Badge>
+              {recentProjects.map((p: any) => {
+                const st = statusConfig[p.status] || statusConfig.active;
+                return (
+                  <div
+                    key={p.id}
+                    onClick={() => navigate(`/proyectos/${p.id}`)}
+                    className="p-4 rounded-xl border border-border bg-card hover:shadow-md transition-shadow cursor-pointer"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="h-8 w-8 rounded-md flex items-center justify-center text-white font-bold text-xs shrink-0" style={{ backgroundColor: p.color || "#1E3A5F" }}>
+                          {p.name.slice(0, 2).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <h3 className="font-semibold text-foreground text-sm truncate">{p.name}</h3>
+                          <p className="text-xs text-muted-foreground truncate">{p.client_name || "Sin cliente"}</p>
+                        </div>
+                      </div>
+                      <Badge className={`${st.color} text-[10px] px-1.5 shrink-0`}>{st.label}</Badge>
+                    </div>
+
+                    <div className="mt-3 space-y-1">
+                      <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>Progreso</span>
+                        <span>{p.progress}%</span>
+                      </div>
+                      <Progress value={p.progress} className="h-1.5" />
+                    </div>
+
+                    {p.activeSprint && (
+                      <p className="text-xs text-accent mt-2">🏃 {p.activeSprint}</p>
+                    )}
+
+                    {(p.start_date || p.end_date) && (
+                      <p className="text-[11px] text-muted-foreground mt-2">
+                        {p.start_date ? new Date(p.start_date).toLocaleDateString("es") : "—"} → {p.end_date ? new Date(p.end_date).toLocaleDateString("es") : "—"}
+                      </p>
+                    )}
+
+                    {p.members?.length > 0 && (
+                      <div className="flex -space-x-2 mt-2">
+                        {p.members.slice(0, 4).map((m: any) => (
+                          <Avatar key={m.id} className="h-6 w-6 border-2 border-card">
+                            <AvatarFallback className="text-[9px] bg-muted">{initials(m.profiles?.full_name ?? null)}</AvatarFallback>
+                          </Avatar>
+                        ))}
+                        {p.members.length > 4 && (
+                          <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center text-[9px] font-medium text-muted-foreground border-2 border-card">
+                            +{p.members.length - 4}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  <div className="mt-3 w-full bg-muted rounded-full h-1.5">
-                    <div className="bg-accent h-1.5 rounded-full" style={{ width: "0%" }} />
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>
