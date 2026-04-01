@@ -59,14 +59,24 @@ export function ProjectBacklogTab({ projectId }: { projectId: string }) {
   const [selectedStoryId, setSelectedStoryId] = useState<string | null>(null);
   const [newStory, setNewStory] = useState({ title: "", description: "", type: "story", priority: "medium", status: "backlog", story_points: "", epic_id: "", assigned_to: "", sprint_id: "" });
 
-  // Sprints
+  // Sprints (include status for read-only logic)
   const { data: sprints } = useQuery({
     queryKey: ["sprints", projectId],
     queryFn: async () => {
-      const { data } = await supabase.from("sprints").select("id, name").eq("project_id", projectId).order("created_at");
+      const { data } = await supabase.from("sprints").select("id, name, status").eq("project_id", projectId).order("created_at");
       return data ?? [];
     },
   });
+
+  const isStoryReadOnly = (s: UserStory) => {
+    if (s.deleted_at) return true;
+    if (s.status === "done") return true;
+    if (s.sprint_id) {
+      const sprint = sprints?.find(sp => sp.id === s.sprint_id);
+      if (sprint && sprint.status === "active") return true;
+    }
+    return false;
+  };
 
   const handleCreate = async () => {
     if (!newStory.title.trim()) return;
@@ -84,13 +94,6 @@ export function ProjectBacklogTab({ projectId }: { projectId: string }) {
     });
     setCreateOpen(false);
     setNewStory({ title: "", description: "", type: "story", priority: "medium", status: "backlog", story_points: "", epic_id: "", assigned_to: "", sprint_id: "" });
-  };
-
-  const handleInlinePointsChange = async (storyId: string, value: string) => {
-    const pts = parseInt(value);
-    if (!isNaN(pts) && pts >= 0) {
-      await updateStory.mutateAsync({ id: storyId, story_points: pts });
-    }
   };
 
   const initials = (name: string | null) => name ? name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() : "?";
@@ -204,8 +207,25 @@ export function ProjectBacklogTab({ projectId }: { projectId: string }) {
                     </span>
                   </TableCell>
                   <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
-                    <Input type="number" className="h-7 w-14 text-center text-xs mx-auto" value={s.story_points ?? ""}
-                      onChange={(e) => handleInlinePointsChange(s.id, e.target.value)} min={0} />
+                    <Input
+                      type="number"
+                      className="h-7 w-14 text-center text-xs mx-auto [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      value={s.story_points ?? ""}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === "") {
+                          updateStory.mutateAsync({ id: s.id, story_points: null });
+                        } else {
+                          const num = parseInt(val);
+                          if (!isNaN(num) && num >= 0 && num <= 50) {
+                            updateStory.mutateAsync({ id: s.id, story_points: num });
+                          }
+                        }
+                      }}
+                      min={0}
+                      max={50}
+                      disabled={isStoryReadOnly(s)}
+                    />
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">{s.sprints?.name ?? "—"}</TableCell>
                   <TableCell>
@@ -315,7 +335,7 @@ export function ProjectBacklogTab({ projectId }: { projectId: string }) {
         onOpenChange={(open) => { if (!open) setSelectedStoryId(null); }}
         epics={epics ?? []}
         members={members ?? []}
-        readOnly={!!stories?.find(s => s.id === selectedStoryId)?.deleted_at}
+        readOnly={(() => { const s = stories?.find(st => st.id === selectedStoryId); return s ? isStoryReadOnly(s) : false; })()}
       />
 
       <PlanningPokerModal projectId={projectId} open={planningPokerOpen} onOpenChange={setPlanningPokerOpen} />
