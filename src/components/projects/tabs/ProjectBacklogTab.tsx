@@ -49,7 +49,7 @@ function priorityBadge(p: string) {
   return pr ? <span className={`inline-block h-2.5 w-2.5 rounded-full ${pr.color} mr-1.5`} /> : null;
 }
 
-export function ProjectBacklogTab({ projectId }: { projectId: string }) {
+export function ProjectBacklogTab({ projectId, estimationOnly = false }: { projectId: string; estimationOnly?: boolean }) {
   const [filters, setFilters] = useState<{ epicId?: string; type?: string; priority?: string; status?: string; assignedTo?: string; search?: string; showDeleted?: boolean }>({});
   const { data: stories, isLoading } = useUserStories(projectId, filters);
   const { data: epics } = useEpics(projectId);
