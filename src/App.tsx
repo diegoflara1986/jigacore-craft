@@ -19,6 +19,7 @@ import LookupIncident from "./pages/LookupIncident";
 import Incidents from "./pages/Incidents";
 import Settings from "./pages/Settings";
 import Reports from "./pages/Reports";
+import Notifications from "./pages/Notifications";
 
 const App = () => (
   <TooltipProvider>
@@ -41,6 +42,7 @@ const App = () => (
           <Route path="/incidents" element={<AppLayout><Incidents /></AppLayout>} />
           <Route path="/reports" element={<AppLayout><Reports /></AppLayout>} />
           <Route path="/settings" element={<AppLayout><Settings /></AppLayout>} />
+          <Route path="/notificaciones" element={<AppLayout><Notifications /></AppLayout>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </AuthProvider>

@@ -1,4 +1,4 @@
-import { Bell, Search, Moon, Sun, LogOut } from "lucide-react";
+import { Moon, Sun, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -9,10 +9,15 @@ import { useAuth } from "@/lib/auth";
 import { useTheme } from "@/lib/theme";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { GlobalTimer } from "@/components/timer/GlobalTimer";
+import { NotificationDropdown } from "@/components/notifications/NotificationDropdown";
+import { useRealtimeNotifications } from "@/hooks/useNotifications";
+import { Search } from "lucide-react";
 
 export function AppHeader() {
   const { profile, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  useRealtimeNotifications();
+
   const initials = profile?.full_name
     ? profile.full_name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
     : "U";
@@ -34,10 +39,7 @@ export function AppHeader() {
           {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </Button>
 
-        <Button variant="ghost" size="icon" className="text-muted-foreground relative">
-          <Bell className="h-4 w-4" />
-          <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-accent" />
-        </Button>
+        <NotificationDropdown />
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
