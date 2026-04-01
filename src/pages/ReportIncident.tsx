@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Hexagon, CheckCircle2, Upload, X } from "lucide-react";
+import { Hexagon, CheckCircle2, Upload, X, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,12 +18,15 @@ const SEVERITY_OPTIONS = [
 ];
 
 const CATEGORIES = ["Bug de sistema", "Error de interfaz", "Problema de rendimiento", "Error de datos", "Problema de seguridad", "Otro"];
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 export default function ReportIncident() {
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState<{ ticketCode: string; email: string } | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [fileErrors, setFileErrors] = useState<string[]>([]);
 
   const [form, setForm] = useState({
     project_id: "", reporter_name: "", reported_by_email: "", title: "", description: "",
@@ -49,8 +52,23 @@ export default function ReportIncident() {
   };
 
   const handleFiles = useCallback((newFiles: FileList | File[]) => {
-    const arr = Array.from(newFiles).filter(f => ["image/jpeg", "image/png", "image/gif", "image/webp"].includes(f.type) && f.size <= 10 * 1024 * 1024);
-    const combined = [...files, ...arr].slice(0, 5);
+    const errs: string[] = [];
+    const valid: File[] = [];
+
+    Array.from(newFiles).forEach(f => {
+      if (!ALLOWED_TYPES.includes(f.type)) {
+        errs.push(`"${f.name}" no es un tipo permitido. Solo JPG, PNG, GIF, WEBP.`);
+        return;
+      }
+      if (f.size > MAX_FILE_SIZE) {
+        errs.push(`"${f.name}" supera el límite de 10MB`);
+        return;
+      }
+      valid.push(f);
+    });
+
+    setFileErrors(errs);
+    const combined = [...files, ...valid].slice(0, 5);
     setFiles(combined);
     setPreviews(combined.map(f => URL.createObjectURL(f)));
   }, [files]);
@@ -58,6 +76,7 @@ export default function ReportIncident() {
   const removeFile = (idx: number) => {
     setFiles(p => p.filter((_, i) => i !== idx));
     setPreviews(p => p.filter((_, i) => i !== idx));
+    setFileErrors([]);
   };
 
   const validate = () => {
@@ -78,6 +97,7 @@ export default function ReportIncident() {
     if (!validate()) return;
     setSubmitting(true);
     try {
+      // Step 1: Create incident record FIRST to get ticket_code
       const { data, error } = await supabase.from("incidents").insert({
         project_id: form.project_id,
         title: form.title,
@@ -93,15 +113,26 @@ export default function ReportIncident() {
         version: form.version || null,
         browser_info: form.browser_info || null,
       } as any).select("ticket_code").single();
+
       if (error) throw error;
 
-      // Upload images
+      const ticketCode = data.ticket_code!;
+
+      // Step 2: Upload images using ticket code as folder path
       for (const file of files) {
-        const path = `${data.ticket_code}/${Date.now()}-${file.name}`;
-        await supabase.storage.from("incident-attachments").upload(path, file);
+        // Sanitize filename
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+        const path = `${ticketCode}/${Date.now()}-${safeName}`;
+        const { error: uploadError } = await supabase.storage
+          .from("incident-attachments")
+          .upload(path, file, { contentType: file.type });
+
+        if (uploadError) {
+          console.error("Upload error:", uploadError.message);
+        }
       }
 
-      setSubmitted({ ticketCode: data.ticket_code!, email: form.reported_by_email });
+      setSubmitted({ ticketCode, email: form.reported_by_email });
     } catch (err: any) {
       setErrors({ submit: err.message });
     } finally {
@@ -130,7 +161,7 @@ export default function ReportIncident() {
           </p>
           <div className="flex gap-3 mt-8">
             <Button onClick={() => navigate("/consultar-incidente")} className="bg-primary">Consultar estado de mi reporte</Button>
-            <Button variant="outline" onClick={() => { setSubmitted(null); setForm({ project_id: "", reporter_name: "", reported_by_email: "", title: "", description: "", steps_to_reproduce: "", expected_result: "", actual_result: "", severity: "media", category: "", version: "", browser_info: "" }); setFiles([]); setPreviews([]); setAcceptTerms(false); }}>
+            <Button variant="outline" onClick={() => { setSubmitted(null); setForm({ project_id: "", reporter_name: "", reported_by_email: "", title: "", description: "", steps_to_reproduce: "", expected_result: "", actual_result: "", severity: "media", category: "", version: "", browser_info: "" }); setFiles([]); setPreviews([]); setAcceptTerms(false); setFileErrors([]); }}>
               Reportar otro incidente
             </Button>
           </div>
@@ -150,7 +181,6 @@ export default function ReportIncident() {
         <p className="text-gray-500 text-center mt-1 mb-8">Describe el problema y te contactaremos pronto</p>
 
         <div className="space-y-5">
-          {/* 1. Proyecto */}
           <Field label="Proyecto/Producto afectado" error={errors.project_id} required>
             <Select value={form.project_id} onValueChange={v => set("project_id", v)}>
               <SelectTrigger><SelectValue placeholder="Selecciona el producto afectado" /></SelectTrigger>
@@ -158,44 +188,36 @@ export default function ReportIncident() {
             </Select>
           </Field>
 
-          {/* 2. Nombre */}
           <Field label="Nombre completo" error={errors.reporter_name} required>
             <Input placeholder="Tu nombre completo" value={form.reporter_name} onChange={e => set("reporter_name", e.target.value)} />
           </Field>
 
-          {/* 3. Email */}
           <Field label="Email de contacto" error={errors.reported_by_email} required>
             <Input type="email" placeholder="tu@email.com" value={form.reported_by_email} onChange={e => set("reported_by_email", e.target.value)} />
           </Field>
 
-          {/* 4. Título */}
           <Field label="Título del incidente" error={errors.title} required>
             <Input placeholder="Resumen corto del problema" maxLength={150} value={form.title} onChange={e => set("title", e.target.value)} />
             <span className="text-xs text-gray-400">{form.title.length}/150</span>
           </Field>
 
-          {/* 5. Descripción */}
           <Field label="Descripción detallada" error={errors.description} required>
             <Textarea placeholder="Describe el problema con el mayor detalle posible" value={form.description} onChange={e => set("description", e.target.value)} className="min-h-[120px]" />
             <span className="text-xs text-gray-400">{form.description.length} caracteres (mín. 50)</span>
           </Field>
 
-          {/* 6. Pasos */}
           <Field label="Pasos para reproducir">
             <Textarea placeholder={"1. Ir a la pantalla X\n2. Hacer clic en Y\n3. El error aparece"} value={form.steps_to_reproduce} onChange={e => set("steps_to_reproduce", e.target.value)} />
           </Field>
 
-          {/* 7. Resultado esperado */}
           <Field label="Resultado esperado">
             <Textarea placeholder="¿Qué debería pasar normalmente?" value={form.expected_result} onChange={e => set("expected_result", e.target.value)} />
           </Field>
 
-          {/* 8. Resultado actual */}
           <Field label="Resultado actual">
             <Textarea placeholder="¿Qué está pasando actualmente?" value={form.actual_result} onChange={e => set("actual_result", e.target.value)} />
           </Field>
 
-          {/* 9. Severidad */}
           <Field label="Severidad" required>
             <div className="grid grid-cols-2 gap-3">
               {SEVERITY_OPTIONS.map(s => (
@@ -208,7 +230,6 @@ export default function ReportIncident() {
             </div>
           </Field>
 
-          {/* 10. Categoría */}
           <Field label="Categoría" error={errors.category} required>
             <Select value={form.category} onValueChange={v => set("category", v)}>
               <SelectTrigger><SelectValue placeholder="Selecciona una categoría" /></SelectTrigger>
@@ -216,17 +237,15 @@ export default function ReportIncident() {
             </Select>
           </Field>
 
-          {/* 11. Versión */}
           <Field label="Versión del producto">
             <Input placeholder="ej: v2.1.0" value={form.version} onChange={e => set("version", e.target.value)} />
           </Field>
 
-          {/* 12. Navegador */}
           <Field label="Navegador y dispositivo">
             <Input placeholder="ej: Chrome 120 en Windows 11" value={form.browser_info} onChange={e => set("browser_info", e.target.value)} />
           </Field>
 
-          {/* 13. Capturas */}
+          {/* Capturas de pantalla */}
           <Field label="Capturas de pantalla">
             <div
               className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-gray-400 transition-colors"
@@ -239,12 +258,25 @@ export default function ReportIncident() {
               <p className="text-xs text-gray-400 mt-1">JPG, PNG, GIF, WEBP · Máx 5 imágenes · 10MB c/u</p>
               <input id="file-input" type="file" accept="image/jpeg,image/png,image/gif,image/webp" multiple className="hidden" onChange={e => e.target.files && handleFiles(e.target.files)} />
             </div>
+
+            {/* File validation errors */}
+            {fileErrors.length > 0 && (
+              <div className="mt-2 space-y-1">
+                {fileErrors.map((err, i) => (
+                  <div key={i} className="flex items-center gap-2 text-sm text-red-600">
+                    <AlertCircle className="h-4 w-4 shrink-0" />
+                    <span>{err}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {previews.length > 0 && (
               <div className="flex gap-2 mt-3 flex-wrap">
                 {previews.map((p, i) => (
                   <div key={i} className="relative h-20 w-20 rounded-lg overflow-hidden border">
-                    <img src={p} alt="" className="h-full w-full object-cover" />
-                    <button type="button" onClick={() => removeFile(i)} className="absolute top-0.5 right-0.5 bg-black/60 rounded-full p-0.5">
+                    <img src={p} alt={`Captura ${i + 1}`} className="h-full w-full object-cover" />
+                    <button type="button" onClick={() => removeFile(i)} className="absolute top-0.5 right-0.5 bg-black/60 rounded-full p-0.5" aria-label="Eliminar imagen">
                       <X className="h-3 w-3 text-white" />
                     </button>
                   </div>
@@ -253,7 +285,6 @@ export default function ReportIncident() {
             )}
           </Field>
 
-          {/* 14. Checkbox */}
           <div className="flex items-start gap-2">
             <Checkbox id="terms" checked={acceptTerms} onCheckedChange={v => setAcceptTerms(!!v)} className="mt-0.5" />
             <label htmlFor="terms" className="text-sm text-gray-600 cursor-pointer">
@@ -263,7 +294,7 @@ export default function ReportIncident() {
           {errors.terms && <p className="text-sm text-red-500">{errors.terms}</p>}
           {errors.submit && <p className="text-sm text-red-500">{errors.submit}</p>}
 
-          <Button onClick={handleSubmit} disabled={submitting} className="w-full h-12 text-base font-semibold" style={{ backgroundColor: "#F97316" }}>
+          <Button onClick={handleSubmit} disabled={submitting} className="w-full h-12 text-base font-semibold bg-accent text-accent-foreground hover:bg-accent/90">
             {submitting ? <span className="flex items-center gap-2"><span className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Enviando...</span> : "Enviar Reporte"}
           </Button>
         </div>

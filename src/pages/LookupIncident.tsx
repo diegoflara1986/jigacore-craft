@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Hexagon, Search } from "lucide-react";
+import { Hexagon, Search, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -32,17 +32,39 @@ export default function LookupIncident() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<PublicIncident | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const [attachments, setAttachments] = useState<string[]>([]);
 
   const lookup = async () => {
     if (!code.trim()) return;
     setLoading(true);
     setNotFound(false);
     setResult(null);
+    setAttachments([]);
     try {
       const { data, error } = await supabase.rpc("lookup_incident_public", { p_ticket_code: code.trim().toUpperCase() });
       if (error) throw error;
       if (data && data.length > 0) {
-        setResult(data[0] as PublicIncident);
+        const incident = data[0] as PublicIncident;
+        setResult(incident);
+
+        // Load attachments using signed URLs (bucket is private)
+        const ticketCode = incident.ticket_code;
+        const { data: files } = await supabase.storage
+          .from("incident-attachments")
+          .list(ticketCode, { limit: 10 });
+
+        if (files && files.length > 0) {
+          const signedUrls: string[] = [];
+          for (const file of files) {
+            const { data: signedData } = await supabase.storage
+              .from("incident-attachments")
+              .createSignedUrl(`${ticketCode}/${file.name}`, 3600); // 1 hour expiration
+            if (signedData?.signedUrl) {
+              signedUrls.push(signedData.signedUrl);
+            }
+          }
+          setAttachments(signedUrls);
+        }
       } else {
         setNotFound(true);
       }
@@ -66,8 +88,16 @@ export default function LookupIncident() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex gap-2">
-              <Input placeholder="Ingresa tu código de ticket (ej: INC-2025-001)" value={code} onChange={e => setCode(e.target.value)} onKeyDown={e => e.key === "Enter" && lookup()} />
-              <Button onClick={lookup} disabled={loading}><Search className="h-4 w-4" /></Button>
+              <Input
+                placeholder="Ingresa tu código de ticket (ej: INC-2025-001)"
+                value={code}
+                onChange={e => setCode(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && lookup()}
+                aria-label="Código de ticket"
+              />
+              <Button onClick={lookup} disabled={loading} aria-label="Buscar incidente">
+                <Search className="h-4 w-4" />
+              </Button>
             </div>
 
             {notFound && (
@@ -97,6 +127,22 @@ export default function LookupIncident() {
                     </div>
                   )}
                 </div>
+
+                {/* Attachments with signed URLs */}
+                {attachments.length > 0 && (
+                  <div className="pt-2 border-t">
+                    <p className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
+                      <ImageIcon className="h-4 w-4" /> Adjuntos ({attachments.length})
+                    </p>
+                    <div className="flex gap-2 flex-wrap">
+                      {attachments.map((url, i) => (
+                        <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="block h-20 w-20 rounded-lg overflow-hidden border hover:ring-2 ring-primary transition-all">
+                          <img src={url} alt={`Adjunto ${i + 1}`} className="h-full w-full object-cover" loading="lazy" />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
