@@ -106,7 +106,10 @@ export default function Incidents() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <h1 className="text-2xl font-bold text-foreground">Incidentes</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-foreground">Incidentes</h1>
+        <CreateIncidentButton projects={projects ?? []} onCreated={(id) => setSelectedId(id)} />
+      </div>
 
       {/* Metric cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
