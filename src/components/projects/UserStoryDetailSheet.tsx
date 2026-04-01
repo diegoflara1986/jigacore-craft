@@ -302,7 +302,7 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
                 <div className="space-y-1.5">
                   <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Story Points</Label>
                   <Input type="number" className="h-8 text-xs" value={story.story_points ?? ""}
-                    onChange={(e) => saveField("story_points", e.target.value ? parseInt(e.target.value) : null)} min={0} />
+                    onChange={(e) => !readOnly && saveField("story_points", e.target.value ? parseInt(e.target.value) : null)} min={0} readOnly={readOnly} />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Épica</Label>
