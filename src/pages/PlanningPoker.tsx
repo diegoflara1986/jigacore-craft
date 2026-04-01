@@ -116,22 +116,21 @@ export default function PlanningPoker() {
   };
 
   const handleAcceptPoints = async (points: number) => {
-    if (!session?.current_story_id) return;
-    await updateStory.mutateAsync({ id: session.current_story_id, story_points: points });
-    setStoryEstimations((prev) => ({ ...prev, [session.current_story_id!]: points }));
+    if (!activeStoryId) return;
+    await updateStory.mutateAsync({ id: activeStoryId, story_points: points });
+    setStoryEstimations((prev) => ({ ...prev, [activeStoryId]: points }));
     // Move to next unestimated story
-    const currentIdx = storyIds.indexOf(session.current_story_id);
-    const nextId = storyIds.find((id, i) => i > currentIdx && !storyEstimations[id]);
+    const currentIdx = storyIds.indexOf(activeStoryId);
+    const nextId = storyIds.find((id, i) => i > currentIdx && !storyEstimations[id] && id !== activeStoryId);
     if (nextId) {
-      await updateSession.mutateAsync({ id: session.id, current_story_id: nextId });
+      setActiveStoryId(nextId);
     }
     setRevealed(false);
     setSelectedCard(null);
   };
 
-  const handleSelectStory = async (storyId: string) => {
-    if (!session) return;
-    await updateSession.mutateAsync({ id: session.id, current_story_id: storyId });
+  const handleSelectStory = (storyId: string) => {
+    setActiveStoryId(storyId);
     setRevealed(false);
     setSelectedCard(null);
   };
