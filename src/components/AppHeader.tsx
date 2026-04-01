@@ -1,6 +1,5 @@
-import { Moon, Sun, LogOut } from "lucide-react";
+import { Moon, Sun, LogOut, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
@@ -11,7 +10,6 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { GlobalTimer } from "@/components/timer/GlobalTimer";
 import { NotificationDropdown } from "@/components/notifications/NotificationDropdown";
 import { useRealtimeNotifications } from "@/hooks/useNotifications";
-import { Search } from "lucide-react";
 
 export function AppHeader() {
   const { profile, signOut } = useAuth();
@@ -25,17 +23,22 @@ export function AppHeader() {
   return (
     <header className="h-14 border-b border-border bg-card flex items-center justify-between px-4 gap-4">
       <div className="flex items-center gap-2">
-        <SidebarTrigger />
-        <div className="relative hidden sm:block">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Buscar..." className="pl-9 w-64 h-9 bg-muted/50 border-0" />
-        </div>
+        <SidebarTrigger aria-label="Abrir menú lateral" />
+        <button
+          onClick={() => document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true }))}
+          className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-md bg-muted/50 text-muted-foreground text-sm hover:bg-muted transition-colors cursor-pointer"
+          aria-label="Buscar (Ctrl+K)"
+        >
+          <Search className="h-4 w-4" />
+          <span>Buscar...</span>
+          <kbd className="ml-4 text-[10px] bg-background border border-border rounded px-1.5 py-0.5 font-mono">⌘K</kbd>
+        </button>
       </div>
 
       <div className="flex items-center gap-2">
         <GlobalTimer />
 
-        <Button variant="ghost" size="icon" onClick={toggleTheme} className="text-muted-foreground">
+        <Button variant="ghost" size="icon" onClick={toggleTheme} className="text-muted-foreground" aria-label={theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}>
           {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </Button>
 
@@ -43,7 +46,7 @@ export function AppHeader() {
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-9 gap-2 px-2">
+            <Button variant="ghost" className="h-9 gap-2 px-2" aria-label="Menú de usuario">
               <Avatar className="h-7 w-7">
                 <AvatarFallback className="bg-primary text-primary-foreground text-xs">{initials}</AvatarFallback>
               </Avatar>

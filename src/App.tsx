@@ -4,6 +4,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/lib/auth";
 import { AppLayout } from "@/components/AppLayout";
+import { GlobalSearch } from "@/components/GlobalSearch";
+import { KeyboardShortcuts } from "@/components/KeyboardShortcuts";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -27,6 +29,8 @@ const App = () => (
     <Sonner />
     <BrowserRouter>
       <AuthProvider>
+        <GlobalSearch />
+        <KeyboardShortcuts />
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
