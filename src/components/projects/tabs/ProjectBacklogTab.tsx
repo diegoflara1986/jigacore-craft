@@ -214,9 +214,9 @@ export function ProjectBacklogTab({ projectId }: { projectId: string }) {
                   </TableCell>
                   <TableCell>
                     {s.epics ? (
-                      <Badge variant="outline" className="text-[10px]" style={{ borderColor: s.epics.color || undefined }}>
+                      <span className="text-xs text-foreground truncate block max-w-[120px]" title={s.epics.title}>
                         {s.epics.title}
-                      </Badge>
+                      </span>
                     ) : <span className="text-muted-foreground text-xs">—</span>}
                   </TableCell>
                   <TableCell>

@@ -441,39 +441,51 @@ export function ProjectKanbanTab({ projectId }: Props) {
 
         <div className="flex-1" />
 
-        <Select value={filterAssigned} onValueChange={setFilterAssigned}>
-          <SelectTrigger className="h-8 w-32 text-xs"><SelectValue placeholder="Asignado" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos</SelectItem>
-            {members?.map((m) => <SelectItem key={m.user_id} value={m.user_id}>{m.profiles?.full_name || m.profiles?.email}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={filterEpic} onValueChange={setFilterEpic}>
-          <SelectTrigger className="h-8 w-28 text-xs"><SelectValue placeholder="Épica" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todas</SelectItem>
-            {epics?.map((e) => <SelectItem key={e.id} value={e.id}>{e.title}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={filterPriority} onValueChange={setFilterPriority}>
-          <SelectTrigger className="h-8 w-28 text-xs"><SelectValue placeholder="Prioridad" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todas</SelectItem>
-            <SelectItem value="critical">Crítica</SelectItem>
-            <SelectItem value="high">Alta</SelectItem>
-            <SelectItem value="medium">Media</SelectItem>
-            <SelectItem value="low">Baja</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={filterType} onValueChange={setFilterType}>
-          <SelectTrigger className="h-8 w-24 text-xs"><SelectValue placeholder="Tipo" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos</SelectItem>
-            <SelectItem value="story">Historia</SelectItem>
-            <SelectItem value="bug">Bug</SelectItem>
-            <SelectItem value="technical">Técnica</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="space-y-0.5">
+          <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Asignado</span>
+          <Select value={filterAssigned} onValueChange={setFilterAssigned}>
+            <SelectTrigger className="h-8 w-32 text-xs"><SelectValue placeholder="Asignado" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              {members?.map((m) => <SelectItem key={m.user_id} value={m.user_id}>{m.profiles?.full_name || m.profiles?.email}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-0.5">
+          <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Épica</span>
+          <Select value={filterEpic} onValueChange={setFilterEpic}>
+            <SelectTrigger className="h-8 w-28 text-xs"><SelectValue placeholder="Épica" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas</SelectItem>
+              {epics?.map((e) => <SelectItem key={e.id} value={e.id}>{e.title}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-0.5">
+          <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Prioridad</span>
+          <Select value={filterPriority} onValueChange={setFilterPriority}>
+            <SelectTrigger className="h-8 w-28 text-xs"><SelectValue placeholder="Prioridad" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas</SelectItem>
+              <SelectItem value="critical">Crítica</SelectItem>
+              <SelectItem value="high">Alta</SelectItem>
+              <SelectItem value="medium">Media</SelectItem>
+              <SelectItem value="low">Baja</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-0.5">
+          <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Tipo</span>
+          <Select value={filterType} onValueChange={setFilterType}>
+            <SelectTrigger className="h-8 w-24 text-xs"><SelectValue placeholder="Tipo" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="story">Historia</SelectItem>
+              <SelectItem value="bug">Bug</SelectItem>
+              <SelectItem value="technical">Técnica</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
         {viewMode === "board" && (
           <Select value={groupBy} onValueChange={(v) => setGroupBy(v as any)}>

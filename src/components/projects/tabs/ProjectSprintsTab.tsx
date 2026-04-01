@@ -106,7 +106,7 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
 
   const activeSprint = sprints?.find((s) => s.status === "active");
   const otherSprints = sprints?.filter((s) => s.status !== "active") ?? [];
-  const unassignedStories = backlogStories?.filter((s) => !s.sprint_id || s.sprint_id === editSprint?.id) ?? [];
+  const unassignedStories = backlogStories?.filter((s) => (!s.sprint_id || s.sprint_id === editSprint?.id) && !s.deleted_at && s.story_points != null && s.story_points > 0) ?? [];
 
   const openCreate = () => {
     const nextNum = (sprints?.length ?? 0) + 1;
