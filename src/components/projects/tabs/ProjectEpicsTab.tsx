@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useEpics, useCreateEpic, useUpdateEpic, useDeleteEpic, EpicWithProgress } from "@/hooks/useEpics";
+import { usePermissions } from "@/hooks/usePermissions";
+import { PermissionDeniedDialog } from "@/components/PermissionDeniedDialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -45,6 +47,7 @@ export function ProjectEpicsTab({ projectId }: { projectId: string }) {
   const createEpic = useCreateEpic();
   const updateEpic = useUpdateEpic();
   const deleteEpic = useDeleteEpic();
+  const { guardAction, denied, closeDenied } = usePermissions(projectId);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingEpic, setEditingEpic] = useState<EpicWithProgress | null>(null);
@@ -93,7 +96,7 @@ export function ProjectEpicsTab({ projectId }: { projectId: string }) {
     <div className="mt-4 space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-medium text-muted-foreground">{epics?.length ?? 0} épicas</h3>
-        <Button size="sm" onClick={openCreate}><Plus className="h-4 w-4 mr-1" />Nueva Épica</Button>
+        <Button size="sm" onClick={() => guardAction("lead", "crear una épica", openCreate)}><Plus className="h-4 w-4 mr-1" />Nueva Épica</Button>
       </div>
 
       {!epics?.length ? (
@@ -133,8 +136,8 @@ export function ProjectEpicsTab({ projectId }: { projectId: string }) {
                           <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0"><MoreHorizontal className="h-4 w-4" /></Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => openEdit(e)}><Pencil className="h-3.5 w-3.5 mr-2" />Editar</DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive" onClick={() => deleteEpic.mutate({ id: e.id, projectId })}>
+                          <DropdownMenuItem onClick={() => guardAction("lead", "editar una épica", () => openEdit(e))}><Pencil className="h-3.5 w-3.5 mr-2" />Editar</DropdownMenuItem>
+                          <DropdownMenuItem className="text-destructive" onClick={() => guardAction("management", "eliminar una épica", () => deleteEpic.mutate({ id: e.id, projectId }))}>
                             <Trash2 className="h-3.5 w-3.5 mr-2" />Eliminar
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -208,6 +211,7 @@ export function ProjectEpicsTab({ projectId }: { projectId: string }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <PermissionDeniedDialog open={denied.open} onOpenChange={closeDenied} actionLabel={denied.actionLabel} requiredRoleLabel={denied.requiredRoleLabel} allowedMembers={denied.allowedMembers} />
     </div>
   );
 }

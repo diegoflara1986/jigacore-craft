@@ -3,6 +3,8 @@ import { useSprintsWithStats, useCreateSprint, useUpdateSprint, SprintWithStats 
 import { useUserStories, useUpdateUserStory, useCreateUserStory } from "@/hooks/useUserStories";
 import { useEpics } from "@/hooks/useEpics";
 import { useProjectMembers } from "@/hooks/useProjects";
+import { usePermissions } from "@/hooks/usePermissions";
+import { PermissionDeniedDialog } from "@/components/PermissionDeniedDialog";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -45,6 +47,7 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
   const updateSprint = useUpdateSprint();
   const updateStory = useUpdateUserStory();
   const createStory = useCreateUserStory();
+  const { guardAction, denied, closeDenied } = usePermissions(projectId);
 
   const { data: sprintsList } = useQuery({
     queryKey: ["sprints-list", projectId],
@@ -220,10 +223,10 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
             <div className="flex gap-1.5">
               {sprint.status === "planning" && (
                 <>
-                  <Button size="sm" variant="ghost" onClick={() => openEdit(sprint)}>
+                  <Button size="sm" variant="ghost" onClick={() => guardAction("lead", "editar un sprint", () => openEdit(sprint))}>
                     <Pencil className="h-3.5 w-3.5 mr-1" />Editar
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => setStartConfirm(sprint)}>
+                  <Button size="sm" variant="outline" onClick={() => guardAction("lead", "iniciar un sprint", () => setStartConfirm(sprint))}>
                     <Play className="h-3.5 w-3.5 mr-1" />Iniciar
                   </Button>
                 </>
@@ -235,7 +238,7 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
                       <LayoutDashboard className="h-3.5 w-3.5 mr-1" />Ver Tablero
                     </Button>
                   )}
-                  <Button size="sm" onClick={() => setCompleteReview(sprint)}>
+                  <Button size="sm" onClick={() => guardAction("lead", "completar un sprint", () => setCompleteReview(sprint))}>
                     <CheckCircle2 className="h-3.5 w-3.5 mr-1" />Completar
                   </Button>
                 </>
@@ -285,7 +288,7 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
           <Button size="sm" variant="outline" onClick={() => setPlanningPokerOpen(true)}>
             <Users className="h-4 w-4 mr-1" />Planning Poker
           </Button>
-          <Button size="sm" onClick={openCreate}><Plus className="h-4 w-4 mr-1" />Nuevo Sprint</Button>
+          <Button size="sm" onClick={() => guardAction("lead", "crear un sprint", openCreate)}><Plus className="h-4 w-4 mr-1" />Nuevo Sprint</Button>
         </div>
       </div>
 
@@ -638,6 +641,7 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
       </Dialog>
 
       <PlanningPokerModal projectId={projectId} open={planningPokerOpen} onOpenChange={setPlanningPokerOpen} />
+      <PermissionDeniedDialog open={denied.open} onOpenChange={closeDenied} actionLabel={denied.actionLabel} requiredRoleLabel={denied.requiredRoleLabel} allowedMembers={denied.allowedMembers} />
     </div>
   );
 }

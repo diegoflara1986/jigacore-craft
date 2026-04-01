@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { ProjectMember, useAddProjectMember, useRemoveProjectMember } from "@/hooks/useProjects";
+import { usePermissions } from "@/hooks/usePermissions";
+import { PermissionDeniedDialog } from "@/components/PermissionDeniedDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -20,6 +22,7 @@ export function ProjectTeamTab({ projectId, members }: { projectId: string; memb
   const [userSearch, setUserSearch] = useState("");
   const addMember = useAddProjectMember();
   const removeMember = useRemoveProjectMember();
+  const { guardAction, denied, closeDenied } = usePermissions(projectId);
 
   const { data: workspaceUsers } = useQuery({
     queryKey: ["workspace-users"],
@@ -51,7 +54,7 @@ export function ProjectTeamTab({ projectId, members }: { projectId: string; memb
       <Card className="border-border">
         <CardHeader className="flex flex-row items-center justify-between pb-3">
           <CardTitle className="text-base">Equipo del Proyecto</CardTitle>
-          <Button size="sm" onClick={() => setAddOpen(true)} className="bg-accent text-accent-foreground hover:bg-accent/90">
+          <Button size="sm" onClick={() => guardAction("management", "agregar un miembro al proyecto", () => setAddOpen(true))} className="bg-accent text-accent-foreground hover:bg-accent/90">
             <Plus className="h-4 w-4 mr-1" />Agregar Miembro
           </Button>
         </CardHeader>
@@ -74,7 +77,7 @@ export function ProjectTeamTab({ projectId, members }: { projectId: string; memb
                   <div className="flex items-center gap-3">
                     <span className="text-xs px-2 py-1 bg-muted rounded-md text-muted-foreground capitalize">{m.project_role.replace("_", " ")}</span>
                     <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive"
-                      onClick={() => removeMember.mutate({ id: m.id, project_id: projectId })}>
+                      onClick={() => guardAction("management", "remover un miembro del proyecto", () => removeMember.mutate({ id: m.id, project_id: projectId }))}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -124,6 +127,7 @@ export function ProjectTeamTab({ projectId, members }: { projectId: string; memb
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <PermissionDeniedDialog open={denied.open} onOpenChange={closeDenied} actionLabel={denied.actionLabel} requiredRoleLabel={denied.requiredRoleLabel} allowedMembers={denied.allowedMembers} />
     </div>
   );
 }

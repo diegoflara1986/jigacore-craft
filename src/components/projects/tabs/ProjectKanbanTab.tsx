@@ -1,5 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useUserStories, useUpdateUserStory, useCreateUserStory, UserStory } from "@/hooks/useUserStories";
+import { usePermissions } from "@/hooks/usePermissions";
+import { PermissionDeniedDialog } from "@/components/PermissionDeniedDialog";
 import { useSprintsWithStats } from "@/hooks/useSprints";
 import { useEpics } from "@/hooks/useEpics";
 import { useProjectMembers } from "@/hooks/useProjects";
@@ -50,6 +52,7 @@ export function ProjectKanbanTab({ projectId }: Props) {
   const { data: members } = useProjectMembers(projectId);
   const updateStory = useUpdateUserStory();
   const createStory = useCreateUserStory();
+  const { guardAction, denied, closeDenied } = usePermissions(projectId);
 
   const activeSprint = sprints?.find((s) => s.status === "active");
   const [selectedSprintId, setSelectedSprintId] = useState<string | undefined>(undefined);
@@ -260,7 +263,7 @@ export function ProjectKanbanTab({ projectId }: Props) {
               {colStories.length}{col.limit > 0 ? `/${col.limit}` : ""}
             </span>
           </div>
-          <Button size="icon" variant="ghost" className="h-5 w-5" onClick={() => { setQuickAddCol(col.id); setQuickAddTitle(""); }}>
+          <Button size="icon" variant="ghost" className="h-5 w-5" onClick={() => guardAction("team", "agregar una historia al tablero", () => { setQuickAddCol(col.id); setQuickAddTitle(""); })}>
             <Plus className="h-3 w-3" />
           </Button>
         </div>
@@ -531,6 +534,7 @@ export function ProjectKanbanTab({ projectId }: Props) {
         epics={epics ?? []}
         members={members ?? []}
       />
+      <PermissionDeniedDialog open={denied.open} onOpenChange={closeDenied} actionLabel={denied.actionLabel} requiredRoleLabel={denied.requiredRoleLabel} allowedMembers={denied.allowedMembers} />
     </div>
   );
 }

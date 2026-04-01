@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useUserStories, useCreateUserStory, useUpdateUserStory, UserStory } from "@/hooks/useUserStories";
+import { usePermissions } from "@/hooks/usePermissions";
+import { PermissionDeniedDialog } from "@/components/PermissionDeniedDialog";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEpics } from "@/hooks/useEpics";
@@ -54,6 +56,7 @@ export function ProjectBacklogTab({ projectId }: { projectId: string }) {
   const { data: members } = useProjectMembers(projectId);
   const createStory = useCreateUserStory();
   const updateStory = useUpdateUserStory();
+  const { guardAction, denied, closeDenied } = usePermissions(projectId);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [planningPokerOpen, setPlanningPokerOpen] = useState(false);
@@ -104,8 +107,8 @@ export function ProjectBacklogTab({ projectId }: { projectId: string }) {
       {/* Actions */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2 flex-wrap">
-          <Button size="sm" onClick={() => setCreateOpen(true)}><Plus className="h-4 w-4 mr-1" />Agregar HU</Button>
-          <Button size="sm" variant="outline" onClick={() => setPlanningPokerOpen(true)}>
+          <Button size="sm" onClick={() => guardAction("team", "crear una historia de usuario", () => setCreateOpen(true))}><Plus className="h-4 w-4 mr-1" />Agregar HU</Button>
+          <Button size="sm" variant="outline" onClick={() => guardAction("team", "iniciar Planning Poker", () => setPlanningPokerOpen(true))}>
             <Users className="h-4 w-4 mr-1" />Planning Poker
           </Button>
         </div>
@@ -358,6 +361,7 @@ export function ProjectBacklogTab({ projectId }: { projectId: string }) {
       />
 
       <PlanningPokerModal projectId={projectId} open={planningPokerOpen} onOpenChange={setPlanningPokerOpen} />
+      <PermissionDeniedDialog open={denied.open} onOpenChange={closeDenied} actionLabel={denied.actionLabel} requiredRoleLabel={denied.requiredRoleLabel} allowedMembers={denied.allowedMembers} />
     </div>
   );
 }
