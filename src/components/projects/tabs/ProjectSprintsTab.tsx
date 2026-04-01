@@ -80,7 +80,8 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
   const [editSprint, setEditSprint] = useState<SprintWithStats | null>(null);
   const [startConfirm, setStartConfirm] = useState<SprintWithStats | null>(null);
   const [completeReview, setCompleteReview] = useState<SprintWithStats | null>(null);
-  const [newSprint, setNewSprint] = useState({ name: "", goal: "", start_date: undefined as Date | undefined, end_date: undefined as Date | undefined, capacity: "" });
+  const [incompleteHandled, setIncompleteHandled] = useState(false);
+  const [newSprint, setNewSprint] = useState({ name: "", goal: "", start_date: undefined as Date | undefined, end_date: undefined as Date | undefined });
   const [selectedBacklogIds, setSelectedBacklogIds] = useState<string[]>([]);
   const [createHUOpen, setCreateHUOpen] = useState(false);
   const [planningPokerOpen, setPlanningPokerOpen] = useState(false);
