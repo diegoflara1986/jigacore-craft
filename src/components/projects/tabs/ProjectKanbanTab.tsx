@@ -47,7 +47,7 @@ interface Props {
   isArchived?: boolean;
 }
 
-export function ProjectKanbanTab({ projectId }: Props) {
+export function ProjectKanbanTab({ projectId, isArchived = false }: Props) {
   const { data: sprints } = useSprintsWithStats(projectId);
   const { data: epics } = useEpics(projectId);
   const { data: members } = useProjectMembers(projectId);
