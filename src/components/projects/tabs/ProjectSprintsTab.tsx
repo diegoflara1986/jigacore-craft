@@ -222,7 +222,7 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
               )}
             </div>
             <div className="flex gap-1.5">
-              {sprint.status === "planning" && (
+              {sprint.status === "planning" && !isArchived && (
                 <>
                   <Button size="sm" variant="ghost" onClick={() => guardAction("lead", "editar un sprint", () => openEdit(sprint))}>
                     <Pencil className="h-3.5 w-3.5 mr-1" />Editar
@@ -239,9 +239,11 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
                       <LayoutDashboard className="h-3.5 w-3.5 mr-1" />Ver Tablero
                     </Button>
                   )}
-                  <Button size="sm" onClick={() => guardAction("lead", "completar un sprint", () => setCompleteReview(sprint))}>
-                    <CheckCircle2 className="h-3.5 w-3.5 mr-1" />Completar
-                  </Button>
+                  {!isArchived && (
+                    <Button size="sm" onClick={() => guardAction("lead", "completar un sprint", () => setCompleteReview(sprint))}>
+                      <CheckCircle2 className="h-3.5 w-3.5 mr-1" />Completar
+                    </Button>
+                  )}
                 </>
               )}
             </div>
