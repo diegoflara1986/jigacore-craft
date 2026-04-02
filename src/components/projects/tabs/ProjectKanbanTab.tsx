@@ -130,9 +130,10 @@ export function ProjectKanbanTab({ projectId, isArchived = false }: Props) {
   const daysLeft = selectedSprint?.end_date ? Math.max(0, Math.ceil((new Date(selectedSprint.end_date).getTime() - Date.now()) / 86400000)) : null;
 
   const handleDragStart = useCallback((e: React.DragEvent, id: string) => {
+    if (isArchived) { e.preventDefault(); return; }
     e.dataTransfer.setData("text/plain", id);
     setDraggedId(id);
-  }, []);
+  }, [isArchived]);
 
   const handleDragOver = useCallback((e: React.DragEvent, colId: string) => {
     e.preventDefault();
