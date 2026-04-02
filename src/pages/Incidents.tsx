@@ -257,7 +257,7 @@ function CreateIncidentButton({ projects, onCreated }: { projects: { id: string;
   const { data: permConfigs } = useQuery({
     queryKey: ["incident-permission-configs"],
     queryFn: async () => {
-      const { data } = await supabase.from("incident_permission_configs" as any).select("*");
+      const { data } = await (supabase as any).from("incident_permission_configs").select("*");
       return (data ?? []) as { role: string; can_create: boolean }[];
     },
   });
