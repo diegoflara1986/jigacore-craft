@@ -39,7 +39,7 @@ interface Props {
   isArchived?: boolean;
 }
 
-export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
+export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = false }: Props) {
   const { data: sprints, isLoading } = useSprintsWithStats(projectId);
   const { data: backlogStories } = useUserStories(projectId, { status: undefined });
   const { data: epics } = useEpics(projectId);
