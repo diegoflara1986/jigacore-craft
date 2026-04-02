@@ -11,6 +11,7 @@ import { SettingsRoles } from "@/components/settings/SettingsRoles";
 import { SettingsSLA } from "@/components/settings/SettingsSLA";
 import { SettingsIntegrations } from "@/components/settings/SettingsIntegrations";
 import { SettingsAudit } from "@/components/settings/SettingsAudit";
+import { SettingsIncidentPermissions } from "@/components/settings/SettingsIncidentPermissions";
 
 type Section = "profile" | "notifications" | "appearance" | "workspace" | "users" | "roles" | "sla" | "integrations" | "audit";
 
