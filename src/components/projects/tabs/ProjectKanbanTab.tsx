@@ -271,7 +271,6 @@ export function ProjectKanbanTab({ projectId, isArchived = false }: Props) {
               <Plus className="h-3 w-3" />
             </Button>
           )}
-          </Button>
         </div>
         {quickAddCol === col.id && (
           <div className="mb-2 flex gap-1">
