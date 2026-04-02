@@ -270,7 +270,7 @@ export function ProjectBacklogTab({ projectId, estimationOnly = false, isArchive
                       }}
                       min={0}
                       max={50}
-                      disabled={isStoryReadOnly(s)}
+                      disabled={isStoryReadOnly(s) || isArchived}
                     />
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">{s.sprints?.name ?? "—"}</TableCell>
