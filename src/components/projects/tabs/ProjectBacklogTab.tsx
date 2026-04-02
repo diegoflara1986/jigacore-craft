@@ -15,10 +15,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, Users, Trash2 } from "lucide-react";
+import { Plus, Search, Users, Trash2, PlayCircle, ArrowRight } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { UserStoryDetailSheet } from "../UserStoryDetailSheet";
 import { PlanningPokerModal } from "../PlanningPokerModal";
+import { useAuth } from "@/lib/auth";
+import { useNavigate } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const TYPES = [
   { value: "story", label: "Historia", icon: "📖" },
@@ -63,11 +66,28 @@ export function ProjectBacklogTab({ projectId, estimationOnly = false, isArchive
   const createStory = useCreateUserStory();
   const updateStory = useUpdateUserStory();
   const { guardAction, denied, closeDenied } = usePermissions(projectId);
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   const [createOpen, setCreateOpen] = useState(false);
   const [planningPokerOpen, setPlanningPokerOpen] = useState(false);
   const [selectedStoryId, setSelectedStoryId] = useState<string | null>(null);
   const [newStory, setNewStory] = useState({ title: "", description: "", type: "story", priority: "medium", status: "backlog", story_points: "", epic_id: "", assigned_to: "", sprint_id: "" });
+
+  // Active estimation sessions for this project
+  const { data: activeSessions } = useQuery({
+    queryKey: ["active-estimation-sessions", projectId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).from("estimation_sessions")
+        .select("*, participants:estimation_session_participants(user_id, is_online, profiles:user_id(id, full_name, avatar_url))")
+        .eq("project_id", projectId)
+        .eq("status", "active")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!projectId,
+  });
 
   // Sprints (include status for read-only logic)
   const { data: sprints } = useQuery({
@@ -108,8 +128,70 @@ export function ProjectBacklogTab({ projectId, estimationOnly = false, isArchive
 
   const initials = (name: string | null) => name ? name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() : "?";
 
+  // Filter sessions where current user is a participant
+  const myActiveSessions = (activeSessions ?? []).filter((s: any) =>
+    s.participants?.some((p: any) => p.user_id === user?.id) || s.created_by === user?.id
+  );
+
   return (
     <div className="mt-4 space-y-4">
+      {/* Active Planning Poker Sessions */}
+      {estimationOnly && myActiveSessions.length > 0 && (
+        <Card className="border-primary/20 bg-primary/5">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <PlayCircle className="h-4 w-4 text-primary" />
+              Sesiones Activas de Planning Poker
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {myActiveSessions.map((session: any) => {
+              const isModerator = session.created_by === user?.id;
+              const onlineCount = session.participants?.filter((p: any) => p.is_online).length ?? 0;
+              const totalParticipants = session.participants?.length ?? 0;
+              return (
+                <div key={session.id} className="flex items-center justify-between gap-3 p-3 rounded-lg border border-border bg-background">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{session.name}</p>
+                    <div className="flex items-center gap-3 mt-1">
+                      <span className="text-xs text-muted-foreground">
+                        {isModerator ? "🎯 Moderador" : "🃏 Participante"}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {onlineCount}/{totalParticipants} conectados
+                      </span>
+                    </div>
+                    {/* Participant avatars */}
+                    <div className="flex items-center gap-1 mt-1.5">
+                      {(session.participants ?? []).slice(0, 6).map((p: any) => (
+                        <div key={p.user_id} className="relative">
+                          <Avatar className="h-6 w-6">
+                            <AvatarFallback className="text-[9px] bg-muted">
+                              {initials(p.profiles?.full_name ?? null)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className={`absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full border border-background ${p.is_online ? "bg-green-500 animate-pulse" : "bg-muted-foreground/40"}`} />
+                        </div>
+                      ))}
+                      {(session.participants?.length ?? 0) > 6 && (
+                        <span className="text-[10px] text-muted-foreground ml-1">+{session.participants.length - 6}</span>
+                      )}
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={() => navigate(`/proyectos/${projectId}/planning-poker/${session.id}`)}
+                    disabled={isArchived}
+                  >
+                    {isModerator ? "Continuar sesión" : "Unirse a votar"}
+                    <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                  </Button>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+      )}
       {/* Actions */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2 flex-wrap">
