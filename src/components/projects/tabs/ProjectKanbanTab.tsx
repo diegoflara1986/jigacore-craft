@@ -44,6 +44,7 @@ const PRIORITY_LABELS: Record<string, string> = {
 
 interface Props {
   projectId: string;
+  isArchived?: boolean;
 }
 
 export function ProjectKanbanTab({ projectId }: Props) {
