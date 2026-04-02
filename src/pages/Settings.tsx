@@ -13,7 +13,7 @@ import { SettingsIntegrations } from "@/components/settings/SettingsIntegrations
 import { SettingsAudit } from "@/components/settings/SettingsAudit";
 import { SettingsIncidentPermissions } from "@/components/settings/SettingsIncidentPermissions";
 
-type Section = "profile" | "notifications" | "appearance" | "workspace" | "users" | "roles" | "sla" | "integrations" | "audit";
+type Section = "profile" | "notifications" | "appearance" | "workspace" | "users" | "roles" | "sla" | "incident_perms" | "integrations" | "audit";
 
 const PERSONAL_ITEMS = [
   { id: "profile" as Section, label: "Mi Perfil", icon: User },
