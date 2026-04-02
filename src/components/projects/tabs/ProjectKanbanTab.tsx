@@ -145,6 +145,7 @@ export function ProjectKanbanTab({ projectId, isArchived = false }: Props) {
   }, []);
 
   const handleDrop = useCallback(async (e: React.DragEvent, newStatus: string) => {
+    if (isArchived) return;
     e.preventDefault();
     const storyId = e.dataTransfer.getData("text/plain");
     setDraggedId(null);
