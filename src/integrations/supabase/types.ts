@@ -579,6 +579,61 @@ export type Database = {
           },
         ]
       }
+      incident_attachments: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_size: number | null
+          file_type: string
+          file_url: string
+          id: string
+          incident_id: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_size?: number | null
+          file_type?: string
+          file_url: string
+          id?: string
+          incident_id: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_size?: number | null
+          file_type?: string
+          file_url?: string
+          id?: string
+          incident_id?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incident_attachments_incident_id_fkey"
+            columns: ["incident_id"]
+            isOneToOne: false
+            referencedRelation: "incidents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incident_attachments_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incident_attachments_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_safe_view"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       incident_history: {
         Row: {
           created_at: string
@@ -682,21 +737,27 @@ export type Database = {
       }
       incident_permission_configs: {
         Row: {
+          can_close: boolean
           can_create: boolean
+          can_manage: boolean
           created_at: string
           id: string
           role: string
           workspace_id: string
         }
         Insert: {
+          can_close?: boolean
           can_create?: boolean
+          can_manage?: boolean
           created_at?: string
           id?: string
           role: string
           workspace_id: string
         }
         Update: {
+          can_close?: boolean
           can_create?: boolean
+          can_manage?: boolean
           created_at?: string
           id?: string
           role?: string
@@ -718,17 +779,25 @@ export type Database = {
           assigned_to: string | null
           browser_info: string | null
           category: string | null
+          closed_at: string | null
           created_at: string
+          created_by: string | null
           description: string | null
           expected_result: string | null
           id: string
+          is_requirement: boolean
           linked_user_story_id: string | null
           project_id: string
           reported_by_email: string | null
           reporter_name: string | null
-          severity: string
+          resolution_date: string | null
+          resolved_at: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          severity: string | null
           status: string
           steps_to_reproduce: string | null
+          suspension_reason: string | null
           ticket_code: string | null
           title: string
           updated_at: string | null
@@ -739,17 +808,25 @@ export type Database = {
           assigned_to?: string | null
           browser_info?: string | null
           category?: string | null
+          closed_at?: string | null
           created_at?: string
+          created_by?: string | null
           description?: string | null
           expected_result?: string | null
           id?: string
+          is_requirement?: boolean
           linked_user_story_id?: string | null
           project_id: string
           reported_by_email?: string | null
           reporter_name?: string | null
-          severity?: string
+          resolution_date?: string | null
+          resolved_at?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          severity?: string | null
           status?: string
           steps_to_reproduce?: string | null
+          suspension_reason?: string | null
           ticket_code?: string | null
           title: string
           updated_at?: string | null
@@ -760,17 +837,25 @@ export type Database = {
           assigned_to?: string | null
           browser_info?: string | null
           category?: string | null
+          closed_at?: string | null
           created_at?: string
+          created_by?: string | null
           description?: string | null
           expected_result?: string | null
           id?: string
+          is_requirement?: boolean
           linked_user_story_id?: string | null
           project_id?: string
           reported_by_email?: string | null
           reporter_name?: string | null
-          severity?: string
+          resolution_date?: string | null
+          resolved_at?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          severity?: string | null
           status?: string
           steps_to_reproduce?: string | null
+          suspension_reason?: string | null
           ticket_code?: string | null
           title?: string
           updated_at?: string | null
@@ -792,6 +877,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "incidents_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incidents_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_safe_view"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "incidents_linked_user_story_id_fkey"
             columns: ["linked_user_story_id"]
             isOneToOne: false
@@ -803,6 +902,20 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incidents_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incidents_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_safe_view"
             referencedColumns: ["id"]
           },
         ]
