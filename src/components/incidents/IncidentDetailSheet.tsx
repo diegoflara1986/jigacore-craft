@@ -5,28 +5,23 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { useIncident, useUpdateIncident, useIncidentNotes, useCreateIncidentNote, useIncidentHistory, useCreateIncidentHistory } from "@/hooks/useIncidents";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  useIncident, useUpdateIncident, useIncidentNotes, useCreateIncidentNote,
+  useIncidentHistory, useCreateIncidentHistory, useIncidentAttachments, useSlaConfigs,
+  STATUSES, SEVERITIES, STATUS_TRANSITIONS,
+  getStatusInfo, getSeverityInfo, getCategoryLabel,
+} from "@/hooks/useIncidents";
 import { useAuth } from "@/lib/auth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { X, Send, ArrowRight, Link2 } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-
-const STATUSES = ["nuevo", "asignado", "en revisión", "en desarrollo", "en qa", "resuelto", "cerrado"];
-const STATUS_COLORS: Record<string, string> = {
-  nuevo: "bg-gray-200 text-gray-800", asignado: "bg-blue-100 text-blue-800",
-  "en revisión": "bg-yellow-100 text-yellow-800", "en desarrollo": "bg-orange-100 text-orange-800",
-  "en qa": "bg-purple-100 text-purple-800", resuelto: "bg-green-100 text-green-800",
-  cerrado: "bg-gray-400 text-white",
-};
-const SEV_COLORS: Record<string, string> = {
-  critica: "bg-red-100 text-red-800", alta: "bg-orange-100 text-orange-800",
-  media: "bg-yellow-100 text-yellow-800", baja: "bg-green-100 text-green-800",
-};
+import { X, Send, ArrowRight, Link2, Download, Calendar, FileText, Image as ImageIcon } from "lucide-react";
 
 function timeAgo(date: string) {
   const diff = Date.now() - new Date(date).getTime();
@@ -37,41 +32,43 @@ function timeAgo(date: string) {
   return `hace ${Math.floor(hrs / 24)}d`;
 }
 
-export function IncidentDetailSheet({ incidentId, onClose }: { incidentId: string | null; onClose: () => void }) {
-  const { profile } = useAuth();
+interface Props {
+  incidentId: string | null;
+  onClose: () => void;
+  canManage: boolean;
+  canClose: boolean;
+}
+
+export function IncidentDetailSheet({ incidentId, onClose, canManage, canClose }: Props) {
+  const { profile, user } = useAuth();
+  const qc = useQueryClient();
   const { data: incident } = useIncident(incidentId ?? undefined);
   const updateIncident = useUpdateIncident();
   const { data: notes } = useIncidentNotes(incidentId ?? undefined);
   const createNote = useCreateIncidentNote();
   const { data: history } = useIncidentHistory(incidentId ?? undefined);
   const createHistory = useCreateIncidentHistory();
-  const qc = useQueryClient();
+  const { data: attachments } = useIncidentAttachments(incidentId ?? undefined);
+  const { data: slaConfigs } = useSlaConfigs();
 
   const [noteText, setNoteText] = useState("");
-  const [noteTab, setNoteTab] = useState("internal");
+  const [noteTab, setNoteTab] = useState("conversation");
+  const [suspendReason, setSuspendReason] = useState("");
+  const [showSuspendDialog, setShowSuspendDialog] = useState(false);
+  const [pendingStatus, setPendingStatus] = useState("");
   const [showLinkDialog, setShowLinkDialog] = useState(false);
   const [storySearch, setStorySearch] = useState("");
 
   const { data: members } = useQuery({
-    queryKey: ["workspace-members-detail"],
+    queryKey: ["project-members-detail", incident?.project_id],
     queryFn: async () => {
-      const { data } = await supabase.from("profiles_safe_view").select("id, full_name, email, avatar_url");
+      if (!incident?.project_id) return [];
+      const { data } = await supabase.from("project_members")
+        .select("user_id, project_role, profiles:profiles(id, full_name, email, avatar_url, role)")
+        .eq("project_id", incident.project_id);
       return data ?? [];
     },
-    enabled: !!incidentId,
-  });
-
-  const { data: attachments } = useQuery({
-    queryKey: ["incident-attachments", incident?.ticket_code],
-    queryFn: async () => {
-      if (!incident?.ticket_code) return [];
-      const { data } = await supabase.storage.from("incident-attachments").list(incident.ticket_code);
-      return (data ?? []).map(f => ({
-        name: f.name,
-        url: supabase.storage.from("incident-attachments").getPublicUrl(`${incident.ticket_code}/${f.name}`).data.publicUrl,
-      }));
-    },
-    enabled: !!incident?.ticket_code,
+    enabled: !!incident?.project_id,
   });
 
   const { data: stories } = useQuery({
@@ -88,17 +85,114 @@ export function IncidentDetailSheet({ incidentId, onClose }: { incidentId: strin
 
   if (!incident) return null;
 
-  const changeField = async (field: string, value: string | null) => {
+  const statusInfo = getStatusInfo(incident.status);
+  const sevInfo = getSeverityInfo(incident.severity);
+  const allowedTransitions = STATUS_TRANSITIONS[incident.status] ?? [];
+
+  const changeField = async (field: string, value: any) => {
     const oldValue = (incident as any)[field];
     await updateIncident.mutateAsync({ id: incident.id, [field]: value } as any);
     if (profile) {
-      createHistory.mutate({ incident_id: incident.id, user_id: profile.id, field_name: field, old_value: oldValue ?? null, new_value: value });
+      createHistory.mutate({ incident_id: incident.id, user_id: profile.id, field_name: field, old_value: String(oldValue ?? ""), new_value: String(value ?? "") });
+    }
+  };
+
+  const handleStatusChange = async (newStatus: string) => {
+    if (newStatus === "suspendido") {
+      setPendingStatus(newStatus);
+      setShowSuspendDialog(true);
+      return;
+    }
+    if (newStatus === "cerrado" && !canClose) {
+      toast({ title: "No tienes permiso para cerrar incidentes", variant: "destructive" });
+      return;
+    }
+
+    const updates: any = { status: newStatus };
+    if (newStatus === "cerrado") updates.closed_at = new Date().toISOString();
+    if (newStatus === "revision" && !incident.reviewed_by) {
+      updates.reviewed_by = user?.id;
+      updates.reviewed_at = new Date().toISOString();
+    }
+
+    await updateIncident.mutateAsync({ id: incident.id, ...updates });
+    if (profile) {
+      createHistory.mutate({ incident_id: incident.id, user_id: profile.id, field_name: "status", old_value: incident.status, new_value: newStatus });
+    }
+
+    // Notify creator on status changes
+    if (incident.created_by && incident.created_by !== user?.id) {
+      const statusLabel = STATUSES.find(s => s.value === newStatus)?.label ?? newStatus;
+      await supabase.from("notifications").insert({
+        user_id: incident.created_by,
+        title: newStatus === "listo_para_cerrar" ? "✅ Tu incidente está listo para cerrar" : `Estado actualizado: ${statusLabel}`,
+        message: `Incidente ${incident.ticket_code}: ${incident.title}`,
+        type: "incident",
+        reference_id: incident.id,
+        reference_type: "incident",
+      });
+    }
+  };
+
+  const confirmSuspend = async () => {
+    if (!suspendReason.trim()) {
+      toast({ title: "El motivo de suspensión es requerido", variant: "destructive" });
+      return;
+    }
+    await updateIncident.mutateAsync({ id: incident.id, status: "suspendido", suspension_reason: suspendReason } as any);
+    if (profile) {
+      createHistory.mutate({ incident_id: incident.id, user_id: profile.id, field_name: "status", old_value: incident.status, new_value: "suspendido" });
+    }
+    setShowSuspendDialog(false);
+    setSuspendReason("");
+  };
+
+  const saveEvaluation = async (field: string, value: any) => {
+    const updates: any = { [field]: value };
+    if (field === "severity" && value === "no_aplica") {
+      updates.is_requirement = true;
+    }
+    if (field === "severity" && value !== "no_aplica") {
+      updates.is_requirement = false;
+    }
+    // Auto-move to revision on first evaluation
+    if (incident.status === "pendiente" && (field === "severity" || field === "assigned_to")) {
+      updates.status = "revision";
+      updates.reviewed_by = user?.id;
+      updates.reviewed_at = new Date().toISOString();
+    }
+    await updateIncident.mutateAsync({ id: incident.id, ...updates });
+    if (profile) {
+      createHistory.mutate({ incident_id: incident.id, user_id: profile.id, field_name: field, old_value: String((incident as any)[field] ?? ""), new_value: String(value ?? "") });
+    }
+    // Notify creator when severity is assigned
+    if (field === "severity" && incident.created_by && incident.created_by !== user?.id) {
+      await supabase.from("notifications").insert({
+        user_id: incident.created_by,
+        title: "📋 Tu incidente ha sido evaluado",
+        message: `Severidad asignada: ${value} | ${incident.ticket_code}`,
+        type: "incident",
+        reference_id: incident.id,
+        reference_type: "incident",
+      });
     }
   };
 
   const addNote = async () => {
     if (!noteText.trim() || !profile) return;
-    await createNote.mutateAsync({ incident_id: incident.id, user_id: profile.id, content: noteText, is_internal: noteTab === "internal" });
+    const isInternal = noteTab === "internal";
+    await createNote.mutateAsync({ incident_id: incident.id, user_id: profile.id, content: noteText, is_internal: isInternal });
+    // Notify involved parties
+    if (!isInternal && incident.created_by && incident.created_by !== user?.id) {
+      await supabase.from("notifications").insert({
+        user_id: incident.created_by,
+        title: "💬 Nuevo comentario en tu incidente",
+        message: `${incident.ticket_code}: ${noteText.slice(0, 100)}`,
+        type: "incident",
+        reference_id: incident.id,
+        reference_type: "incident",
+      });
+    }
     setNoteText("");
   };
 
@@ -124,36 +218,63 @@ export function IncidentDetailSheet({ incidentId, onClose }: { incidentId: strin
     toast({ title: "HU vinculada" });
   };
 
+  // SLA suggestion
+  const getSlaDate = () => {
+    if (!incident.severity || incident.severity === "no_aplica" || !slaConfigs?.length) return null;
+    const sla = slaConfigs.find((s: any) => s.severity === incident.severity);
+    if (!sla) return null;
+    const date = new Date(incident.created_at);
+    date.setHours(date.getHours() + sla.resolution_hours);
+    return date.toISOString().split("T")[0];
+  };
+
+  const conversationNotes = (notes ?? []).filter((n: any) => !n.is_internal);
   const internalNotes = (notes ?? []).filter((n: any) => n.is_internal);
-  const clientNotes = (notes ?? []).filter((n: any) => !n.is_internal);
+
+  // Client can approve closure
+  const isCreator = incident.created_by === user?.id;
+  const showApproveClose = isCreator && incident.status === "listo_para_cerrar";
 
   return (
     <>
       <Sheet open={!!incidentId} onOpenChange={open => { if (!open) onClose(); }}>
-        <SheetContent className="w-[600px] sm:max-w-[600px] overflow-y-auto p-0">
+        <SheetContent className="w-[700px] sm:max-w-[700px] overflow-y-auto p-0">
           <SheetHeader className="p-4 border-b sticky top-0 bg-background z-10">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <SheetTitle className="font-mono text-lg">{incident.ticket_code}</SheetTitle>
-                <Badge className={SEV_COLORS[incident.severity] || ""}>{incident.severity}</Badge>
-                <Badge className={STATUS_COLORS[incident.status] || ""}>{incident.status}</Badge>
+                <Badge className={sevInfo.color}>
+                  {incident.is_requirement ? "Requerimiento" : sevInfo.label}
+                </Badge>
+                <Badge className={statusInfo.color}>{statusInfo.icon} {statusInfo.label}</Badge>
               </div>
               <Button variant="ghost" size="icon" onClick={onClose}><X className="h-4 w-4" /></Button>
             </div>
           </SheetHeader>
 
           <div className="p-4 space-y-6">
-            {/* Info */}
+            {/* Approve close banner for creator */}
+            {showApproveClose && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-yellow-800">✅ Este incidente está listo para cerrar</p>
+                  <p className="text-sm text-yellow-700">El equipo completó la solución. ¿Apruebas el cierre?</p>
+                </div>
+                <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => handleStatusChange("cerrado")}>
+                  Aprobar Cierre
+                </Button>
+              </div>
+            )}
+
+            {/* Info Section */}
             <section>
               <h3 className="text-sm font-semibold text-muted-foreground mb-2">INFORMACIÓN DEL REPORTE</h3>
               <h2 className="text-lg font-bold mb-2">{incident.title}</h2>
               <div className="grid grid-cols-2 gap-2 text-sm">
-                <div><span className="text-muted-foreground">Reportado por:</span> {incident.reporter_name || "—"} ({incident.reported_by_email || "—"})</div>
+                <div><span className="text-muted-foreground">Reportado por:</span> {incident.creator_profile?.full_name || incident.reporter_name || "—"}</div>
                 <div><span className="text-muted-foreground">Fecha:</span> {new Date(incident.created_at).toLocaleDateString("es", { day: "numeric", month: "short", year: "numeric" })}</div>
                 <div><span className="text-muted-foreground">Proyecto:</span> {incident.projects?.name}</div>
-                <div><span className="text-muted-foreground">Categoría:</span> {incident.category || "—"}</div>
-                <div><span className="text-muted-foreground">Versión:</span> {incident.version || "—"}</div>
-                <div><span className="text-muted-foreground">Navegador:</span> {incident.browser_info || "—"}</div>
+                <div><span className="text-muted-foreground">Categoría:</span> {getCategoryLabel(incident.category)}</div>
               </div>
             </section>
 
@@ -175,17 +296,111 @@ export function IncidentDetailSheet({ incidentId, onClose }: { incidentId: strin
             </section>
 
             {/* Attachments */}
-            {attachments && attachments.length > 0 && (
+            {(attachments ?? []).length > 0 && (
               <>
                 <Separator />
                 <section>
                   <h3 className="text-sm font-semibold text-muted-foreground mb-2">ARCHIVOS ADJUNTOS</h3>
-                  <div className="grid grid-cols-4 gap-2">
-                    {attachments.map((a, i) => (
-                      <a key={i} href={a.url} target="_blank" rel="noopener noreferrer" className="aspect-square rounded-lg overflow-hidden border hover:ring-2 ring-primary transition-all">
-                        <img src={a.url} alt={a.name} className="w-full h-full object-cover" />
-                      </a>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(attachments ?? []).map((a: any) => (
+                      <div key={a.id} className="flex items-center gap-2 p-2 border rounded-lg">
+                        {a.file_type === "image" ? <ImageIcon className="h-4 w-4 text-blue-500" /> : <FileText className="h-4 w-4 text-orange-500" />}
+                        <span className="text-xs flex-1 truncate">{a.file_name}</span>
+                        <span className="text-xs text-muted-foreground">{a.file_size ? `${(a.file_size / 1024 / 1024).toFixed(1)}MB` : ""}</span>
+                        <a href={a.file_url} target="_blank" rel="noopener noreferrer"><Download className="h-3 w-3 text-muted-foreground hover:text-foreground" /></a>
+                      </div>
                     ))}
+                  </div>
+                </section>
+              </>
+            )}
+
+            {/* Evaluation Section - Managers Only */}
+            {canManage && (
+              <>
+                <Separator />
+                <section>
+                  <h3 className="text-sm font-semibold text-muted-foreground mb-3">EVALUACIÓN</h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-xs text-muted-foreground">Severidad</label>
+                      <Select value={incident.severity || "none"} onValueChange={v => saveEvaluation("severity", v === "none" ? null : v)}>
+                        <SelectTrigger className="h-9"><SelectValue placeholder="Sin evaluar" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Sin evaluar</SelectItem>
+                          {SEVERITIES.map(s => <SelectItem key={s.value} value={s.value}>{s.icon} {s.label}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs text-muted-foreground">Asignar a</label>
+                      <Select value={incident.assigned_to || "none"} onValueChange={v => saveEvaluation("assigned_to", v === "none" ? null : v)}>
+                        <SelectTrigger className="h-9"><SelectValue placeholder="Sin asignar" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Sin asignar</SelectItem>
+                          {members?.filter((m: any) => ["developer", "qa", "team_lead"].includes(m.profiles?.role)).map((m: any) => (
+                            <SelectItem key={m.user_id} value={m.user_id}>{m.profiles?.full_name || m.profiles?.email}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 space-y-2">
+                    <div className="flex items-center gap-3">
+                      <Switch checked={incident.is_requirement} onCheckedChange={v => {
+                        if (v) saveEvaluation("severity", "no_aplica");
+                        else saveEvaluation("is_requirement", false);
+                      }} />
+                      <Label className="text-sm">Clasificar como Requerimiento</Label>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 space-y-1">
+                    <label className="text-xs text-muted-foreground">Fecha estimada de resolución</label>
+                    <Input type="date" value={incident.resolution_date || ""} onChange={e => saveEvaluation("resolution_date", e.target.value || null)} />
+                    {getSlaDate() && !incident.resolution_date && (
+                      <p className="text-xs text-blue-600">
+                        <Calendar className="inline h-3 w-3 mr-1" />
+                        Sugerido según SLA ({incident.severity}): {getSlaDate()}
+                        <Button variant="link" size="sm" className="text-xs h-auto p-0 ml-1" onClick={() => saveEvaluation("resolution_date", getSlaDate())}>Aplicar</Button>
+                      </p>
+                    )}
+                  </div>
+                </section>
+              </>
+            )}
+
+            {/* Status Management - Managers Only */}
+            {canManage && incident.status !== "cerrado" && (
+              <>
+                <Separator />
+                <section>
+                  <h3 className="text-sm font-semibold text-muted-foreground mb-2">GESTIÓN DE ESTADO</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {allowedTransitions.map(s => {
+                      const si = getStatusInfo(s);
+                      const disabled = s === "cerrado" && !canClose;
+                      return (
+                        <Button key={s} size="sm" variant="outline" disabled={disabled} onClick={() => handleStatusChange(s)}
+                          className={disabled ? "opacity-50" : ""}>
+                          {si.icon} {si.label}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  {incident.suspension_reason && incident.status === "suspendido" && (
+                    <div className="mt-2 p-2 bg-muted rounded text-sm">
+                      <span className="font-medium">Motivo de suspensión:</span> {incident.suspension_reason}
+                    </div>
+                  )}
+                  <div className="flex gap-2 mt-3">
+                    <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={convertToBug}>
+                      <ArrowRight className="h-3 w-3 mr-1" /> Convertir a Bug
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => setShowLinkDialog(true)}>
+                      <Link2 className="h-3 w-3 mr-1" /> Vincular HU
+                    </Button>
                   </div>
                 </section>
               </>
@@ -193,50 +408,17 @@ export function IncidentDetailSheet({ incidentId, onClose }: { incidentId: strin
 
             <Separator />
 
-            {/* Management */}
+            {/* Comments */}
             <section>
-              <h3 className="text-sm font-semibold text-muted-foreground mb-3">GESTIÓN INTERNA</h3>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs text-muted-foreground">Estado</label>
-                  <Select value={incident.status} onValueChange={v => changeField("status", v)}>
-                    <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                    <SelectContent>{STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="text-xs text-muted-foreground">Asignar a</label>
-                  <Select value={incident.assigned_to || "none"} onValueChange={v => changeField("assigned_to", v === "none" ? null : v)}>
-                    <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Sin asignar</SelectItem>
-                      {members?.map(m => <SelectItem key={m.id} value={m.id}>{m.full_name || m.email}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="flex gap-2 mt-3">
-                <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={convertToBug}>
-                  <ArrowRight className="h-3 w-3 mr-1" /> Convertir a Bug en Backlog
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => setShowLinkDialog(true)}>
-                  <Link2 className="h-3 w-3 mr-1" /> Vincular con HU
-                </Button>
-              </div>
-            </section>
-
-            <Separator />
-
-            {/* Communication */}
-            <section>
-              <h3 className="text-sm font-semibold text-muted-foreground mb-2">COMUNICACIÓN</h3>
+              <h3 className="text-sm font-semibold text-muted-foreground mb-2">COMENTARIOS</h3>
               <Tabs value={noteTab} onValueChange={setNoteTab}>
                 <TabsList className="w-full">
-                  <TabsTrigger value="internal" className="flex-1">Notas Internas</TabsTrigger>
-                  <TabsTrigger value="client" className="flex-1">Mensajes al Cliente</TabsTrigger>
+                  <TabsTrigger value="conversation" className="flex-1">Conversación</TabsTrigger>
+                  {canManage && <TabsTrigger value="internal" className="flex-1">Notas Internas</TabsTrigger>}
                 </TabsList>
-                <TabsContent value="internal" className="mt-3 space-y-3">
-                  {internalNotes.map((n: any) => (
+                <TabsContent value="conversation" className="mt-3 space-y-3">
+                  {conversationNotes.length === 0 && <p className="text-xs text-muted-foreground">Sin comentarios aún</p>}
+                  {conversationNotes.map((n: any) => (
                     <div key={n.id} className="flex gap-2 text-sm">
                       <Avatar className="h-6 w-6 mt-0.5"><AvatarFallback className="text-xs">{(n.profiles?.full_name || "U")[0]}</AvatarFallback></Avatar>
                       <div className="flex-1">
@@ -245,26 +427,35 @@ export function IncidentDetailSheet({ incidentId, onClose }: { incidentId: strin
                       </div>
                     </div>
                   ))}
-                  <div className="flex gap-2">
-                    <Input placeholder="Agregar nota interna..." value={noteText} onChange={e => setNoteText(e.target.value)} onKeyDown={e => e.key === "Enter" && addNote()} />
-                    <Button size="icon" onClick={addNote}><Send className="h-4 w-4" /></Button>
-                  </div>
-                </TabsContent>
-                <TabsContent value="client" className="mt-3 space-y-3">
-                  {clientNotes.map((n: any) => (
-                    <div key={n.id} className="flex gap-2 text-sm">
-                      <Avatar className="h-6 w-6 mt-0.5"><AvatarFallback className="text-xs">{(n.profiles?.full_name || "U")[0]}</AvatarFallback></Avatar>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2"><span className="font-medium text-xs">{n.profiles?.full_name || n.profiles?.email}</span><span className="text-xs text-muted-foreground">{timeAgo(n.created_at)}</span></div>
-                        <p className="text-sm mt-0.5">{n.content}</p>
-                      </div>
+                  {incident.status !== "cerrado" && (
+                    <div className="flex gap-2">
+                      <Input placeholder="Agregar comentario..." value={noteTab === "conversation" ? noteText : ""} onChange={e => setNoteText(e.target.value)} onKeyDown={e => e.key === "Enter" && addNote()} />
+                      <Button size="icon" onClick={addNote}><Send className="h-4 w-4" /></Button>
                     </div>
-                  ))}
-                  <div className="flex gap-2">
-                    <Input placeholder="Enviar mensaje al cliente..." value={noteTab === "client" ? noteText : ""} onChange={e => setNoteText(e.target.value)} onKeyDown={e => e.key === "Enter" && addNote()} />
-                    <Button size="icon" onClick={addNote}><Send className="h-4 w-4" /></Button>
-                  </div>
+                  )}
                 </TabsContent>
+                {canManage && (
+                  <TabsContent value="internal" className="mt-3 space-y-3">
+                    {internalNotes.length === 0 && <p className="text-xs text-muted-foreground">Sin notas internas</p>}
+                    {internalNotes.map((n: any) => (
+                      <div key={n.id} className="flex gap-2 text-sm">
+                        <Avatar className="h-6 w-6 mt-0.5"><AvatarFallback className="text-xs">{(n.profiles?.full_name || "U")[0]}</AvatarFallback></Avatar>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-xs">{n.profiles?.full_name || n.profiles?.email}</span>
+                            <Badge variant="outline" className="text-[10px] h-4">Interno</Badge>
+                            <span className="text-xs text-muted-foreground">{timeAgo(n.created_at)}</span>
+                          </div>
+                          <p className="text-sm mt-0.5">{n.content}</p>
+                        </div>
+                      </div>
+                    ))}
+                    <div className="flex gap-2">
+                      <Input placeholder="Agregar nota interna..." value={noteTab === "internal" ? noteText : ""} onChange={e => setNoteText(e.target.value)} onKeyDown={e => e.key === "Enter" && addNote()} />
+                      <Button size="icon" onClick={addNote}><Send className="h-4 w-4" /></Button>
+                    </div>
+                  </TabsContent>
+                )}
               </Tabs>
             </section>
 
@@ -272,16 +463,17 @@ export function IncidentDetailSheet({ incidentId, onClose }: { incidentId: strin
 
             {/* History */}
             <section>
-              <h3 className="text-sm font-semibold text-muted-foreground mb-2">HISTORIAL DE CAMBIOS</h3>
+              <h3 className="text-sm font-semibold text-muted-foreground mb-2">HISTORIAL</h3>
               {!(history ?? []).length ? (
                 <p className="text-xs text-muted-foreground">Sin cambios registrados</p>
               ) : (
                 <div className="space-y-2">
                   {(history ?? []).map((h: any) => (
                     <div key={h.id} className="text-xs text-muted-foreground">
-                      <span className="font-medium text-foreground">{h.profiles?.full_name || h.profiles?.email || "Sistema"}</span>{" "}
-                      cambió <span className="font-medium">{h.field_name}</span> de "{h.old_value || "—"}" a "{h.new_value || "—"}"{" "}
-                      <span>- {timeAgo(h.created_at)}</span>
+                      <span className="font-medium text-foreground">{h.profiles?.full_name || "Sistema"}</span>{" "}
+                      cambió <span className="font-medium">{h.field_name}</span>{" "}
+                      de "{h.old_value || "—"}" a "{h.new_value || "—"}"{" "}
+                      <span>— {timeAgo(h.created_at)}</span>
                     </div>
                   ))}
                 </div>
@@ -290,6 +482,18 @@ export function IncidentDetailSheet({ incidentId, onClose }: { incidentId: strin
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* Suspend dialog */}
+      <Dialog open={showSuspendDialog} onOpenChange={setShowSuspendDialog}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Motivo de Suspensión</DialogTitle></DialogHeader>
+          <Textarea placeholder="Indica por qué se suspende este incidente..." value={suspendReason} onChange={e => setSuspendReason(e.target.value)} rows={3} />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSuspendDialog(false)}>Cancelar</Button>
+            <Button onClick={confirmSuspend}>Confirmar Suspensión</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Link story dialog */}
       <Dialog open={showLinkDialog} onOpenChange={setShowLinkDialog}>

@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
+const fromTable = (table: string) => (supabase as any).from(table);
+
 export interface Incident {
   id: string;
   project_id: string;
@@ -10,7 +12,7 @@ export interface Incident {
   steps_to_reproduce: string | null;
   expected_result: string | null;
   actual_result: string | null;
-  severity: string;
+  severity: string | null;
   category: string | null;
   status: string;
   reported_by_email: string | null;
@@ -22,10 +24,82 @@ export interface Incident {
   updated_at: string | null;
   linked_user_story_id: string | null;
   created_at: string;
+  is_requirement: boolean;
+  resolution_date: string | null;
+  suspension_reason: string | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  resolved_at: string | null;
+  closed_at: string | null;
+  created_by: string | null;
   projects?: { id: string; name: string; color: string | null } | null;
   assigned_profile?: { id: string; full_name: string | null; email: string; avatar_url: string | null } | null;
+  creator_profile?: { id: string; full_name: string | null; email: string } | null;
 }
 
+export const STATUSES = [
+  { value: "pendiente", label: "Pendiente", color: "bg-gray-200 text-gray-800", icon: "⚪" },
+  { value: "revision", label: "En Revisión", color: "bg-blue-100 text-blue-800", icon: "🔵" },
+  { value: "en_proceso", label: "En Proceso", color: "bg-orange-100 text-orange-800", icon: "🟠" },
+  { value: "en_qa", label: "En QA", color: "bg-purple-100 text-purple-800", icon: "🟣" },
+  { value: "listo_para_cerrar", label: "Listo p/Cerrar", color: "bg-yellow-100 text-yellow-800", icon: "🟡" },
+  { value: "cerrado", label: "Cerrado", color: "bg-green-100 text-green-800", icon: "✅" },
+  { value: "suspendido", label: "Suspendido", color: "bg-gray-400 text-white", icon: "⏸️" },
+];
+
+export const SEVERITIES = [
+  { value: "critica", label: "Crítica", color: "bg-red-100 text-red-800", icon: "🔴" },
+  { value: "alta", label: "Alta", color: "bg-orange-100 text-orange-800", icon: "🟠" },
+  { value: "media", label: "Media", color: "bg-yellow-100 text-yellow-800", icon: "🟡" },
+  { value: "baja", label: "Baja", color: "bg-green-100 text-green-800", icon: "🟢" },
+  { value: "no_aplica", label: "No Aplica", color: "bg-gray-200 text-gray-800", icon: "⚫" },
+];
+
+export const CATEGORIES = [
+  { value: "bug_sistema", label: "Bug de Sistema" },
+  { value: "error_interfaz", label: "Error de Interfaz" },
+  { value: "problema_rendimiento", label: "Problema de Rendimiento" },
+  { value: "error_datos", label: "Error de Datos" },
+  { value: "problema_seguridad", label: "Problema de Seguridad" },
+  { value: "otro", label: "Otro" },
+];
+
+export const STATUS_TRANSITIONS: Record<string, string[]> = {
+  pendiente: ["revision", "suspendido"],
+  revision: ["en_proceso", "suspendido"],
+  en_proceso: ["en_qa", "suspendido"],
+  en_qa: ["listo_para_cerrar", "en_proceso", "suspendido"],
+  listo_para_cerrar: ["cerrado", "en_proceso"],
+  suspendido: ["pendiente", "revision"],
+};
+
+export function getStatusInfo(status: string) {
+  return STATUSES.find(s => s.value === status) ?? { value: status, label: status, color: "bg-gray-200 text-gray-800", icon: "⚪" };
+}
+
+export function getSeverityInfo(severity: string | null) {
+  if (!severity) return { value: "sin_evaluar", label: "Sin evaluar", color: "bg-gray-100 text-gray-500", icon: "❓" };
+  return SEVERITIES.find(s => s.value === severity) ?? { value: severity, label: severity, color: "bg-gray-200 text-gray-800", icon: "❓" };
+}
+
+export function getCategoryLabel(cat: string | null) {
+  if (!cat) return "—";
+  return CATEGORIES.find(c => c.value === cat)?.label ?? cat;
+}
+
+// ===== INCIDENT PERMISSIONS =====
+export function useIncidentPermissions() {
+  return useQuery({
+    queryKey: ["incident-permission-configs"],
+    queryFn: async () => {
+      const { data, error } = await fromTable("incident_permission_configs").select("*");
+      if (error) throw error;
+      return (data ?? []) as { id: string; role: string; can_create: boolean; can_manage: boolean; can_close: boolean; workspace_id: string }[];
+    },
+  });
+}
+
+// ===== INCIDENTS LIST =====
 export function useIncidents(filters?: {
   search?: string;
   status?: string[];
@@ -33,8 +107,7 @@ export function useIncidents(filters?: {
   category?: string;
   projectId?: string;
   assignedTo?: string;
-  dateFrom?: string;
-  dateTo?: string;
+  createdBy?: string;
   page?: number;
 }) {
   return useQuery({
@@ -48,19 +121,15 @@ export function useIncidents(filters?: {
       if (filters?.search) {
         q = q.or(`title.ilike.%${filters.search}%,ticket_code.ilike.%${filters.search}%`);
       }
-      if (filters?.status?.length) {
-        q = q.in("status", filters.status);
-      }
+      if (filters?.status?.length) q = q.in("status", filters.status);
       if (filters?.severity) q = q.eq("severity", filters.severity);
       if (filters?.category) q = q.eq("category", filters.category);
       if (filters?.projectId) q = q.eq("project_id", filters.projectId);
       if (filters?.assignedTo) q = q.eq("assigned_to", filters.assignedTo);
-      if (filters?.dateFrom) q = q.gte("created_at", filters.dateFrom);
-      if (filters?.dateTo) q = q.lte("created_at", filters.dateTo);
+      if (filters?.createdBy) q = q.eq("created_by", filters.createdBy);
 
       const page = filters?.page ?? 0;
-      const from = page * 20;
-      q = q.range(from, from + 19);
+      q = q.range(page * 20, page * 20 + 19);
 
       const { data, error, count } = await q;
       if (error) throw error;
@@ -80,7 +149,13 @@ export function useIncident(id: string | undefined) {
         .eq("id", id)
         .single();
       if (error) throw error;
-      return data as Incident;
+      // Fetch creator profile separately
+      let creator_profile = null;
+      if ((data as any).created_by) {
+        const { data: cp } = await supabase.from("profiles").select("id, full_name, email").eq("id", (data as any).created_by).single();
+        creator_profile = cp;
+      }
+      return { ...data, creator_profile } as Incident;
     },
     enabled: !!id,
   });
@@ -96,12 +171,13 @@ export function useUpdateIncident() {
     onSuccess: (_d, v) => {
       qc.invalidateQueries({ queryKey: ["incidents"] });
       qc.invalidateQueries({ queryKey: ["incident", v.id] });
-      toast({ title: "Incidente actualizado" });
+      qc.invalidateQueries({ queryKey: ["incident-stats"] });
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 }
 
+// ===== NOTES (reusing incident_notes table as comments) =====
 export function useIncidentNotes(incidentId: string | undefined) {
   return useQuery({
     queryKey: ["incident-notes", incidentId],
@@ -128,12 +204,12 @@ export function useCreateIncidentNote() {
     },
     onSuccess: (_d, v) => {
       qc.invalidateQueries({ queryKey: ["incident-notes", v.incident_id] });
-      toast({ title: "Nota agregada" });
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 }
 
+// ===== HISTORY =====
 export function useIncidentHistory(incidentId: string | undefined) {
   return useQuery({
     queryKey: ["incident-history", incidentId],
@@ -164,29 +240,42 @@ export function useCreateIncidentHistory() {
   });
 }
 
+// ===== ATTACHMENTS =====
+export function useIncidentAttachments(incidentId: string | undefined) {
+  return useQuery({
+    queryKey: ["incident-attachments-db", incidentId],
+    queryFn: async () => {
+      if (!incidentId) return [];
+      const { data, error } = await fromTable("incident_attachments")
+        .select("*, profiles:profiles(id, full_name)")
+        .eq("incident_id", incidentId)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+    enabled: !!incidentId,
+  });
+}
+
+// ===== STATS =====
 export function useIncidentStats() {
   return useQuery({
     queryKey: ["incident-stats"],
     queryFn: async () => {
-      const { data: all, error } = await supabase.from("incidents").select("id, status, severity, assigned_to, created_at, updated_at");
+      const { data: all, error } = await supabase.from("incidents").select("id, status, severity, assigned_to, created_at, updated_at, is_requirement");
       if (error) throw error;
       const items = all ?? [];
-      const open = items.filter(i => i.status !== "cerrado").length;
-      const criticalUnassigned = items.filter(i => i.severity === "critica" && !i.assigned_to && i.status !== "cerrado").length;
-      const oneWeekAgo = new Date(); oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-      const resolvedThisWeek = items.filter(i => i.status === "resuelto" && i.updated_at && new Date(i.updated_at) >= oneWeekAgo).length;
-      // Avg resolution time
-      const resolved = items.filter(i => (i.status === "resuelto" || i.status === "cerrado") && i.updated_at);
-      let avgHours = 0;
-      if (resolved.length) {
-        const total = resolved.reduce((sum, i) => sum + (new Date(i.updated_at!).getTime() - new Date(i.created_at).getTime()), 0);
-        avgHours = Math.round(total / resolved.length / 3600000);
-      }
-      return { open, criticalUnassigned, resolvedThisWeek, avgHours };
+      const pendingNoSeverity = items.filter(i => i.status === "pendiente" && !i.severity).length;
+      const inProcess = items.filter(i => ["en_proceso", "revision", "en_qa"].includes(i.status)).length;
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const resolvedThisMonth = items.filter(i => i.status === "cerrado" && i.updated_at && new Date(i.updated_at) >= monthStart).length;
+      return { pendingNoSeverity, inProcess, resolvedThisMonth };
     },
   });
 }
 
+// ===== SLA =====
 export function useSlaConfigs() {
   return useQuery({
     queryKey: ["sla-configs"],

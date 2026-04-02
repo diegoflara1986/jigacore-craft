@@ -12,8 +12,6 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json();
-
-    // Validate required fields server-side
     const { project_id, title, description, reported_by_email, reporter_name, severity, category,
       steps_to_reproduce, expected_result, actual_result, version, browser_info } = body;
 
@@ -37,17 +35,16 @@ Deno.serve(async (req) => {
     }
 
     const validSeverities = ["critica", "alta", "media", "baja"];
-    if (!severity || !validSeverities.includes(severity)) {
+    const validCategory = severity ? validSeverities.includes(severity) : true;
+    if (severity && !validCategory) {
       return new Response(JSON.stringify({ error: "Severidad inválida" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Use service role to bypass RLS
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Validate project exists and is active
     const { data: project, error: projError } = await supabaseAdmin
       .from("projects")
       .select("id")
@@ -59,7 +56,6 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Proyecto no encontrado o no activo" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Sanitize text fields
     const sanitize = (val: unknown): string | null => {
       if (!val || typeof val !== "string") return null;
       return val.trim().slice(0, 2000);
@@ -72,9 +68,9 @@ Deno.serve(async (req) => {
       steps_to_reproduce: sanitize(steps_to_reproduce),
       expected_result: sanitize(expected_result),
       actual_result: sanitize(actual_result),
-      severity,
+      severity: severity || null,
       category: category.trim().slice(0, 100),
-      status: "nuevo",
+      status: "pendiente",
       reported_by_email: reported_by_email.trim().slice(0, 255),
       reporter_name: (reporter_name as string).trim().slice(0, 100),
       version: sanitize(version),

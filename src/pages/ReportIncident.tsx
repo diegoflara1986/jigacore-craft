@@ -17,7 +17,14 @@ const SEVERITY_OPTIONS = [
   { value: "baja", emoji: "🟢", label: "Baja", desc: "Problema menor o estético", color: "border-green-500 bg-green-50" },
 ];
 
-const CATEGORIES = ["Bug de sistema", "Error de interfaz", "Problema de rendimiento", "Error de datos", "Problema de seguridad", "Otro"];
+const CATEGORIES = [
+  { value: "bug_sistema", label: "Bug de Sistema" },
+  { value: "error_interfaz", label: "Error de Interfaz" },
+  { value: "problema_rendimiento", label: "Problema de Rendimiento" },
+  { value: "error_datos", label: "Error de Datos" },
+  { value: "problema_seguridad", label: "Problema de Seguridad" },
+  { value: "otro", label: "Otro" },
+];
 
 export default function ReportIncident() {
   const navigate = useNavigate();
@@ -201,7 +208,7 @@ export default function ReportIncident() {
           <Field label="Categoría" error={errors.category} required>
             <Select value={form.category} onValueChange={v => set("category", v)}>
               <SelectTrigger><SelectValue placeholder="Selecciona una categoría" /></SelectTrigger>
-              <SelectContent>{CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+              <SelectContent>{CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent>
             </Select>
           </Field>
 
