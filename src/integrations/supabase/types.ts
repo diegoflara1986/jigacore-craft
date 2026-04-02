@@ -173,6 +173,38 @@ export type Database = {
           },
         ]
       }
+      estimation_session_participants: {
+        Row: {
+          id: string
+          is_online: boolean | null
+          joined_at: string | null
+          session_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          is_online?: boolean | null
+          joined_at?: string | null
+          session_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          is_online?: boolean | null
+          joined_at?: string | null
+          session_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "estimation_session_participants_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "estimation_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       estimation_sessions: {
         Row: {
           created_at: string
