@@ -82,6 +82,7 @@ export default function Settings() {
         {section === "sla" && <SettingsSLA />}
         {section === "integrations" && <SettingsIntegrations />}
         {section === "audit" && <SettingsAudit />}
+        {section === "incident_perms" && <SettingsIncidentPermissions />}
       </main>
     </div>
   );
