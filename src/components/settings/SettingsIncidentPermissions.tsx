@@ -23,11 +23,20 @@ const ALL_ROLES = [
   { value: "external_user", label: "Usuario Externo" },
 ];
 
+interface PermConfig {
+  id: string;
+  role: string;
+  can_create: boolean;
+  can_manage: boolean;
+  can_close: boolean;
+  workspace_id: string;
+}
+
 export function SettingsIncidentPermissions() {
   const { profile } = useAuth();
   const qc = useQueryClient();
   const [saving, setSaving] = useState(false);
-  const [permissions, setPermissions] = useState<Record<string, boolean>>({});
+  const [permissions, setPermissions] = useState<Record<string, { can_create: boolean; can_manage: boolean; can_close: boolean }>>({});
 
   const workspaceId = profile?.workspace_id;
 
@@ -36,20 +45,31 @@ export function SettingsIncidentPermissions() {
     queryFn: async () => {
       const { data, error } = await fromTable("incident_permission_configs").select("*");
       if (error) throw error;
-      return (data ?? []) as { id: string; role: string; can_create: boolean; workspace_id: string }[];
+      return (data ?? []) as PermConfig[];
     },
   });
 
   useEffect(() => {
     if (configs) {
-      const map: Record<string, boolean> = {};
+      const map: Record<string, { can_create: boolean; can_manage: boolean; can_close: boolean }> = {};
       ALL_ROLES.forEach(r => {
         const found = configs.find(c => c.role === r.value);
-        map[r.value] = found?.can_create ?? false;
+        map[r.value] = {
+          can_create: found?.can_create ?? false,
+          can_manage: found?.can_manage ?? false,
+          can_close: found?.can_close ?? false,
+        };
       });
       setPermissions(map);
     }
   }, [configs]);
+
+  const toggle = (role: string, field: "can_create" | "can_manage" | "can_close", value: boolean) => {
+    setPermissions(prev => ({
+      ...prev,
+      [role]: { ...prev[role], [field]: value },
+    }));
+  };
 
   const handleSave = async () => {
     if (!workspaceId) return;
@@ -57,15 +77,16 @@ export function SettingsIncidentPermissions() {
     try {
       for (const role of ALL_ROLES) {
         const existing = configs?.find(c => c.role === role.value);
+        const perm = permissions[role.value] ?? { can_create: false, can_manage: false, can_close: false };
         if (existing) {
           await fromTable("incident_permission_configs")
-            .update({ can_create: permissions[role.value] ?? false })
+            .update({ can_create: perm.can_create, can_manage: perm.can_manage, can_close: perm.can_close })
             .eq("id", existing.id);
         } else {
           await fromTable("incident_permission_configs").insert({
             workspace_id: workspaceId,
             role: role.value,
-            can_create: permissions[role.value] ?? false,
+            ...perm,
           });
         }
       }
@@ -87,28 +108,49 @@ export function SettingsIncidentPermissions() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           <Shield className="h-4 w-4" />
-          Permisos de Creación de Incidentes
+          Permisos de Incidentes
         </CardTitle>
         <p className="text-sm text-muted-foreground">
-          Los roles de Admin y Super Admin siempre pueden crear incidentes. Selecciona qué otros roles tienen permiso.
+          Admin y Super Admin siempre tienen todos los permisos. Configura permisos para los demás roles.
+          <br />
+          <strong>Nota:</strong> El usuario también debe ser miembro del proyecto para poder operar.
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="space-y-3">
-          <div className="flex items-center justify-between p-2 rounded-md bg-muted/50">
-            <Label className="text-sm font-medium">Admin / Super Admin</Label>
-            <Switch checked disabled />
-          </div>
-          {ALL_ROLES.map(role => (
-            <div key={role.value} className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50">
-              <Label className="text-sm">{role.label}</Label>
-              <Switch
-                checked={permissions[role.value] ?? false}
-                onCheckedChange={(v) => setPermissions(prev => ({ ...prev, [role.value]: v }))}
-              />
-            </div>
-          ))}
+        {/* Header */}
+        <div className="grid grid-cols-4 gap-2 text-xs font-medium text-muted-foreground border-b pb-2">
+          <div>Rol</div>
+          <div className="text-center">Crear</div>
+          <div className="text-center">Gestionar</div>
+          <div className="text-center">Cerrar</div>
         </div>
+
+        {/* Admin row - always enabled */}
+        <div className="grid grid-cols-4 gap-2 items-center p-2 rounded-md bg-muted/50">
+          <Label className="text-sm font-medium">Admin / Super Admin</Label>
+          <div className="text-center"><Switch checked disabled /></div>
+          <div className="text-center"><Switch checked disabled /></div>
+          <div className="text-center"><Switch checked disabled /></div>
+        </div>
+
+        {ALL_ROLES.map(role => {
+          const perm = permissions[role.value] ?? { can_create: false, can_manage: false, can_close: false };
+          return (
+            <div key={role.value} className="grid grid-cols-4 gap-2 items-center p-2 rounded-md hover:bg-muted/50">
+              <Label className="text-sm">{role.label}</Label>
+              <div className="text-center">
+                <Switch checked={perm.can_create} onCheckedChange={v => toggle(role.value, "can_create", v)} />
+              </div>
+              <div className="text-center">
+                <Switch checked={perm.can_manage} onCheckedChange={v => toggle(role.value, "can_manage", v)} />
+              </div>
+              <div className="text-center">
+                <Switch checked={perm.can_close} onCheckedChange={v => toggle(role.value, "can_close", v)} />
+              </div>
+            </div>
+          );
+        })}
+
         <Button onClick={handleSave} disabled={saving} className="w-full">
           {saving ? "Guardando..." : "Guardar Permisos"}
         </Button>
