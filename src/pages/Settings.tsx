@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
-import { User, Bell, Palette, Building2, Users, Shield, Clock, FileText, Kanban, Tags, Puzzle, Box, Receipt, ClipboardList, Lock } from "lucide-react";
+import { User, Bell, Palette, Building2, Users, Shield, Clock, FileText, Kanban, Tags, Puzzle, Box, Receipt, ClipboardList, Lock, Bug } from "lucide-react";
 import { SettingsProfile } from "@/components/settings/SettingsProfile";
 import { SettingsNotifications } from "@/components/settings/SettingsNotifications";
 import { SettingsAppearance } from "@/components/settings/SettingsAppearance";
