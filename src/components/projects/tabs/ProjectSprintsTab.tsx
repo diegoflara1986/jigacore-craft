@@ -88,7 +88,7 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
   const [newSprint, setNewSprint] = useState({ name: "", goal: "", start_date: undefined as Date | undefined, end_date: undefined as Date | undefined });
   const [selectedBacklogIds, setSelectedBacklogIds] = useState<string[]>([]);
   const [createHUOpen, setCreateHUOpen] = useState(false);
-  const [planningPokerOpen, setPlanningPokerOpen] = useState(false);
+  const [_planningPokerOpen, _setPlanningPokerOpen] = useState(false);
   const [newStory, setNewStory] = useState({ title: "", description: "", type: "story", priority: "medium", status: "backlog", story_points: "", epic_id: "", assigned_to: "", sprint_id: "" });
 
   const handleCreateHU = async () => {
