@@ -18,9 +18,9 @@ import { PermissionDeniedDialog } from "@/components/PermissionDeniedDialog";
 
 const CHART_COLORS = ["hsl(213,52%,24%)", "hsl(24,95%,53%)", "hsl(142,71%,45%)", "hsl(199,89%,48%)", "hsl(38,92%,50%)", "hsl(0,84%,60%)"];
 
-interface Props { projectId: string; }
+interface Props { projectId: string; isArchived?: boolean; }
 
-export function ProjectCostsTab({ projectId }: Props) {
+export function ProjectCostsTab({ projectId, isArchived = false }: Props) {
   const { data: project } = useProject(projectId);
   const { data: members } = useProjectMembers(projectId);
   const { data: configs } = useCostConfigs(projectId);
@@ -231,7 +231,7 @@ export function ProjectCostsTab({ projectId }: Props) {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm">Configuración de Tarifas por Miembro</CardTitle>
-                <Button size="sm" onClick={saveRates} disabled={Object.keys(rates).length === 0}>
+                <Button size="sm" onClick={saveRates} disabled={Object.keys(rates).length === 0 || isArchived}>
                   <Save className="h-4 w-4 mr-1" />Guardar tarifas
                 </Button>
               </div>

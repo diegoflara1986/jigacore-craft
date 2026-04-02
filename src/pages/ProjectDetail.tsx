@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useProject, useProjectMembers, useProjectStats } from "@/hooks/useProjects";
+import { useProject, useUpdateProject, useProjectMembers, useProjectStats } from "@/hooks/useProjects";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, LayoutDashboard, Settings } from "lucide-react";
+import { ArrowLeft, LayoutDashboard, Settings, Lock, RotateCcw } from "lucide-react";
 import { ProjectOverviewTab } from "@/components/projects/tabs/ProjectOverviewTab";
 import { ProjectTeamTab } from "@/components/projects/tabs/ProjectTeamTab";
 import { ProjectEpicsTab } from "@/components/projects/tabs/ProjectEpicsTab";
@@ -14,14 +14,20 @@ import { ProjectCostsTab } from "@/components/projects/tabs/ProjectCostsTab";
 import { ProjectStepNav, StepHintBanner, StepDef } from "@/components/projects/ProjectStepNav";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { toast } from "@/hooks/use-toast";
 
 export default function ProjectDetail() {
   const [activeTab, setActiveTab] = useState("overview");
+  const [restoreOpen, setRestoreOpen] = useState(false);
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: project, isLoading } = useProject(id);
   const { data: members } = useProjectMembers(id);
   const { data: stats } = useProjectStats(id);
+  const updateProject = useUpdateProject();
+
+  const isArchived = project?.status === "archived";
 
   // Fetch completion data for steps
   const { data: epicsCount } = useQuery({
@@ -64,6 +70,13 @@ export default function ProjectDetail() {
     enabled: !!id,
   });
 
+  const handleRestore = async () => {
+    if (!project) return;
+    await updateProject.mutateAsync({ id: project.id, status: "active" });
+    setRestoreOpen(false);
+    toast({ title: "Proyecto restaurado correctamente" });
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center py-20">
@@ -94,11 +107,26 @@ export default function ProjectDetail() {
     { key: "costs", label: "Costos", completed: false },
   ];
 
-  const stepKey = activeTab;
   const isStepTab = steps.some(s => s.key === activeTab);
 
   return (
     <div className="space-y-4 animate-fade-in">
+      {/* Archived Banner */}
+      {isArchived && (
+        <div className="flex items-center justify-between gap-4 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30 text-yellow-700 dark:text-yellow-400">
+          <div className="flex items-center gap-2">
+            <Lock className="h-4 w-4 shrink-0" />
+            <div>
+              <p className="text-sm font-medium">Este proyecto está archivado.</p>
+              <p className="text-xs opacity-80">Estás en modo solo lectura.</p>
+            </div>
+          </div>
+          <Button size="sm" variant="outline" className="border-yellow-500/50 text-yellow-700 dark:text-yellow-400 hover:bg-yellow-500/20" onClick={() => setRestoreOpen(true)}>
+            <RotateCcw className="h-3.5 w-3.5 mr-1" />Restaurar Proyecto
+          </Button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -114,18 +142,10 @@ export default function ProjectDetail() {
           </div>
         </div>
         <div className="flex items-center gap-1">
-          <Button
-            variant={activeTab === "overview" ? "secondary" : "ghost"}
-            size="sm"
-            onClick={() => setActiveTab("overview")}
-          >
+          <Button variant={activeTab === "overview" ? "secondary" : "ghost"} size="sm" onClick={() => setActiveTab("overview")}>
             <LayoutDashboard className="h-4 w-4 mr-1" /> Overview
           </Button>
-          <Button
-            variant={activeTab === "settings" ? "secondary" : "ghost"}
-            size="sm"
-            onClick={() => setActiveTab("settings")}
-          >
+          <Button variant={activeTab === "settings" ? "secondary" : "ghost"} size="sm" onClick={() => setActiveTab("settings")}>
             <Settings className="h-4 w-4 mr-1" /> Configuración
           </Button>
         </div>
@@ -142,32 +162,44 @@ export default function ProjectDetail() {
         <ProjectOverviewTab project={project} members={members ?? []} stats={stats} progress={progress} />
       )}
       {activeTab === "team" && (
-        <ProjectTeamTab projectId={project.id} members={members ?? []} />
+        <ProjectTeamTab projectId={project.id} members={members ?? []} isArchived={isArchived} />
       )}
       {activeTab === "backlog" && (
-        <ProjectBacklogTab projectId={project.id} />
+        <ProjectBacklogTab projectId={project.id} isArchived={isArchived} />
       )}
       {activeTab === "estimation" && (
-        <ProjectBacklogTab projectId={project.id} estimationOnly />
+        <ProjectBacklogTab projectId={project.id} estimationOnly isArchived={isArchived} />
       )}
       {activeTab === "epics" && (
-        <ProjectEpicsTab projectId={project.id} />
+        <ProjectEpicsTab projectId={project.id} isArchived={isArchived} />
       )}
       {activeTab === "sprints" && (
-        <ProjectSprintsTab projectId={project.id} onNavigateToBoard={() => setActiveTab("board")} />
+        <ProjectSprintsTab projectId={project.id} onNavigateToBoard={() => setActiveTab("board")} isArchived={isArchived} />
       )}
       {activeTab === "board" && (
-        <ProjectKanbanTab projectId={project.id} />
+        <ProjectKanbanTab projectId={project.id} isArchived={isArchived} />
       )}
       {activeTab === "time" && (
-        <ProjectTimeTab projectId={project.id} />
+        <ProjectTimeTab projectId={project.id} isArchived={isArchived} />
       )}
       {activeTab === "costs" && (
-        <ProjectCostsTab projectId={project.id} />
+        <ProjectCostsTab projectId={project.id} isArchived={isArchived} />
       )}
       {activeTab === "settings" && (
-        <ProjectTeamTab projectId={project.id} members={members ?? []} />
+        <ProjectTeamTab projectId={project.id} members={members ?? []} isArchived={isArchived} />
       )}
+
+      {/* Restore Dialog */}
+      <Dialog open={restoreOpen} onOpenChange={setRestoreOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader><DialogTitle>¿Restaurar este proyecto?</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">Volverá al estado activo con todas sus funciones habilitadas.</p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRestoreOpen(false)}>Cancelar</Button>
+            <Button onClick={handleRestore} disabled={updateProject.isPending}>Restaurar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

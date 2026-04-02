@@ -9,13 +9,15 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Plus, Trash2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 const projectRoles = ["project_manager", "team_lead", "developer", "qa", "designer", "architect", "analyst"];
+const ARCHIVED_TOOLTIP = "Proyecto archivado. Restaura el proyecto para editar";
 
-export function ProjectTeamTab({ projectId, members }: { projectId: string; members: ProjectMember[] }) {
+export function ProjectTeamTab({ projectId, members, isArchived = false }: { projectId: string; members: ProjectMember[]; isArchived?: boolean }) {
   const [addOpen, setAddOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState("");
   const [selectedRole, setSelectedRole] = useState("developer");
@@ -54,9 +56,16 @@ export function ProjectTeamTab({ projectId, members }: { projectId: string; memb
       <Card className="border-border">
         <CardHeader className="flex flex-row items-center justify-between pb-3">
           <CardTitle className="text-base">Equipo del Proyecto</CardTitle>
-          <Button size="sm" onClick={() => guardAction("management", "agregar un miembro al proyecto", () => setAddOpen(true))} className="bg-accent text-accent-foreground hover:bg-accent/90">
-            <Plus className="h-4 w-4 mr-1" />Agregar Miembro
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span>
+                <Button size="sm" disabled={isArchived} onClick={() => guardAction("management", "agregar un miembro al proyecto", () => setAddOpen(true))} className={isArchived ? "opacity-50" : "bg-accent text-accent-foreground hover:bg-accent/90"}>
+                  <Plus className="h-4 w-4 mr-1" />Agregar Miembro
+                </Button>
+              </span>
+            </TooltipTrigger>
+            {isArchived && <TooltipContent>{ARCHIVED_TOOLTIP}</TooltipContent>}
+          </Tooltip>
         </CardHeader>
         <CardContent>
           {!members.length ? (
@@ -76,10 +85,17 @@ export function ProjectTeamTab({ projectId, members }: { projectId: string; memb
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-xs px-2 py-1 bg-muted rounded-md text-muted-foreground capitalize">{m.project_role.replace("_", " ")}</span>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive"
-                      onClick={() => guardAction("management", "remover un miembro del proyecto", () => removeMember.mutate({ id: m.id, project_id: projectId }))}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" disabled={isArchived}
+                            onClick={() => guardAction("management", "remover un miembro del proyecto", () => removeMember.mutate({ id: m.id, project_id: projectId }))}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </span>
+                      </TooltipTrigger>
+                      {isArchived && <TooltipContent>{ARCHIVED_TOOLTIP}</TooltipContent>}
+                    </Tooltip>
                   </div>
                 </div>
               ))}

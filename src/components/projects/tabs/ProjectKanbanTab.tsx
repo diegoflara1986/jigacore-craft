@@ -44,9 +44,10 @@ const PRIORITY_LABELS: Record<string, string> = {
 
 interface Props {
   projectId: string;
+  isArchived?: boolean;
 }
 
-export function ProjectKanbanTab({ projectId }: Props) {
+export function ProjectKanbanTab({ projectId, isArchived = false }: Props) {
   const { data: sprints } = useSprintsWithStats(projectId);
   const { data: epics } = useEpics(projectId);
   const { data: members } = useProjectMembers(projectId);
@@ -129,9 +130,10 @@ export function ProjectKanbanTab({ projectId }: Props) {
   const daysLeft = selectedSprint?.end_date ? Math.max(0, Math.ceil((new Date(selectedSprint.end_date).getTime() - Date.now()) / 86400000)) : null;
 
   const handleDragStart = useCallback((e: React.DragEvent, id: string) => {
+    if (isArchived) { e.preventDefault(); return; }
     e.dataTransfer.setData("text/plain", id);
     setDraggedId(id);
-  }, []);
+  }, [isArchived]);
 
   const handleDragOver = useCallback((e: React.DragEvent, colId: string) => {
     e.preventDefault();
@@ -143,6 +145,7 @@ export function ProjectKanbanTab({ projectId }: Props) {
   }, []);
 
   const handleDrop = useCallback(async (e: React.DragEvent, newStatus: string) => {
+    if (isArchived) return;
     e.preventDefault();
     const storyId = e.dataTransfer.getData("text/plain");
     setDraggedId(null);
@@ -188,7 +191,7 @@ export function ProjectKanbanTab({ projectId }: Props) {
     return (
       <div
         key={story.id}
-        draggable
+        draggable={!isArchived}
         onDragStart={(e) => handleDragStart(e, story.id)}
         onClick={() => setSelectedStoryId(story.id)}
         className={cn(
@@ -263,9 +266,11 @@ export function ProjectKanbanTab({ projectId }: Props) {
               {colStories.length}{col.limit > 0 ? `/${col.limit}` : ""}
             </span>
           </div>
-          <Button size="icon" variant="ghost" className="h-5 w-5" onClick={() => guardAction("team", "agregar una historia al tablero", () => { setQuickAddCol(col.id); setQuickAddTitle(""); })}>
-            <Plus className="h-3 w-3" />
-          </Button>
+          {!isArchived && (
+            <Button size="icon" variant="ghost" className="h-5 w-5" onClick={() => guardAction("team", "agregar una historia al tablero", () => { setQuickAddCol(col.id); setQuickAddTitle(""); })}>
+              <Plus className="h-3 w-3" />
+            </Button>
+          )}
         </div>
         {quickAddCol === col.id && (
           <div className="mb-2 flex gap-1">

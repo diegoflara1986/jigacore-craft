@@ -6,13 +6,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Plus, Trash2, Clock } from "lucide-react";
 import { useAuth } from "@/lib/auth";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip as RTooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 
-interface Props { projectId: string; }
+const ARCHIVED_TOOLTIP = "Proyecto archivado. Restaura el proyecto para editar";
 
-export function ProjectTimeTab({ projectId }: Props) {
+interface Props { projectId: string; isArchived?: boolean; }
+
+export function ProjectTimeTab({ projectId, isArchived = false }: Props) {
   const { profile } = useAuth();
   const { data: logs } = useTimeLogs(projectId);
   const { data: members } = useProjectMembers(projectId);
@@ -36,7 +39,16 @@ export function ProjectTimeTab({ projectId }: Props) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold flex items-center gap-2"><Clock className="h-5 w-5" />Registro de Tiempo</h2>
-        <Button size="sm" onClick={() => setShowManual(true)}><Plus className="h-4 w-4 mr-1" />Registrar tiempo</Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span>
+              <Button size="sm" disabled={isArchived} className={isArchived ? "opacity-50" : ""} onClick={() => setShowManual(true)}>
+                <Plus className="h-4 w-4 mr-1" />Registrar tiempo
+              </Button>
+            </span>
+          </TooltipTrigger>
+          {isArchived && <TooltipContent>{ARCHIVED_TOOLTIP}</TooltipContent>}
+        </Tooltip>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -54,7 +66,7 @@ export function ProjectTimeTab({ projectId }: Props) {
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis type="number" tick={{ fontSize: 12 }} />
                 <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={100} />
-                <Tooltip />
+                <RTooltip />
                 <Bar dataKey="hours" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} name="Horas" />
               </BarChart>
             </ResponsiveContainer>
@@ -90,7 +102,7 @@ export function ProjectTimeTab({ projectId }: Props) {
                   <TableCell className="text-sm font-medium">{l.hours}h</TableCell>
                   <TableCell className="text-sm text-muted-foreground max-w-40 truncate">{l.description || "—"}</TableCell>
                   <TableCell>
-                    {l.user_id === profile?.id && (
+                    {l.user_id === profile?.id && !isArchived && (
                       <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteLog.mutate(l.id)}>
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
@@ -106,7 +118,7 @@ export function ProjectTimeTab({ projectId }: Props) {
         </CardContent>
       </Card>
 
-      <ManualTimeLogModal open={showManual} onOpenChange={setShowManual} projectId={projectId} />
+      {!isArchived && <ManualTimeLogModal open={showManual} onOpenChange={setShowManual} projectId={projectId} />}
     </div>
   );
 }

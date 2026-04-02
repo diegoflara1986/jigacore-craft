@@ -36,9 +36,10 @@ const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secon
 interface Props {
   projectId: string;
   onNavigateToBoard?: () => void;
+  isArchived?: boolean;
 }
 
-export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
+export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = false }: Props) {
   const { data: sprints, isLoading } = useSprintsWithStats(projectId);
   const { data: backlogStories } = useUserStories(projectId, { status: undefined });
   const { data: epics } = useEpics(projectId);
@@ -221,7 +222,7 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
               )}
             </div>
             <div className="flex gap-1.5">
-              {sprint.status === "planning" && (
+              {sprint.status === "planning" && !isArchived && (
                 <>
                   <Button size="sm" variant="ghost" onClick={() => guardAction("lead", "editar un sprint", () => openEdit(sprint))}>
                     <Pencil className="h-3.5 w-3.5 mr-1" />Editar
@@ -238,9 +239,11 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
                       <LayoutDashboard className="h-3.5 w-3.5 mr-1" />Ver Tablero
                     </Button>
                   )}
-                  <Button size="sm" onClick={() => guardAction("lead", "completar un sprint", () => setCompleteReview(sprint))}>
-                    <CheckCircle2 className="h-3.5 w-3.5 mr-1" />Completar
-                  </Button>
+                  {!isArchived && (
+                    <Button size="sm" onClick={() => guardAction("lead", "completar un sprint", () => setCompleteReview(sprint))}>
+                      <CheckCircle2 className="h-3.5 w-3.5 mr-1" />Completar
+                    </Button>
+                  )}
                 </>
               )}
             </div>
@@ -285,10 +288,14 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-foreground">Sprints</h3>
         <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={() => setPlanningPokerOpen(true)}>
-            <Users className="h-4 w-4 mr-1" />Planning Poker
-          </Button>
-          <Button size="sm" onClick={() => guardAction("lead", "crear un sprint", openCreate)}><Plus className="h-4 w-4 mr-1" />Nuevo Sprint</Button>
+          {!isArchived && (
+            <>
+              <Button size="sm" variant="outline" onClick={() => setPlanningPokerOpen(true)}>
+                <Users className="h-4 w-4 mr-1" />Planning Poker
+              </Button>
+              <Button size="sm" onClick={() => guardAction("lead", "crear un sprint", openCreate)}><Plus className="h-4 w-4 mr-1" />Nuevo Sprint</Button>
+            </>
+          )}
         </div>
       </div>
 

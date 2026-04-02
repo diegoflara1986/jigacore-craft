@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Search, Users, Trash2 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { UserStoryDetailSheet } from "../UserStoryDetailSheet";
 import { PlanningPokerModal } from "../PlanningPokerModal";
 
@@ -49,7 +50,9 @@ function priorityBadge(p: string) {
   return pr ? <span className={`inline-block h-2.5 w-2.5 rounded-full ${pr.color} mr-1.5`} /> : null;
 }
 
-export function ProjectBacklogTab({ projectId, estimationOnly = false }: { projectId: string; estimationOnly?: boolean }) {
+const ARCHIVED_TOOLTIP = "Proyecto archivado. Restaura el proyecto para editar";
+
+export function ProjectBacklogTab({ projectId, estimationOnly = false, isArchived = false }: { projectId: string; estimationOnly?: boolean; isArchived?: boolean }) {
   const [filters, setFilters] = useState<{ epicId?: string; type?: string; priority?: string; status?: string; assignedTo?: string; search?: string; showDeleted?: boolean }>({});
   const { data: allStories, isLoading } = useUserStories(projectId, filters);
   const stories = estimationOnly
@@ -111,12 +114,26 @@ export function ProjectBacklogTab({ projectId, estimationOnly = false }: { proje
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2 flex-wrap">
           {!estimationOnly && (
-            <Button size="sm" onClick={() => guardAction("team", "crear una historia de usuario", () => setCreateOpen(true))}><Plus className="h-4 w-4 mr-1" />Agregar HU</Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span>
+                  <Button size="sm" disabled={isArchived} className={isArchived ? "opacity-50" : ""} onClick={() => guardAction("team", "crear una historia de usuario", () => setCreateOpen(true))}><Plus className="h-4 w-4 mr-1" />Agregar HU</Button>
+                </span>
+              </TooltipTrigger>
+              {isArchived && <TooltipContent>{ARCHIVED_TOOLTIP}</TooltipContent>}
+            </Tooltip>
           )}
           {estimationOnly && (
-            <Button size="sm" variant="outline" onClick={() => guardAction("team", "iniciar Planning Poker", () => setPlanningPokerOpen(true))}>
-              <Users className="h-4 w-4 mr-1" />Planning Poker
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span>
+                  <Button size="sm" variant="outline" disabled={isArchived} className={isArchived ? "opacity-50" : ""} onClick={() => guardAction("team", "iniciar Planning Poker", () => setPlanningPokerOpen(true))}>
+                    <Users className="h-4 w-4 mr-1" />Planning Poker
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              {isArchived && <TooltipContent>{ARCHIVED_TOOLTIP}</TooltipContent>}
+            </Tooltip>
           )}
         </div>
         <span className="text-sm text-muted-foreground">{stories?.length ?? 0} historias</span>
@@ -253,7 +270,7 @@ export function ProjectBacklogTab({ projectId, estimationOnly = false }: { proje
                       }}
                       min={0}
                       max={50}
-                      disabled={isStoryReadOnly(s)}
+                      disabled={isStoryReadOnly(s) || isArchived}
                     />
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">{s.sprints?.name ?? "—"}</TableCell>
