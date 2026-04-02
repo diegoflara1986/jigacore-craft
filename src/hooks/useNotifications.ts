@@ -26,6 +26,7 @@ const TYPE_CONFIG: Record<string, { icon: string; color: string }> = {
   nuevo_incidente: { icon: "🐛", color: "text-orange-500" },
   presupuesto_alerta: { icon: "💰", color: "text-yellow-500" },
   planning_poker: { icon: "🃏", color: "text-blue-400" },
+  estimation_invite: { icon: "📊", color: "text-primary" },
   info: { icon: "ℹ️", color: "text-muted-foreground" },
 };
 

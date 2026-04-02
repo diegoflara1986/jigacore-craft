@@ -57,7 +57,7 @@ export function ProjectStepNav({ steps, activeStep, onStepClick }: Props) {
 const stepHints: Record<string, string> = {
   team: "👥 Primero agrega los miembros que trabajarán en este proyecto y asígnales su rol",
   backlog: "📋 Crea las Historias de Usuario describiendo las funcionalidades que necesitas desarrollar",
-  estimation: "🃏 Estima el esfuerzo de cada Historia de Usuario usando Planning Poker con tu equipo",
+  estimation: "📊 Estima el esfuerzo de cada Historia de Usuario creando rondas de estimación asíncrona con tu equipo",
   epics: "🗂️ Opcional: Agrupa tus HU en Épicas para organizar mejor el trabajo por funcionalidades grandes",
   sprints: "🚀 Crea un Sprint, selecciona las HU a desarrollar y define las fechas de inicio y fin",
   board: "📌 Gestiona el avance diario moviendo las tarjetas entre columnas según su estado",
