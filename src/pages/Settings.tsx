@@ -26,6 +26,7 @@ const WORKSPACE_ITEMS = [
   { id: "users" as Section, label: "Gestión de Usuarios", icon: Users },
   { id: "roles" as Section, label: "Roles y Permisos", icon: Shield },
   { id: "sla" as Section, label: "SLA de Incidentes", icon: Clock },
+  { id: "incident_perms" as Section, label: "Permisos Incidentes", icon: Bug },
 ];
 
 const SYSTEM_ITEMS = [
