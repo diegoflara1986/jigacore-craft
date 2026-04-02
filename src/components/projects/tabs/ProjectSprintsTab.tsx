@@ -644,7 +644,7 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
         </DialogContent>
       </Dialog>
 
-      <PlanningPokerModal projectId={projectId} open={planningPokerOpen} onOpenChange={setPlanningPokerOpen} />
+      
       <PermissionDeniedDialog open={denied.open} onOpenChange={closeDenied} actionLabel={denied.actionLabel} requiredRoleLabel={denied.requiredRoleLabel} allowedMembers={denied.allowedMembers} />
     </div>
   );
