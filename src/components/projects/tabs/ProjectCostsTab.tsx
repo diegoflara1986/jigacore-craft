@@ -20,7 +20,7 @@ const CHART_COLORS = ["hsl(213,52%,24%)", "hsl(24,95%,53%)", "hsl(142,71%,45%)",
 
 interface Props { projectId: string; isArchived?: boolean; }
 
-export function ProjectCostsTab({ projectId }: Props) {
+export function ProjectCostsTab({ projectId, isArchived = false }: Props) {
   const { data: project } = useProject(projectId);
   const { data: members } = useProjectMembers(projectId);
   const { data: configs } = useCostConfigs(projectId);
