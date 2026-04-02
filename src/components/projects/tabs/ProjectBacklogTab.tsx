@@ -67,11 +67,28 @@ export function ProjectBacklogTab({ projectId, estimationOnly = false, isArchive
   const createStory = useCreateUserStory();
   const updateStory = useUpdateUserStory();
   const { guardAction, denied, closeDenied } = usePermissions(projectId);
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   const [createOpen, setCreateOpen] = useState(false);
   const [planningPokerOpen, setPlanningPokerOpen] = useState(false);
   const [selectedStoryId, setSelectedStoryId] = useState<string | null>(null);
   const [newStory, setNewStory] = useState({ title: "", description: "", type: "story", priority: "medium", status: "backlog", story_points: "", epic_id: "", assigned_to: "", sprint_id: "" });
+
+  // Active estimation sessions for this project
+  const { data: activeSessions } = useQuery({
+    queryKey: ["active-estimation-sessions", projectId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).from("estimation_sessions")
+        .select("*, participants:estimation_session_participants(user_id, is_online, profiles:user_id(id, full_name, avatar_url))")
+        .eq("project_id", projectId)
+        .eq("status", "active")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!projectId,
+  });
 
   // Sprints (include status for read-only logic)
   const { data: sprints } = useQuery({
