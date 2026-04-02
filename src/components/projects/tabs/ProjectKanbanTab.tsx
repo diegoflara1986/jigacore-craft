@@ -191,7 +191,7 @@ export function ProjectKanbanTab({ projectId, isArchived = false }: Props) {
     return (
       <div
         key={story.id}
-        draggable
+        draggable={!isArchived}
         onDragStart={(e) => handleDragStart(e, story.id)}
         onClick={() => setSelectedStoryId(story.id)}
         className={cn(
