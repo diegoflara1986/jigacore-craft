@@ -38,7 +38,8 @@ export function NotificationDropdown() {
       } else {
         navigate(`/my-work`);
       }
-    } else if (n.reference_type === "incident" && n.reference_id) navigate(`/incidents`);
+    } else if (n.reference_type === "project" && n.reference_id) navigate(`/proyectos/${n.reference_id}`);
+    else if (n.reference_type === "incident" && n.reference_id) navigate(`/incidents`);
     else if (n.reference_type === "user_story" && n.reference_id) navigate(`/my-work`);
     else if (n.reference_type === "sprint") navigate(`/reports`);
   };
