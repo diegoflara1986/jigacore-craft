@@ -36,6 +36,7 @@ const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secon
 interface Props {
   projectId: string;
   onNavigateToBoard?: () => void;
+  isArchived?: boolean;
 }
 
 export function ProjectSprintsTab({ projectId, onNavigateToBoard }: Props) {
