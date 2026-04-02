@@ -24,7 +24,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
-import { PlanningPokerModal } from "../PlanningPokerModal";
+
 
 const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
   planning: { label: "Planificado", variant: "outline" },
