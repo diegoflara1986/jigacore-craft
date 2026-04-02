@@ -9,6 +9,7 @@ import { ProjectFormModal } from "@/components/projects/ProjectFormModal";
 import { EmptyState } from "@/components/EmptyState";
 import { CardSkeleton } from "@/components/TableSkeleton";
 import { usePageTitle } from "@/hooks/usePageTitle";
+import { useAuth } from "@/lib/auth";
 
 const filters = [
   { value: "all", label: "Todos" },
@@ -26,6 +27,9 @@ export default function Projects() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editProject, setEditProject] = useState<Project | null>(null);
   const { data: projects, isLoading } = useProjects(status, search);
+  const { profile } = useAuth();
+
+  const isAdmin = ["admin", "super_admin"].includes(profile?.role ?? "");
 
   const openEdit = (p: Project) => { setEditProject(p); setModalOpen(true); };
   const openNew = () => { setEditProject(null); setModalOpen(true); };
@@ -33,7 +37,16 @@ export default function Projects() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Proyectos</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-foreground">Proyectos</h1>
+          {!isLoading && projects && (
+            <span className="text-sm text-muted-foreground">
+              {isAdmin
+                ? `${projects.length} proyectos en el workspace`
+                : `${projects.length} proyectos asignados a ti`}
+            </span>
+          )}
+        </div>
         <Button onClick={openNew} className="bg-accent text-accent-foreground hover:bg-accent/90">
           <Plus className="h-4 w-4 mr-1" /> Nuevo Proyecto
         </Button>

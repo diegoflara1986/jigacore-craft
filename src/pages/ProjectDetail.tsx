@@ -88,10 +88,20 @@ export default function ProjectDetail() {
   }
 
   if (!project) {
+    // Check if it's an access denied (project exists but user can't see it)
+    const isAccessDenied = projectError || (!isLoading && !project);
     return (
-      <div className="text-center py-20">
-        <p className="text-muted-foreground">Proyecto no encontrado</p>
-        <Button variant="link" onClick={() => navigate("/proyectos")} className="text-accent mt-2">Volver a proyectos</Button>
+      <div className="flex flex-col items-center justify-center py-20 space-y-4 animate-fade-in">
+        <div className="h-16 w-16 rounded-full bg-destructive/10 flex items-center justify-center">
+          <ShieldAlert className="h-8 w-8 text-destructive" />
+        </div>
+        <h2 className="text-xl font-bold text-foreground">Acceso restringido</h2>
+        <p className="text-sm text-muted-foreground text-center max-w-md">
+          No tienes acceso a este proyecto. Contacta al administrador para ser agregado como miembro.
+        </p>
+        <Button onClick={() => navigate("/proyectos")} className="mt-2">
+          Volver a mis proyectos
+        </Button>
       </div>
     );
   }
