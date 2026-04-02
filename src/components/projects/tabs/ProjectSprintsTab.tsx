@@ -290,9 +290,6 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
         <div className="flex gap-2">
           {!isArchived && (
             <>
-              <Button size="sm" variant="outline" onClick={() => setPlanningPokerOpen(true)}>
-                <Users className="h-4 w-4 mr-1" />Planning Poker
-              </Button>
               <Button size="sm" onClick={() => guardAction("lead", "crear un sprint", openCreate)}><Plus className="h-4 w-4 mr-1" />Nuevo Sprint</Button>
             </>
           )}
