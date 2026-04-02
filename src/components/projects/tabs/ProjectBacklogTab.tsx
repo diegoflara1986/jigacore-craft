@@ -114,12 +114,26 @@ export function ProjectBacklogTab({ projectId, estimationOnly = false, isArchive
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2 flex-wrap">
           {!estimationOnly && (
-            <Button size="sm" onClick={() => guardAction("team", "crear una historia de usuario", () => setCreateOpen(true))}><Plus className="h-4 w-4 mr-1" />Agregar HU</Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span>
+                  <Button size="sm" disabled={isArchived} className={isArchived ? "opacity-50" : ""} onClick={() => guardAction("team", "crear una historia de usuario", () => setCreateOpen(true))}><Plus className="h-4 w-4 mr-1" />Agregar HU</Button>
+                </span>
+              </TooltipTrigger>
+              {isArchived && <TooltipContent>{ARCHIVED_TOOLTIP}</TooltipContent>}
+            </Tooltip>
           )}
           {estimationOnly && (
-            <Button size="sm" variant="outline" onClick={() => guardAction("team", "iniciar Planning Poker", () => setPlanningPokerOpen(true))}>
-              <Users className="h-4 w-4 mr-1" />Planning Poker
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span>
+                  <Button size="sm" variant="outline" disabled={isArchived} className={isArchived ? "opacity-50" : ""} onClick={() => guardAction("team", "iniciar Planning Poker", () => setPlanningPokerOpen(true))}>
+                    <Users className="h-4 w-4 mr-1" />Planning Poker
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              {isArchived && <TooltipContent>{ARCHIVED_TOOLTIP}</TooltipContent>}
+            </Tooltip>
           )}
         </div>
         <span className="text-sm text-muted-foreground">{stories?.length ?? 0} historias</span>
