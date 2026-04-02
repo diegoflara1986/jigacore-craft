@@ -231,7 +231,7 @@ export function ProjectCostsTab({ projectId, isArchived = false }: Props) {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm">Configuración de Tarifas por Miembro</CardTitle>
-                <Button size="sm" onClick={saveRates} disabled={Object.keys(rates).length === 0}>
+                <Button size="sm" onClick={saveRates} disabled={Object.keys(rates).length === 0 || isArchived}>
                   <Save className="h-4 w-4 mr-1" />Guardar tarifas
                 </Button>
               </div>

@@ -266,8 +266,11 @@ export function ProjectKanbanTab({ projectId, isArchived = false }: Props) {
               {colStories.length}{col.limit > 0 ? `/${col.limit}` : ""}
             </span>
           </div>
-          <Button size="icon" variant="ghost" className="h-5 w-5" onClick={() => guardAction("team", "agregar una historia al tablero", () => { setQuickAddCol(col.id); setQuickAddTitle(""); })}>
-            <Plus className="h-3 w-3" />
+          {!isArchived && (
+            <Button size="icon" variant="ghost" className="h-5 w-5" onClick={() => guardAction("team", "agregar una historia al tablero", () => { setQuickAddCol(col.id); setQuickAddTitle(""); })}>
+              <Plus className="h-3 w-3" />
+            </Button>
+          )}
           </Button>
         </div>
         {quickAddCol === col.id && (
