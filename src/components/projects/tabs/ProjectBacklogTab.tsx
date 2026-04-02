@@ -22,7 +22,6 @@ import { PlanningPokerModal } from "../PlanningPokerModal";
 import { useAuth } from "@/lib/auth";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 const TYPES = [
   { value: "story", label: "Historia", icon: "📖" },
