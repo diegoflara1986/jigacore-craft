@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
-import { User, Bell, Palette, Building2, Users, Shield, Clock, FileText, Kanban, Tags, Puzzle, Box, Receipt, ClipboardList, Lock } from "lucide-react";
+import { User, Bell, Palette, Building2, Users, Shield, Clock, FileText, Kanban, Tags, Puzzle, Box, Receipt, ClipboardList, Lock, Bug } from "lucide-react";
 import { SettingsProfile } from "@/components/settings/SettingsProfile";
 import { SettingsNotifications } from "@/components/settings/SettingsNotifications";
 import { SettingsAppearance } from "@/components/settings/SettingsAppearance";
@@ -11,8 +11,9 @@ import { SettingsRoles } from "@/components/settings/SettingsRoles";
 import { SettingsSLA } from "@/components/settings/SettingsSLA";
 import { SettingsIntegrations } from "@/components/settings/SettingsIntegrations";
 import { SettingsAudit } from "@/components/settings/SettingsAudit";
+import { SettingsIncidentPermissions } from "@/components/settings/SettingsIncidentPermissions";
 
-type Section = "profile" | "notifications" | "appearance" | "workspace" | "users" | "roles" | "sla" | "integrations" | "audit";
+type Section = "profile" | "notifications" | "appearance" | "workspace" | "users" | "roles" | "sla" | "incident_perms" | "integrations" | "audit";
 
 const PERSONAL_ITEMS = [
   { id: "profile" as Section, label: "Mi Perfil", icon: User },
@@ -25,6 +26,7 @@ const WORKSPACE_ITEMS = [
   { id: "users" as Section, label: "Gestión de Usuarios", icon: Users },
   { id: "roles" as Section, label: "Roles y Permisos", icon: Shield },
   { id: "sla" as Section, label: "SLA de Incidentes", icon: Clock },
+  { id: "incident_perms" as Section, label: "Permisos Incidentes", icon: Bug },
 ];
 
 const SYSTEM_ITEMS = [
@@ -80,6 +82,7 @@ export default function Settings() {
         {section === "sla" && <SettingsSLA />}
         {section === "integrations" && <SettingsIntegrations />}
         {section === "audit" && <SettingsAudit />}
+        {section === "incident_perms" && <SettingsIncidentPermissions />}
       </main>
     </div>
   );

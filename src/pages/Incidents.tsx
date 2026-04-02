@@ -239,8 +239,38 @@ function CreateIncidentButton({ projects, onCreated }: { projects: { id: string;
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ title: "", description: "", severity: "media", category: "", project_id: "" });
   const [loading, setLoading] = useState(false);
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const qc = useQueryClient();
+
+  // Get projects where user is a member
+  const { data: myProjectIds } = useQuery({
+    queryKey: ["my-project-memberships", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data } = await supabase.from("project_members").select("project_id").eq("user_id", user.id);
+      return (data ?? []).map(d => d.project_id);
+    },
+    enabled: !!user,
+  });
+
+  // Get incident permission configs for the workspace
+  const { data: permConfigs } = useQuery({
+    queryKey: ["incident-permission-configs"],
+    queryFn: async () => {
+      const { data } = await (supabase as any).from("incident_permission_configs").select("*");
+      return (data ?? []) as { role: string; can_create: boolean }[];
+    },
+  });
+
+  const userRole = profile?.role ?? "external_user";
+  // Admin/super_admin always can create. Otherwise check config.
+  const isAdmin = ["admin", "super_admin"].includes(userRole);
+  const canCreate = isAdmin || (permConfigs ?? []).some(c => c.role === userRole && c.can_create);
+
+  // Filter projects to only those where user is a member (admins see all)
+  const availableProjects = isAdmin
+    ? projects
+    : projects.filter(p => (myProjectIds ?? []).includes(p.id));
 
   const handleCreate = async () => {
     if (!form.title.trim() || !form.project_id) {
@@ -271,6 +301,8 @@ function CreateIncidentButton({ projects, onCreated }: { projects: { id: string;
     }
   };
 
+  if (!canCreate) return null;
+
   return (
     <>
       <Button onClick={() => setOpen(true)}>
@@ -281,11 +313,15 @@ function CreateIncidentButton({ projects, onCreated }: { projects: { id: string;
           <DialogHeader><DialogTitle>Nuevo Incidente</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label>Proyecto *</Label>
+              <Label>Proyecto * <span className="text-xs text-muted-foreground">(solo proyectos donde eres miembro)</span></Label>
               <Select value={form.project_id} onValueChange={v => setForm(f => ({ ...f, project_id: v }))}>
                 <SelectTrigger><SelectValue placeholder="Seleccionar proyecto" /></SelectTrigger>
                 <SelectContent>
-                  {projects.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                  {availableProjects.length === 0 ? (
+                    <SelectItem value="_none" disabled>No tienes proyectos asignados</SelectItem>
+                  ) : (
+                    availableProjects.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)
+                  )}
                 </SelectContent>
               </Select>
             </div>

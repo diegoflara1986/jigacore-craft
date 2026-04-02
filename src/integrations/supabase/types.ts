@@ -490,6 +490,38 @@ export type Database = {
           },
         ]
       }
+      incident_permission_configs: {
+        Row: {
+          can_create: boolean
+          created_at: string
+          id: string
+          role: string
+          workspace_id: string
+        }
+        Insert: {
+          can_create?: boolean
+          created_at?: string
+          id?: string
+          role: string
+          workspace_id: string
+        }
+        Update: {
+          can_create?: boolean
+          created_at?: string
+          id?: string
+          role?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incident_permission_configs_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       incidents: {
         Row: {
           actual_result: string | null
