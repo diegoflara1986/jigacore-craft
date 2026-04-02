@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useProject, useUpdateProject, useProjectMembers, useProjectStats } from "@/hooks/useProjects";
+import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, LayoutDashboard, Settings, Lock, RotateCcw } from "lucide-react";
+import { ArrowLeft, LayoutDashboard, Settings, Lock, RotateCcw, ShieldAlert } from "lucide-react";
 import { ProjectOverviewTab } from "@/components/projects/tabs/ProjectOverviewTab";
 import { ProjectTeamTab } from "@/components/projects/tabs/ProjectTeamTab";
 import { ProjectEpicsTab } from "@/components/projects/tabs/ProjectEpicsTab";
