@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useProject, useUpdateProject, useProjectMembers, useProjectStats } from "@/hooks/useProjects";
+import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, LayoutDashboard, Settings, Lock, RotateCcw } from "lucide-react";
+import { ArrowLeft, LayoutDashboard, Settings, Lock, RotateCcw, ShieldAlert } from "lucide-react";
 import { ProjectOverviewTab } from "@/components/projects/tabs/ProjectOverviewTab";
 import { ProjectTeamTab } from "@/components/projects/tabs/ProjectTeamTab";
 import { ProjectEpicsTab } from "@/components/projects/tabs/ProjectEpicsTab";
@@ -22,7 +23,8 @@ export default function ProjectDetail() {
   const [restoreOpen, setRestoreOpen] = useState(false);
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { data: project, isLoading } = useProject(id);
+  const { profile } = useAuth();
+  const { data: project, isLoading, error: projectError } = useProject(id);
   const { data: members } = useProjectMembers(id);
   const { data: stats } = useProjectStats(id);
   const updateProject = useUpdateProject();
@@ -86,10 +88,20 @@ export default function ProjectDetail() {
   }
 
   if (!project) {
+    // Check if it's an access denied (project exists but user can't see it)
+    const isAccessDenied = projectError || (!isLoading && !project);
     return (
-      <div className="text-center py-20">
-        <p className="text-muted-foreground">Proyecto no encontrado</p>
-        <Button variant="link" onClick={() => navigate("/proyectos")} className="text-accent mt-2">Volver a proyectos</Button>
+      <div className="flex flex-col items-center justify-center py-20 space-y-4 animate-fade-in">
+        <div className="h-16 w-16 rounded-full bg-destructive/10 flex items-center justify-center">
+          <ShieldAlert className="h-8 w-8 text-destructive" />
+        </div>
+        <h2 className="text-xl font-bold text-foreground">Acceso restringido</h2>
+        <p className="text-sm text-muted-foreground text-center max-w-md">
+          No tienes acceso a este proyecto. Contacta al administrador para ser agregado como miembro.
+        </p>
+        <Button onClick={() => navigate("/proyectos")} className="mt-2">
+          Volver a mis proyectos
+        </Button>
       </div>
     );
   }

@@ -1,18 +1,21 @@
 import { useState } from "react";
-import { ProjectMember, useAddProjectMember, useRemoveProjectMember } from "@/hooks/useProjects";
+import { ProjectMember, useAddProjectMember, useRemoveProjectMember, useProject } from "@/hooks/useProjects";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useAuth } from "@/lib/auth";
 import { PermissionDeniedDialog } from "@/components/PermissionDeniedDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Plus, Trash2 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { Plus, Trash2, Crown } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 const projectRoles = ["project_manager", "team_lead", "developer", "qa", "designer", "architect", "analyst"];
 const ARCHIVED_TOOLTIP = "Proyecto archivado. Restaura el proyecto para editar";
@@ -25,6 +28,9 @@ export function ProjectTeamTab({ projectId, members, isArchived = false }: { pro
   const addMember = useAddProjectMember();
   const removeMember = useRemoveProjectMember();
   const { guardAction, denied, closeDenied } = usePermissions(projectId);
+  const { user } = useAuth();
+  const { data: project } = useProject(projectId);
+  const qc = useQueryClient();
 
   const { data: workspaceUsers } = useQuery({
     queryKey: ["workspace-users"],
@@ -37,17 +43,56 @@ export function ProjectTeamTab({ projectId, members, isArchived = false }: { pro
   const availableUsers = (workspaceUsers ?? []).filter(
     (u) => !members.some((m) => m.user_id === u.id) && (
       u.full_name?.toLowerCase().includes(userSearch.toLowerCase()) ||
-      u.email.toLowerCase().includes(userSearch.toLowerCase())
+      u.email?.toLowerCase().includes(userSearch.toLowerCase())
     )
   );
 
   const handleAdd = async () => {
     if (!selectedUser) return;
     await addMember.mutateAsync({ project_id: projectId, user_id: selectedUser, project_role: selectedRole });
+
+    // Send notification to the added user
+    const addedUser = workspaceUsers?.find(u => u.id === selectedUser);
+    if (addedUser && project) {
+      await supabase.from("notifications").insert({
+        user_id: selectedUser,
+        type: "project_added",
+        title: "🎉 Te agregaron a un proyecto",
+        message: `Has sido agregado al proyecto '${project.name}' con el rol: ${selectedRole.replace("_", " ")}`,
+        reference_id: projectId,
+        reference_type: "project",
+      });
+    }
+
     setAddOpen(false);
     setSelectedUser("");
     setUserSearch("");
   };
+
+  const handleRemove = async (member: ProjectMember) => {
+    // Don't allow removing yourself if you're the only member
+    if (member.user_id === user?.id && members.length <= 1) {
+      toast({ title: "No puedes eliminarte si eres el único miembro", variant: "destructive" });
+      return;
+    }
+
+    await removeMember.mutateAsync({ id: member.id, project_id: projectId });
+
+    // Send notification to removed user
+    if (project && member.user_id !== user?.id) {
+      await supabase.from("notifications").insert({
+        user_id: member.user_id,
+        type: "project_removed",
+        title: "Has sido removido de un proyecto",
+        message: `Has sido removido del proyecto '${project.name}'`,
+        reference_id: projectId,
+        reference_type: "project",
+      });
+    }
+  };
+
+  const isCreator = (memberId: string) => project?.created_by === memberId;
+  const isOnlyMember = members.length <= 1;
 
   const initials = (name: string | null) => name ? name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() : "?";
 
@@ -72,33 +117,45 @@ export function ProjectTeamTab({ projectId, members, isArchived = false }: { pro
             <p className="text-sm text-muted-foreground text-center py-6">No hay miembros asignados</p>
           ) : (
             <div className="divide-y divide-border">
-              {members.map((m) => (
-                <div key={m.id} className="flex items-center justify-between py-3">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-9 w-9">
-                      <AvatarFallback className="text-xs bg-muted">{initials(m.profiles?.full_name ?? null)}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{m.profiles?.full_name || m.profiles?.email}</p>
-                      <p className="text-xs text-muted-foreground">{m.profiles?.email}</p>
+              {members.map((m) => {
+                const isSelfAndOnly = m.user_id === user?.id && isOnlyMember;
+                const canRemove = !isSelfAndOnly;
+                return (
+                  <div key={m.id} className="flex items-center justify-between py-3">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-9 w-9">
+                        <AvatarFallback className="text-xs bg-muted">{initials(m.profiles?.full_name ?? null)}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium text-foreground">{m.profiles?.full_name || m.profiles?.email}</p>
+                          {isCreator(m.user_id) && (
+                            <Badge variant="outline" className="text-[9px] gap-1 border-primary/30 text-primary">
+                              <Crown className="h-2.5 w-2.5" />Creador
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">{m.profiles?.email}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs px-2 py-1 bg-muted rounded-md text-muted-foreground capitalize">{m.project_role.replace("_", " ")}</span>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" disabled={isArchived || !canRemove}
+                              onClick={() => guardAction("management", "remover un miembro del proyecto", () => handleRemove(m))}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </span>
+                        </TooltipTrigger>
+                        {isArchived && <TooltipContent>{ARCHIVED_TOOLTIP}</TooltipContent>}
+                        {!isArchived && isSelfAndOnly && <TooltipContent>No puedes eliminarte si eres el único miembro</TooltipContent>}
+                      </Tooltip>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs px-2 py-1 bg-muted rounded-md text-muted-foreground capitalize">{m.project_role.replace("_", " ")}</span>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" disabled={isArchived}
-                            onClick={() => guardAction("management", "remover un miembro del proyecto", () => removeMember.mutate({ id: m.id, project_id: projectId }))}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </span>
-                      </TooltipTrigger>
-                      {isArchived && <TooltipContent>{ARCHIVED_TOOLTIP}</TooltipContent>}
-                    </Tooltip>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>
@@ -114,9 +171,9 @@ export function ProjectTeamTab({ projectId, members, isArchived = false }: { pro
               {userSearch && (
                 <div className="max-h-40 overflow-y-auto border border-border rounded-md">
                   {availableUsers.map((u) => (
-                    <button key={u.id} onClick={() => { setSelectedUser(u.id); setUserSearch(u.full_name || u.email); }}
+                    <button key={u.id} onClick={() => { setSelectedUser(u.id!); setUserSearch(u.full_name || u.email || ""); }}
                       className={`w-full text-left px-3 py-2 text-sm hover:bg-muted/50 flex items-center gap-2 ${selectedUser === u.id ? "bg-muted" : ""}`}>
-                      <Avatar className="h-6 w-6"><AvatarFallback className="text-[9px] bg-muted">{initials(u.full_name)}</AvatarFallback></Avatar>
+                      <Avatar className="h-6 w-6"><AvatarFallback className="text-[9px] bg-muted">{initials(u.full_name ?? null)}</AvatarFallback></Avatar>
                       <div>
                         <p className="text-foreground">{u.full_name || u.email}</p>
                         <p className="text-[10px] text-muted-foreground">{u.email}</p>

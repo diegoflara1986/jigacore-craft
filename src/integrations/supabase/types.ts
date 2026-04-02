@@ -1336,6 +1336,10 @@ export type Database = {
       has_lead_role: { Args: { _user_id: string }; Returns: boolean }
       has_management_role: { Args: { _user_id: string }; Returns: boolean }
       has_team_role: { Args: { _user_id: string }; Returns: boolean }
+      is_project_member: {
+        Args: { _project_id: string; _user_id: string }
+        Returns: boolean
+      }
       lookup_incident_public: {
         Args: { p_ticket_code: string }
         Returns: {
