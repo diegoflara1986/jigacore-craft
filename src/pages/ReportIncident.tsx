@@ -208,7 +208,7 @@ export default function ReportIncident() {
           <Field label="Categoría" error={errors.category} required>
             <Select value={form.category} onValueChange={v => set("category", v)}>
               <SelectTrigger><SelectValue placeholder="Selecciona una categoría" /></SelectTrigger>
-              <SelectContent>{CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+              <SelectContent>{CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent>
             </Select>
           </Field>
 
