@@ -6,6 +6,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNotifications, useUnreadCount, useMarkAsRead, useMarkAllAsRead, getNotificationConfig } from "@/hooks/useNotifications";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
 function timeAgo(dateStr: string) {
@@ -27,12 +28,16 @@ export function NotificationDropdown() {
   const markAll = useMarkAllAsRead();
   const navigate = useNavigate();
 
-  const handleClick = (n: any) => {
+  const handleClick = async (n: any) => {
     if (!n.is_read) markRead.mutate(n.id);
     if (n.reference_type === "estimation_session" && n.reference_id) {
-      // Navigate to planning poker session - need project context
-      // For now navigate to projects, the user can find the session
-      navigate(`/my-work`);
+      // Look up the session's project_id to navigate directly
+      const { data } = await (supabase as any).from("estimation_sessions").select("project_id").eq("id", n.reference_id).maybeSingle();
+      if (data?.project_id) {
+        navigate(`/proyectos/${data.project_id}/planning-poker/${n.reference_id}`);
+      } else {
+        navigate(`/my-work`);
+      }
     } else if (n.reference_type === "incident" && n.reference_id) navigate(`/incidents`);
     else if (n.reference_type === "user_story" && n.reference_id) navigate(`/my-work`);
     else if (n.reference_type === "sprint") navigate(`/reports`);
