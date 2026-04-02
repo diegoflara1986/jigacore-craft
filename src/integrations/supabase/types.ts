@@ -173,6 +173,196 @@ export type Database = {
           },
         ]
       }
+      estimation_round_participants: {
+        Row: {
+          id: string
+          round_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          round_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          round_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "estimation_round_participants_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "estimation_rounds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "estimation_round_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "estimation_round_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_safe_view"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      estimation_round_stories: {
+        Row: {
+          id: string
+          result_points: number | null
+          round_id: string
+          user_story_id: string
+        }
+        Insert: {
+          id?: string
+          result_points?: number | null
+          round_id: string
+          user_story_id: string
+        }
+        Update: {
+          id?: string
+          result_points?: number | null
+          round_id?: string
+          user_story_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "estimation_round_stories_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "estimation_rounds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "estimation_round_stories_user_story_id_fkey"
+            columns: ["user_story_id"]
+            isOneToOne: false
+            referencedRelation: "user_stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      estimation_round_votes: {
+        Row: {
+          created_at: string
+          id: string
+          round_id: string
+          round_story_id: string
+          updated_at: string
+          user_id: string
+          vote_value: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          round_id: string
+          round_story_id: string
+          updated_at?: string
+          user_id: string
+          vote_value: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          round_id?: string
+          round_story_id?: string
+          updated_at?: string
+          user_id?: string
+          vote_value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "estimation_round_votes_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: false
+            referencedRelation: "estimation_rounds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "estimation_round_votes_round_story_id_fkey"
+            columns: ["round_story_id"]
+            isOneToOne: false
+            referencedRelation: "estimation_round_stories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "estimation_round_votes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "estimation_round_votes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_safe_view"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      estimation_rounds: {
+        Row: {
+          closed_at: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          project_id: string
+          scale: number[]
+          status: string
+          title: string
+        }
+        Insert: {
+          closed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          project_id: string
+          scale?: number[]
+          status?: string
+          title: string
+        }
+        Update: {
+          closed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          project_id?: string
+          scale?: number[]
+          status?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "estimation_rounds_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "estimation_rounds_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_safe_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "estimation_rounds_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       estimation_session_participants: {
         Row: {
           id: string
