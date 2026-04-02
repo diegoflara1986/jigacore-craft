@@ -6,6 +6,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNotifications, useUnreadCount, useMarkAsRead, useMarkAllAsRead, getNotificationConfig } from "@/hooks/useNotifications";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
 function timeAgo(dateStr: string) {
