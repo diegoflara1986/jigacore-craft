@@ -23,7 +23,8 @@ export default function ProjectDetail() {
   const [restoreOpen, setRestoreOpen] = useState(false);
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { data: project, isLoading } = useProject(id);
+  const { profile } = useAuth();
+  const { data: project, isLoading, error: projectError } = useProject(id);
   const { data: members } = useProjectMembers(id);
   const { data: stats } = useProjectStats(id);
   const updateProject = useUpdateProject();
