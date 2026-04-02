@@ -29,7 +29,11 @@ export function NotificationDropdown() {
 
   const handleClick = (n: any) => {
     if (!n.is_read) markRead.mutate(n.id);
-    if (n.reference_type === "incident" && n.reference_id) navigate(`/incidents`);
+    if (n.reference_type === "estimation_session" && n.reference_id) {
+      // Navigate to planning poker session - need project context
+      // For now navigate to projects, the user can find the session
+      navigate(`/my-work`);
+    } else if (n.reference_type === "incident" && n.reference_id) navigate(`/incidents`);
     else if (n.reference_type === "user_story" && n.reference_id) navigate(`/my-work`);
     else if (n.reference_type === "sprint") navigate(`/reports`);
   };
