@@ -17,7 +17,14 @@ const SEVERITY_OPTIONS = [
   { value: "baja", emoji: "🟢", label: "Baja", desc: "Problema menor o estético", color: "border-green-500 bg-green-50" },
 ];
 
-const CATEGORIES = ["Bug de sistema", "Error de interfaz", "Problema de rendimiento", "Error de datos", "Problema de seguridad", "Otro"];
+const CATEGORIES = [
+  { value: "bug_sistema", label: "Bug de Sistema" },
+  { value: "error_interfaz", label: "Error de Interfaz" },
+  { value: "problema_rendimiento", label: "Problema de Rendimiento" },
+  { value: "error_datos", label: "Error de Datos" },
+  { value: "problema_seguridad", label: "Problema de Seguridad" },
+  { value: "otro", label: "Otro" },
+];
 
 export default function ReportIncident() {
   const navigate = useNavigate();
