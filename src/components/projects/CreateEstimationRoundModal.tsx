@@ -1,12 +1,9 @@
 import { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
-import { useCreateEstimationSession } from "@/hooks/useEstimationSessions";
+import { useCreateEstimationRound } from "@/hooks/useEstimationRounds";
 import { useUserStories } from "@/hooks/useUserStories";
 import { useProjectMembers, useProject } from "@/hooks/useProjects";
 import { supabase } from "@/integrations/supabase/client";
-
-const fromTable = (table: string) => (supabase as any).from(table);
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +12,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "@/hooks/use-toast";
+
+const fromTable = (table: string) => (supabase as any).from(table);
 
 const PRIORITIES: Record<string, string> = {
   critical: "Crítica", high: "Alta", medium: "Media", low: "Baja",
@@ -26,15 +25,14 @@ interface Props {
   onOpenChange: (open: boolean) => void;
 }
 
-export function PlanningPokerModal({ projectId, open, onOpenChange }: Props) {
-  const navigate = useNavigate();
+export function CreateEstimationRoundModal({ projectId, open, onOpenChange }: Props) {
   const { user, profile } = useAuth();
-  const createSession = useCreateEstimationSession();
+  const createRound = useCreateEstimationRound();
   const { data: stories } = useUserStories(projectId);
   const { data: members } = useProjectMembers(projectId);
   const { data: project } = useProject(projectId);
 
-  const [name, setName] = useState("Planning Poker");
+  const [title, setTitle] = useState("Estimación Sprint");
   const [selectedStoryIds, setSelectedStoryIds] = useState<string[]>([]);
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
 
@@ -53,42 +51,35 @@ export function PlanningPokerModal({ projectId, open, onOpenChange }: Props) {
   const initials = (name: string | null) => name ? name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase() : "?";
 
   const handleCreate = async () => {
-    if (!name.trim() || !selectedStoryIds.length || !user) return;
+    if (!title.trim() || !selectedStoryIds.length || !user) return;
 
     try {
-      const session = await createSession.mutateAsync({
+      const round = await createRound.mutateAsync({
         project_id: projectId,
-        sprint_id: null,
-        name,
-        scale_type: "fibonacci",
-        status: "active",
-        current_story_id: selectedStoryIds[0],
+        title,
         created_by: user.id,
       });
 
-      // Create estimations for each selected story
+      // Create round_stories
       for (const storyId of selectedStoryIds) {
-        await fromTable("estimations").insert({
-          project_id: projectId,
+        await fromTable("estimation_round_stories").insert({
+          round_id: round.id,
           user_story_id: storyId,
-          session_id: session.id,
-          scale_type: "fibonacci",
-          created_by: user.id,
         });
       }
 
       // Save participants
       for (const memberId of selectedMemberIds) {
-        await fromTable("estimation_session_participants").insert({
-          session_id: session.id,
+        await fromTable("estimation_round_participants").insert({
+          round_id: round.id,
           user_id: memberId,
         });
       }
 
-      // Also add the creator as participant
+      // Also add the creator as participant if not selected
       if (!selectedMemberIds.includes(user.id)) {
-        await fromTable("estimation_session_participants").insert({
-          session_id: session.id,
+        await fromTable("estimation_round_participants").insert({
+          round_id: round.id,
           user_id: user.id,
         });
       }
@@ -100,16 +91,18 @@ export function PlanningPokerModal({ projectId, open, onOpenChange }: Props) {
       for (const memberId of invitees) {
         await supabase.from("notifications").insert({
           user_id: memberId,
-          type: "planning_poker_invite",
-          title: "Te invitaron a Planning Poker 🃏",
-          message: `${moderatorName} te invitó a la sesión '${name}' del proyecto '${projectName}'`,
-          reference_id: session.id,
-          reference_type: "estimation_session",
+          type: "estimation_invite",
+          title: "📊 Nueva estimación pendiente",
+          message: `${moderatorName} te invita a estimar ${selectedStoryIds.length} historias de usuario en '${projectName}'`,
+          reference_id: round.id,
+          reference_type: "estimation_round",
         });
       }
 
       onOpenChange(false);
-      navigate(`/proyectos/${projectId}/planning-poker/${session.id}`);
+      setTitle("Estimación Sprint");
+      setSelectedStoryIds([]);
+      setSelectedMemberIds([]);
     } catch (e: any) {
       toast({ title: "Error", description: e.message, variant: "destructive" });
     }
@@ -119,17 +112,17 @@ export function PlanningPokerModal({ projectId, open, onOpenChange }: Props) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Crear Sesión de Planning Poker</DialogTitle>
+          <DialogTitle>Nueva Ronda de Estimación</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-2">
           <div className="space-y-2">
-            <Label>Nombre de la sesión</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Planning Sprint 4" />
+            <Label>Título de la ronda</Label>
+            <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Estimación Sprint 4" />
           </div>
 
           <div className="space-y-2">
             <Label>Escala de votación</Label>
-            <p className="text-sm text-muted-foreground">Fibonacci (0, 1, 2, 3, 5, 8, 13, 21, 34, ?, ☕)</p>
+            <p className="text-sm text-muted-foreground">Fibonacci: 0, 1, 2, 3, 5, 8, 13, 21, 34</p>
           </div>
 
           {/* Stories selection */}
@@ -165,7 +158,7 @@ export function PlanningPokerModal({ projectId, open, onOpenChange }: Props) {
           {/* Participants selection */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label>Participantes</Label>
+              <Label>Miembros que deben votar</Label>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-muted-foreground">{selectedMemberIds.length} seleccionados</span>
                 {(members?.length ?? 0) > 0 && (
@@ -198,8 +191,8 @@ export function PlanningPokerModal({ projectId, open, onOpenChange }: Props) {
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={handleCreate} disabled={!name.trim() || !selectedStoryIds.length || !selectedMemberIds.length || createSession.isPending}>
-            Crear sesión
+          <Button onClick={handleCreate} disabled={!title.trim() || !selectedStoryIds.length || !selectedMemberIds.length || createRound.isPending}>
+            Crear y Notificar
           </Button>
         </DialogFooter>
       </DialogContent>

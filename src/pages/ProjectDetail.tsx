@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useProject, useUpdateProject, useProjectMembers, useProjectStats } from "@/hooks/useProjects";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -22,8 +22,15 @@ export default function ProjectDetail() {
   const [activeTab, setActiveTab] = useState("overview");
   const [restoreOpen, setRestoreOpen] = useState(false);
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { profile } = useAuth();
+
+  // Handle ?tab= URL param
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab === "estimation") setActiveTab("estimation");
+  }, [searchParams]);
   const { data: project, isLoading, error: projectError } = useProject(id);
   const { data: members } = useProjectMembers(id);
   const { data: stats } = useProjectStats(id);

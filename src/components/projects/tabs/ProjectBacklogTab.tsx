@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useUserStories, useCreateUserStory, useUpdateUserStory, UserStory } from "@/hooks/useUserStories";
 import { usePermissions } from "@/hooks/usePermissions";
 import { PermissionDeniedDialog } from "@/components/PermissionDeniedDialog";
@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEpics } from "@/hooks/useEpics";
 import { useProjectMembers, ProjectMember } from "@/hooks/useProjects";
+import { useEstimationRounds, useRoundParticipants } from "@/hooks/useEstimationRounds";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -15,13 +16,17 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, Users, Trash2, PlayCircle, ArrowRight } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Plus, Search, Trash2, BarChart3, Vote, Eye, ChevronDown, ChevronRight } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { UserStoryDetailSheet } from "../UserStoryDetailSheet";
-import { PlanningPokerModal } from "../PlanningPokerModal";
+import { CreateEstimationRoundModal } from "../CreateEstimationRoundModal";
 import { useAuth } from "@/lib/auth";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+
+const fromTable = (table: string) => (supabase as any).from(table);
 
 const TYPES = [
   { value: "story", label: "Historia", icon: "📖" },
@@ -70,26 +75,88 @@ export function ProjectBacklogTab({ projectId, estimationOnly = false, isArchive
   const navigate = useNavigate();
 
   const [createOpen, setCreateOpen] = useState(false);
-  const [planningPokerOpen, setPlanningPokerOpen] = useState(false);
+  const [estimationModalOpen, setEstimationModalOpen] = useState(false);
   const [selectedStoryId, setSelectedStoryId] = useState<string | null>(null);
+  const [closedRoundsOpen, setClosedRoundsOpen] = useState(false);
   const [newStory, setNewStory] = useState({ title: "", description: "", type: "story", priority: "medium", status: "backlog", story_points: "", epic_id: "", assigned_to: "", sprint_id: "" });
 
-  // Active estimation sessions for this project
-  const { data: activeSessions } = useQuery({
-    queryKey: ["active-estimation-sessions", projectId],
+  // Estimation rounds
+  const { data: allRounds } = useEstimationRounds(projectId);
+  const openRounds = useMemo(() => allRounds?.filter((r) => r.status === "abierta") ?? [], [allRounds]);
+  const closedRounds = useMemo(() => allRounds?.filter((r) => r.status === "cerrada") ?? [], [allRounds]);
+
+  // Get vote counts for open rounds (for each round, how many votes does the current user have)
+  const { data: myVoteCounts } = useQuery({
+    queryKey: ["my-round-vote-counts", projectId, user?.id],
     queryFn: async () => {
-      const { data, error } = await (supabase as any).from("estimation_sessions")
-        .select("*, participants:estimation_session_participants(user_id, is_online, profiles:user_id(id, full_name, avatar_url))")
-        .eq("project_id", projectId)
-        .eq("status", "active")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data ?? [];
+      if (!user || !openRounds.length) return {};
+      const roundIds = openRounds.map((r) => r.id);
+      const { data } = await fromTable("estimation_round_votes")
+        .select("round_id, round_story_id")
+        .eq("user_id", user.id)
+        .in("round_id", roundIds);
+      const counts: Record<string, number> = {};
+      (data ?? []).forEach((v: any) => { counts[v.round_id] = (counts[v.round_id] || 0) + 1; });
+      return counts;
     },
-    enabled: !!projectId,
+    enabled: !!user && openRounds.length > 0,
   });
 
-  // Sprints (include status for read-only logic)
+  // Get story counts per round
+  const { data: roundStoryCounts } = useQuery({
+    queryKey: ["round-story-counts", projectId],
+    queryFn: async () => {
+      if (!allRounds?.length) return {};
+      const roundIds = allRounds.map((r) => r.id);
+      const { data } = await fromTable("estimation_round_stories")
+        .select("round_id")
+        .in("round_id", roundIds);
+      const counts: Record<string, number> = {};
+      (data ?? []).forEach((rs: any) => { counts[rs.round_id] = (counts[rs.round_id] || 0) + 1; });
+      return counts;
+    },
+    enabled: (allRounds?.length ?? 0) > 0,
+  });
+
+  // Get participant counts per round
+  const { data: roundParticipantCounts } = useQuery({
+    queryKey: ["round-participant-counts", projectId],
+    queryFn: async () => {
+      if (!allRounds?.length) return {};
+      const roundIds = allRounds.map((r) => r.id);
+      const { data } = await fromTable("estimation_round_participants")
+        .select("round_id")
+        .in("round_id", roundIds);
+      const counts: Record<string, number> = {};
+      (data ?? []).forEach((p: any) => { counts[p.round_id] = (counts[p.round_id] || 0) + 1; });
+      return counts;
+    },
+    enabled: (allRounds?.length ?? 0) > 0,
+  });
+
+  // Get total vote counts per round (all users)
+  const { data: totalVoteCounts } = useQuery({
+    queryKey: ["total-round-vote-counts", projectId],
+    queryFn: async () => {
+      if (!allRounds?.length) return {};
+      const roundIds = allRounds.map((r) => r.id);
+      const { data } = await fromTable("estimation_round_votes")
+        .select("round_id, user_id")
+        .in("round_id", roundIds);
+      // Count distinct users per round
+      const userSets: Record<string, Set<string>> = {};
+      (data ?? []).forEach((v: any) => {
+        if (!userSets[v.round_id]) userSets[v.round_id] = new Set();
+        userSets[v.round_id].add(v.user_id);
+      });
+      const counts: Record<string, number> = {};
+      Object.entries(userSets).forEach(([k, s]) => { counts[k] = s.size; });
+      return counts;
+    },
+    enabled: (allRounds?.length ?? 0) > 0,
+  });
+
+  // Sprints
   const { data: sprints } = useQuery({
     queryKey: ["sprints", projectId],
     queryFn: async () => {
@@ -128,70 +195,111 @@ export function ProjectBacklogTab({ projectId, estimationOnly = false, isArchive
 
   const initials = (name: string | null) => name ? name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() : "?";
 
-  // Filter sessions where current user is a participant
-  const myActiveSessions = (activeSessions ?? []).filter((s: any) =>
-    s.participants?.some((p: any) => p.user_id === user?.id) || s.created_by === user?.id
-  );
+  const isCreatorOrAdmin = (round: any) => round.created_by === user?.id || ["admin", "super_admin", "project_manager"].includes(user?.id ? "" : "");
 
   return (
     <div className="mt-4 space-y-4">
-      {/* Active Planning Poker Sessions */}
-      {estimationOnly && myActiveSessions.length > 0 && (
-        <Card className="border-primary/20 bg-primary/5">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <PlayCircle className="h-4 w-4 text-primary" />
-              Sesiones Activas de Planning Poker
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {myActiveSessions.map((session: any) => {
-              const isModerator = session.created_by === user?.id;
-              const onlineCount = session.participants?.filter((p: any) => p.is_online).length ?? 0;
-              const totalParticipants = session.participants?.length ?? 0;
-              return (
-                <div key={session.id} className="flex items-center justify-between gap-3 p-3 rounded-lg border border-border bg-background">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{session.name}</p>
-                    <div className="flex items-center gap-3 mt-1">
-                      <span className="text-xs text-muted-foreground">
-                        {isModerator ? "🎯 Moderador" : "🃏 Participante"}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {onlineCount}/{totalParticipants} conectados
-                      </span>
-                    </div>
-                    {/* Participant avatars */}
-                    <div className="flex items-center gap-1 mt-1.5">
-                      {(session.participants ?? []).slice(0, 6).map((p: any) => (
-                        <div key={p.user_id} className="relative">
-                          <Avatar className="h-6 w-6">
-                            <AvatarFallback className="text-[9px] bg-muted">
-                              {initials(p.profiles?.full_name ?? null)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className={`absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full border border-background ${p.is_online ? "bg-green-500 animate-pulse" : "bg-muted-foreground/40"}`} />
+      {/* Estimation Rounds Section */}
+      {estimationOnly && (
+        <>
+          {/* Open Rounds */}
+          {openRounds.length > 0 && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <BarChart3 className="h-4 w-4 text-primary" />
+                Rondas Activas
+              </h3>
+              {openRounds.map((round) => {
+                const storyCount = roundStoryCounts?.[round.id] ?? 0;
+                const partCount = roundParticipantCounts?.[round.id] ?? 0;
+                const votedUsersCount = totalVoteCounts?.[round.id] ?? 0;
+                const myVotes = myVoteCounts?.[round.id] ?? 0;
+                const hasVotedAll = storyCount > 0 && myVotes >= storyCount;
+                const progress = partCount > 0 ? Math.round((votedUsersCount / partCount) * 100) : 0;
+                const isCreator = round.created_by === user?.id;
+
+                return (
+                  <Card key={round.id} className="border-primary/20">
+                    <CardContent className="py-3 px-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex-1 min-w-0 space-y-1.5">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-foreground truncate">{round.title}</span>
+                            {hasVotedAll ? (
+                              <Badge className="bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/30 text-[10px]">Ya votaste</Badge>
+                            ) : (
+                              <Badge className="bg-accent/20 text-accent border-accent/30 text-[10px]">Pendiente tu voto</Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                            <span>{storyCount} historias</span>
+                            <span>{votedUsersCount} de {partCount} miembros han votado</span>
+                          </div>
+                          <Progress value={progress} className="h-1.5" />
                         </div>
-                      ))}
-                      {(session.participants?.length ?? 0) > 6 && (
-                        <span className="text-[10px] text-muted-foreground ml-1">+{session.participants.length - 6}</span>
-                      )}
-                    </div>
-                  </div>
-                  <Button
-                    size="sm"
-                    onClick={() => navigate(`/proyectos/${projectId}/planning-poker/${session.id}`)}
-                    disabled={isArchived}
-                  >
-                    {isModerator ? "Continuar sesión" : "Unirse a votar"}
-                    <ArrowRight className="h-3.5 w-3.5 ml-1" />
-                  </Button>
-                </div>
-              );
-            })}
-          </CardContent>
-        </Card>
+                        <div className="flex gap-2 shrink-0">
+                          {!hasVotedAll && (
+                            <Button size="sm" onClick={() => navigate(`/proyectos/${projectId}/estimacion/${round.id}/votar`)} disabled={isArchived}>
+                              <Vote className="h-3.5 w-3.5 mr-1" />Votar
+                            </Button>
+                          )}
+                          {isCreator && (
+                            <Button size="sm" variant="outline" onClick={() => navigate(`/proyectos/${projectId}/estimacion/${round.id}/resultados`)}>
+                              <Eye className="h-3.5 w-3.5 mr-1" />Resultados
+                            </Button>
+                          )}
+                          {!isCreator && hasVotedAll && (
+                            <Button size="sm" variant="outline" onClick={() => navigate(`/proyectos/${projectId}/estimacion/${round.id}/votar`)}>
+                              Cambiar votos
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Closed Rounds */}
+          {closedRounds.length > 0 && (
+            <Collapsible open={closedRoundsOpen} onOpenChange={setClosedRoundsOpen}>
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="sm" className="text-muted-foreground">
+                  {closedRoundsOpen ? <ChevronDown className="h-4 w-4 mr-1" /> : <ChevronRight className="h-4 w-4 mr-1" />}
+                  Rondas Cerradas ({closedRounds.length})
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-2 mt-2">
+                {closedRounds.map((round) => {
+                  const storyCount = roundStoryCounts?.[round.id] ?? 0;
+                  const isCreator = round.created_by === user?.id;
+                  return (
+                    <Card key={round.id} className="border-muted">
+                      <CardContent className="py-3 px-4">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium text-muted-foreground truncate">{round.title}</span>
+                              <Badge variant="secondary" className="text-[10px]">Cerrada</Badge>
+                            </div>
+                            <span className="text-xs text-muted-foreground">{storyCount} historias · {round.closed_at ? new Date(round.closed_at).toLocaleDateString() : ""}</span>
+                          </div>
+                          <Button size="sm" variant="ghost" onClick={() => navigate(`/proyectos/${projectId}/estimacion/${round.id}/resultados`)}>
+                            <Eye className="h-3.5 w-3.5 mr-1" />Ver
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </CollapsibleContent>
+            </Collapsible>
+          )}
+        </>
       )}
+
       {/* Actions */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2 flex-wrap">
@@ -209,8 +317,8 @@ export function ProjectBacklogTab({ projectId, estimationOnly = false, isArchive
             <Tooltip>
               <TooltipTrigger asChild>
                 <span>
-                  <Button size="sm" variant="outline" disabled={isArchived} className={isArchived ? "opacity-50" : ""} onClick={() => guardAction("team", "iniciar Planning Poker", () => setPlanningPokerOpen(true))}>
-                    <Users className="h-4 w-4 mr-1" />Planning Poker
+                  <Button size="sm" disabled={isArchived} className={isArchived ? "opacity-50" : ""} onClick={() => guardAction("lead", "crear una ronda de estimación", () => setEstimationModalOpen(true))}>
+                    <Plus className="h-4 w-4 mr-1" />Nueva Estimación
                   </Button>
                 </span>
               </TooltipTrigger>
@@ -218,7 +326,7 @@ export function ProjectBacklogTab({ projectId, estimationOnly = false, isArchive
             </Tooltip>
           )}
         </div>
-        <span className="text-sm text-muted-foreground">{stories?.length ?? 0} historias</span>
+        <span className="text-sm text-muted-foreground">{stories?.length ?? 0} historias{estimationOnly ? " sin estimar" : ""}</span>
       </div>
 
       {/* Filters */}
@@ -281,28 +389,32 @@ export function ProjectBacklogTab({ projectId, estimationOnly = false, isArchive
             </SelectContent>
           </Select>
         </div>
-        <Button
-          size="sm"
-          variant={filters.showDeleted ? "default" : "outline"}
-          className="h-9"
-          onClick={() => setFilters((f) => ({ ...f, showDeleted: !f.showDeleted }))}
-        >
-          <Trash2 className="h-4 w-4 mr-1" />
-          {filters.showDeleted ? "Ver activas" : "Eliminadas"}
-        </Button>
+        {!estimationOnly && (
+          <Button
+            size="sm"
+            variant={filters.showDeleted ? "default" : "outline"}
+            className="h-9"
+            onClick={() => setFilters((f) => ({ ...f, showDeleted: !f.showDeleted }))}
+          >
+            <Trash2 className="h-4 w-4 mr-1" />
+            {filters.showDeleted ? "Ver activas" : "Eliminadas"}
+          </Button>
+        )}
       </div>
 
       {/* Table */}
       {isLoading ? (
         <div className="flex justify-center py-10"><div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" /></div>
       ) : !stories?.length ? (
-        <div className="text-center py-10 text-muted-foreground text-sm">Sin historias de usuario. Crea la primera.</div>
+        <div className="text-center py-10 text-muted-foreground text-sm">
+          {estimationOnly ? "Todas las historias ya tienen puntos estimados." : "Sin historias de usuario. Crea la primera."}
+        </div>
       ) : (
         <div className="border border-border rounded-lg overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow>
-             <TableHead className="w-20">ID</TableHead>
+                <TableHead className="w-20">ID</TableHead>
                 <TableHead className="w-16">Tipo</TableHead>
                 <TableHead>Título</TableHead>
                 <TableHead className="w-28">Épica</TableHead>
@@ -466,7 +578,7 @@ export function ProjectBacklogTab({ projectId, estimationOnly = false, isArchive
         readOnly={(() => { const s = stories?.find(st => st.id === selectedStoryId); return s ? isStoryReadOnly(s) : false; })()}
       />
 
-      <PlanningPokerModal projectId={projectId} open={planningPokerOpen} onOpenChange={setPlanningPokerOpen} />
+      <CreateEstimationRoundModal projectId={projectId} open={estimationModalOpen} onOpenChange={setEstimationModalOpen} />
       <PermissionDeniedDialog open={denied.open} onOpenChange={closeDenied} actionLabel={denied.actionLabel} requiredRoleLabel={denied.requiredRoleLabel} allowedMembers={denied.allowedMembers} />
     </div>
   );

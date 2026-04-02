@@ -14,7 +14,8 @@ import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import Projects from "./pages/Projects";
 import ProjectDetail from "./pages/ProjectDetail";
-import PlanningPoker from "./pages/PlanningPoker";
+import EstimationVoting from "./pages/EstimationVoting";
+import EstimationResults from "./pages/EstimationResults";
 import MyWork from "./pages/MyWork";
 import ReportIncident from "./pages/ReportIncident";
 import LookupIncident from "./pages/LookupIncident";
@@ -41,7 +42,8 @@ const App = () => (
           <Route path="/" element={<AppLayout><Index /></AppLayout>} />
           <Route path="/proyectos" element={<AppLayout><Projects /></AppLayout>} />
           <Route path="/proyectos/:id" element={<AppLayout><ProjectDetail /></AppLayout>} />
-          <Route path="/proyectos/:id/planning-poker/:sessionId" element={<AppLayout><PlanningPoker /></AppLayout>} />
+          <Route path="/proyectos/:id/estimacion/:roundId/votar" element={<AppLayout><EstimationVoting /></AppLayout>} />
+          <Route path="/proyectos/:id/estimacion/:roundId/resultados" element={<AppLayout><EstimationResults /></AppLayout>} />
           <Route path="/my-work" element={<AppLayout><MyWork /></AppLayout>} />
           <Route path="/incidents" element={<AppLayout><Incidents /></AppLayout>} />
           <Route path="/reports" element={<AppLayout><Reports /></AppLayout>} />

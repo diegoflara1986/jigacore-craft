@@ -15,7 +15,7 @@ const NOTIFICATION_TYPES = [
   { key: "tarea_vencida", label: "Mis tareas vencidas", icon: "⏰" },
   { key: "nuevo_incidente", label: "Nuevo incidente", icon: "🐛" },
   { key: "presupuesto_alerta", label: "Alerta de presupuesto", icon: "💰" },
-  { key: "planning_poker", label: "Invitación a Planning Poker", icon: "🃏" },
+  { key: "estimation_invite", label: "Invitación a estimación", icon: "📊" },
 ];
 
 export function SettingsNotifications() {

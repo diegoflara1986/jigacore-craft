@@ -24,7 +24,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
-import { PlanningPokerModal } from "../PlanningPokerModal";
+
 
 const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
   planning: { label: "Planificado", variant: "outline" },
@@ -88,7 +88,7 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
   const [newSprint, setNewSprint] = useState({ name: "", goal: "", start_date: undefined as Date | undefined, end_date: undefined as Date | undefined });
   const [selectedBacklogIds, setSelectedBacklogIds] = useState<string[]>([]);
   const [createHUOpen, setCreateHUOpen] = useState(false);
-  const [planningPokerOpen, setPlanningPokerOpen] = useState(false);
+  
   const [newStory, setNewStory] = useState({ title: "", description: "", type: "story", priority: "medium", status: "backlog", story_points: "", epic_id: "", assigned_to: "", sprint_id: "" });
 
   const handleCreateHU = async () => {
@@ -290,9 +290,6 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
         <div className="flex gap-2">
           {!isArchived && (
             <>
-              <Button size="sm" variant="outline" onClick={() => setPlanningPokerOpen(true)}>
-                <Users className="h-4 w-4 mr-1" />Planning Poker
-              </Button>
               <Button size="sm" onClick={() => guardAction("lead", "crear un sprint", openCreate)}><Plus className="h-4 w-4 mr-1" />Nuevo Sprint</Button>
             </>
           )}
@@ -647,7 +644,7 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
         </DialogContent>
       </Dialog>
 
-      <PlanningPokerModal projectId={projectId} open={planningPokerOpen} onOpenChange={setPlanningPokerOpen} />
+      
       <PermissionDeniedDialog open={denied.open} onOpenChange={closeDenied} actionLabel={denied.actionLabel} requiredRoleLabel={denied.requiredRoleLabel} allowedMembers={denied.allowedMembers} />
     </div>
   );

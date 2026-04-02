@@ -30,11 +30,11 @@ export function NotificationDropdown() {
 
   const handleClick = async (n: any) => {
     if (!n.is_read) markRead.mutate(n.id);
-    if (n.reference_type === "estimation_session" && n.reference_id) {
-      // Look up the session's project_id to navigate directly
-      const { data } = await (supabase as any).from("estimation_sessions").select("project_id").eq("id", n.reference_id).maybeSingle();
+    if (n.reference_type === "estimation_round" && n.reference_id) {
+      // Look up the round's project_id to navigate to estimation tab
+      const { data } = await (supabase as any).from("estimation_rounds").select("project_id").eq("id", n.reference_id).maybeSingle();
       if (data?.project_id) {
-        navigate(`/proyectos/${data.project_id}/planning-poker/${n.reference_id}`);
+        navigate(`/proyectos/${data.project_id}?tab=estimation`);
       } else {
         navigate(`/my-work`);
       }
