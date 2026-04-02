@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/auth";
 import { useCreateEstimationSession } from "@/hooks/useEstimationSessions";
 import { useUserStories } from "@/hooks/useUserStories";
-import { useProjectMembers } from "@/hooks/useProjects";
+import { useProjectMembers, useProject } from "@/hooks/useProjects";
 import { supabase } from "@/integrations/supabase/client";
 
 const fromTable = (table: string) => (supabase as any).from(table);
@@ -28,40 +28,29 @@ interface Props {
 
 export function PlanningPokerModal({ projectId, open, onOpenChange }: Props) {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const createSession = useCreateEstimationSession();
   const { data: stories } = useUserStories(projectId);
   const { data: members } = useProjectMembers(projectId);
+  const { data: project } = useProject(projectId);
 
   const [name, setName] = useState("Planning Poker");
   const [selectedStoryIds, setSelectedStoryIds] = useState<string[]>([]);
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
 
-  // Stories without story points
   const unestimatedStories = useMemo(
     () => stories?.filter((s) => (s.story_points === null || s.story_points === 0) && !s.deleted_at) ?? [],
     [stories]
   );
 
-  const toggleStory = (id: string) => {
-    setSelectedStoryIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
-  };
-
-  const toggleMember = (id: string) => {
-    setSelectedMemberIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
-  };
-
+  const toggleStory = (id: string) => setSelectedStoryIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
+  const toggleMember = (id: string) => setSelectedMemberIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
   const selectAllStories = () => setSelectedStoryIds(unestimatedStories.map((s) => s.id));
   const deselectAllStories = () => setSelectedStoryIds([]);
   const selectAllMembers = () => setSelectedMemberIds(members?.map((m) => m.user_id) ?? []);
   const deselectAllMembers = () => setSelectedMemberIds([]);
 
-  const initials = (name: string | null) =>
-    name ? name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase() : "?";
+  const initials = (name: string | null) => name ? name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase() : "?";
 
   const handleCreate = async () => {
     if (!name.trim() || !selectedStoryIds.length || !user) return;
@@ -85,6 +74,37 @@ export function PlanningPokerModal({ projectId, open, onOpenChange }: Props) {
           session_id: session.id,
           scale_type: "fibonacci",
           created_by: user.id,
+        });
+      }
+
+      // Save participants
+      for (const memberId of selectedMemberIds) {
+        await fromTable("estimation_session_participants").insert({
+          session_id: session.id,
+          user_id: memberId,
+        });
+      }
+
+      // Also add the creator as participant
+      if (!selectedMemberIds.includes(user.id)) {
+        await fromTable("estimation_session_participants").insert({
+          session_id: session.id,
+          user_id: user.id,
+        });
+      }
+
+      // Send notifications to invited participants (except creator)
+      const moderatorName = profile?.full_name || profile?.email || "Alguien";
+      const projectName = project?.name || "un proyecto";
+      const invitees = selectedMemberIds.filter((id) => id !== user.id);
+      for (const memberId of invitees) {
+        await supabase.from("notifications").insert({
+          user_id: memberId,
+          type: "planning_poker_invite",
+          title: "Te invitaron a Planning Poker 🃏",
+          message: `${moderatorName} te invitó a la sesión '${name}' del proyecto '${projectName}'`,
+          reference_id: session.id,
+          reference_type: "estimation_session",
         });
       }
 
@@ -131,10 +151,7 @@ export function PlanningPokerModal({ projectId, open, onOpenChange }: Props) {
               ) : (
                 unestimatedStories.map((s) => (
                   <label key={s.id} className="flex items-center gap-3 px-3 py-2 hover:bg-muted/50 cursor-pointer">
-                    <Checkbox
-                      checked={selectedStoryIds.includes(s.id)}
-                      onCheckedChange={() => toggleStory(s.id)}
-                    />
+                    <Checkbox checked={selectedStoryIds.includes(s.id)} onCheckedChange={() => toggleStory(s.id)} />
                     <div className="flex-1 min-w-0">
                       <span className="text-sm font-medium text-foreground truncate block">{s.title}</span>
                       <Badge variant="outline" className="text-[9px]">{PRIORITIES[s.priority] ?? s.priority}</Badge>
@@ -164,19 +181,12 @@ export function PlanningPokerModal({ projectId, open, onOpenChange }: Props) {
               ) : (
                 members.map((m) => (
                   <label key={m.user_id} className="flex items-center gap-3 px-3 py-2 hover:bg-muted/50 cursor-pointer">
-                    <Checkbox
-                      checked={selectedMemberIds.includes(m.user_id)}
-                      onCheckedChange={() => toggleMember(m.user_id)}
-                    />
+                    <Checkbox checked={selectedMemberIds.includes(m.user_id)} onCheckedChange={() => toggleMember(m.user_id)} />
                     <Avatar className="h-6 w-6">
-                      <AvatarFallback className="text-[9px] bg-muted">
-                        {initials(m.profiles?.full_name ?? null)}
-                      </AvatarFallback>
+                      <AvatarFallback className="text-[9px] bg-muted">{initials(m.profiles?.full_name ?? null)}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                      <span className="text-sm font-medium text-foreground truncate block">
-                        {m.profiles?.full_name || m.profiles?.email}
-                      </span>
+                      <span className="text-sm font-medium text-foreground truncate block">{m.profiles?.full_name || m.profiles?.email}</span>
                       <span className="text-[10px] text-muted-foreground">{m.project_role}</span>
                     </div>
                   </label>
