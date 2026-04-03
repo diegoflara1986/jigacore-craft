@@ -132,6 +132,70 @@ export type Database = {
           },
         ]
       }
+      custom_roles: {
+        Row: {
+          base_role: Database["public"]["Enums"]["app_role"] | null
+          color: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          is_system_role: boolean | null
+          name: string
+          workspace_id: string
+        }
+        Insert: {
+          base_role?: Database["public"]["Enums"]["app_role"] | null
+          color?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_system_role?: boolean | null
+          name: string
+          workspace_id: string
+        }
+        Update: {
+          base_role?: Database["public"]["Enums"]["app_role"] | null
+          color?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_system_role?: boolean | null
+          name?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_roles_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_roles_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_safe_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_roles_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       epics: {
         Row: {
           color: string | null
@@ -1008,6 +1072,7 @@ export type Database = {
           is_active: boolean | null
           job_title: string | null
           role: Database["public"]["Enums"]["app_role"]
+          role_id: string | null
           timezone: string | null
           workspace_id: string | null
         }
@@ -1020,6 +1085,7 @@ export type Database = {
           is_active?: boolean | null
           job_title?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          role_id?: string | null
           timezone?: string | null
           workspace_id?: string | null
         }
@@ -1032,10 +1098,18 @@ export type Database = {
           is_active?: boolean | null
           job_title?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          role_id?: string | null
           timezone?: string | null
           workspace_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "profiles_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "custom_roles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "profiles_workspace_id_fkey"
             columns: ["workspace_id"]
@@ -1163,6 +1237,76 @@ export type Database = {
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      role_incident_permissions: {
+        Row: {
+          can_close: boolean | null
+          can_create: boolean | null
+          can_manage: boolean | null
+          created_at: string | null
+          id: string
+          role_id: string
+        }
+        Insert: {
+          can_close?: boolean | null
+          can_create?: boolean | null
+          can_manage?: boolean | null
+          created_at?: string | null
+          id?: string
+          role_id: string
+        }
+        Update: {
+          can_close?: boolean | null
+          can_create?: boolean | null
+          can_manage?: boolean | null
+          created_at?: string | null
+          id?: string
+          role_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_incident_permissions_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: true
+            referencedRelation: "custom_roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      role_permissions: {
+        Row: {
+          action: string
+          created_at: string | null
+          id: string
+          is_allowed: boolean | null
+          module: string
+          role_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          id?: string
+          is_allowed?: boolean | null
+          module: string
+          role_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          id?: string
+          is_allowed?: boolean | null
+          module?: string
+          role_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_permissions_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "custom_roles"
             referencedColumns: ["id"]
           },
         ]
@@ -1636,8 +1780,16 @@ export type Database = {
       }
       get_user_workspace_id: { Args: never; Returns: string }
       has_admin_role: { Args: { _user_id: string }; Returns: boolean }
+      has_incident_permission: {
+        Args: { _permission: string; _user_id: string }
+        Returns: boolean
+      }
       has_lead_role: { Args: { _user_id: string }; Returns: boolean }
       has_management_role: { Args: { _user_id: string }; Returns: boolean }
+      has_permission: {
+        Args: { _action: string; _module: string; _user_id: string }
+        Returns: boolean
+      }
       has_team_role: { Args: { _user_id: string }; Returns: boolean }
       is_project_member: {
         Args: { _project_id: string; _user_id: string }
