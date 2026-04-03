@@ -25,11 +25,12 @@ export function SettingsUsers() {
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("active");
   const [showCreate, setShowCreate] = useState(false);
-  const [createForm, setCreateForm] = useState({ email: "", password: "", full_name: "", role: "developer" });
+  const [createForm, setCreateForm] = useState({ email: "", password: "", full_name: "", role_id: "" });
   const [creating, setCreating] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [editUser, setEditUser] = useState<{ id: string; full_name: string | null; role: string; email: string } | null>(null);
+  const [editUser, setEditUser] = useState<{ id: string; full_name: string | null; role: string; role_id: string | null; email: string } | null>(null);
   const isAdmin = profile?.role === "admin" || profile?.role === "super_admin";
+  const { data: customRoles } = useCustomRoles();
 
   const { data: users } = useQuery({
     queryKey: ["workspace-users"],
