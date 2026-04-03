@@ -1,5 +1,9 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
-import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2.95.0/cors";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -23,10 +27,7 @@ Deno.serve(async (req) => {
       global: { headers: { Authorization: authHeader } },
     });
 
-    const {
-      data: { user: caller },
-    } = await callerClient.auth.getUser();
-
+    const { data: { user: caller } } = await callerClient.auth.getUser();
     if (!caller) {
       return new Response(JSON.stringify({ error: "No autorizado" }), {
         status: 401,
@@ -52,7 +53,7 @@ Deno.serve(async (req) => {
     const { action } = body;
 
     if (action === "update") {
-      const { user_id, role, full_name, password } = body;
+      const { user_id, role, role_id, full_name, password } = body;
 
       if (!user_id) {
         return new Response(JSON.stringify({ error: "user_id es requerido" }), {
@@ -84,7 +85,6 @@ Deno.serve(async (req) => {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
-
         const { error: pwError } = await adminClient.auth.admin.updateUserById(user_id, { password });
         if (pwError) {
           return new Response(JSON.stringify({ error: pwError.message }), {
@@ -96,6 +96,7 @@ Deno.serve(async (req) => {
 
       const updates: Record<string, unknown> = {};
       if (role) updates.role = role;
+      if (role_id !== undefined) updates.role_id = role_id;
       if (full_name !== undefined) updates.full_name = full_name || null;
 
       if (Object.keys(updates).length > 0) {
@@ -103,7 +104,6 @@ Deno.serve(async (req) => {
           .from("profiles")
           .update(updates)
           .eq("id", user_id);
-
         if (profileUpdateError) {
           return new Response(JSON.stringify({ error: profileUpdateError.message }), {
             status: 400,
@@ -118,7 +118,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { email, password, role, full_name } = body;
+    // CREATE USER
+    const { email, password, role, role_id, full_name } = body;
 
     if (!email || !password || !role) {
       return new Response(JSON.stringify({ error: "Email, contraseña y rol son requeridos" }), {
@@ -147,31 +148,26 @@ Deno.serve(async (req) => {
     if (createError) {
       if (createError.message.includes("already been registered")) {
         return new Response(
-          JSON.stringify({
-            success: false,
-            code: "email_already_exists",
-            error: "Ya existe un usuario registrado con este correo electrónico",
-          }),
-          {
-            status: 200,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
+          JSON.stringify({ success: false, code: "email_already_exists", error: "Ya existe un usuario registrado con este correo electrónico" }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-
       return new Response(JSON.stringify({ error: createError.message }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
+    const profileUpdates: Record<string, unknown> = {
+      role,
+      workspace_id: callerProfile.workspace_id,
+      full_name: full_name || null,
+    };
+    if (role_id) profileUpdates.role_id = role_id;
+
     const { error: profileError } = await adminClient
       .from("profiles")
-      .update({
-        role,
-        workspace_id: callerProfile.workspace_id,
-        full_name: full_name || null,
-      })
+      .update(profileUpdates)
       .eq("id", newUser.user.id);
 
     if (profileError) {
@@ -188,10 +184,7 @@ Deno.serve(async (req) => {
   } catch (err) {
     return new Response(
       JSON.stringify({ error: err instanceof Error ? err.message : "Unexpected error" }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
