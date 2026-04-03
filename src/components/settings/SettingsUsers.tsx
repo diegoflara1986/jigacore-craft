@@ -79,7 +79,7 @@ export function SettingsUsers() {
   };
 
   const handleCreateUser = async () => {
-    if (!createForm.email || !createForm.password || !createForm.role) {
+    if (!createForm.email || !createForm.password || !createForm.role_id) {
       toast({ title: "Todos los campos son requeridos", variant: "destructive" });
       return;
     }
@@ -89,12 +89,14 @@ export function SettingsUsers() {
     }
     setCreating(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const selectedRole = customRoles?.find(r => r.id === createForm.role_id);
+      const baseRole = selectedRole?.base_role ?? "developer";
       const res = await supabase.functions.invoke("create-user", {
         body: {
           email: createForm.email,
           password: createForm.password,
-          role: createForm.role,
+          role: baseRole,
+          role_id: createForm.role_id,
           full_name: createForm.full_name || null,
         },
       });
@@ -102,8 +104,9 @@ export function SettingsUsers() {
       if (res.data?.error) throw new Error(res.data.error);
       toast({ title: "Usuario creado correctamente", description: `${createForm.email} puede iniciar sesión ahora.` });
       qc.invalidateQueries({ queryKey: ["workspace-users"] });
+      qc.invalidateQueries({ queryKey: ["custom-roles-with-count"] });
       setShowCreate(false);
-      setCreateForm({ email: "", password: "", full_name: "", role: "developer" });
+      setCreateForm({ email: "", password: "", full_name: "", role_id: "" });
       setShowPassword(false);
     } catch (e: any) {
       toast({ title: "Error al crear usuario", description: e.message, variant: "destructive" });
