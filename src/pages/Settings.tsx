@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
-import { User, Bell, Palette, Building2, Users, Shield, Clock, FileText, Kanban, Tags, Puzzle, Box, Receipt, ClipboardList, Lock, Bug } from "lucide-react";
+import { User, Bell, Palette, Building2, Users, Shield, Clock, Puzzle, ClipboardList } from "lucide-react";
 import { SettingsProfile } from "@/components/settings/SettingsProfile";
 import { SettingsNotifications } from "@/components/settings/SettingsNotifications";
 import { SettingsAppearance } from "@/components/settings/SettingsAppearance";
@@ -11,9 +11,8 @@ import { SettingsRoles } from "@/components/settings/SettingsRoles";
 import { SettingsSLA } from "@/components/settings/SettingsSLA";
 import { SettingsIntegrations } from "@/components/settings/SettingsIntegrations";
 import { SettingsAudit } from "@/components/settings/SettingsAudit";
-import { SettingsIncidentPermissions } from "@/components/settings/SettingsIncidentPermissions";
 
-type Section = "profile" | "notifications" | "appearance" | "workspace" | "users" | "roles" | "sla" | "incident_perms" | "integrations" | "audit";
+type Section = "profile" | "notifications" | "appearance" | "workspace" | "users" | "roles" | "sla" | "integrations" | "audit";
 
 const PERSONAL_ITEMS = [
   { id: "profile" as Section, label: "Mi Perfil", icon: User },
@@ -26,7 +25,6 @@ const WORKSPACE_ITEMS = [
   { id: "users" as Section, label: "Gestión de Usuarios", icon: Users },
   { id: "roles" as Section, label: "Roles y Permisos", icon: Shield },
   { id: "sla" as Section, label: "SLA de Incidentes", icon: Clock },
-  { id: "incident_perms" as Section, label: "Permisos Incidentes", icon: Bug },
 ];
 
 const SYSTEM_ITEMS = [
@@ -63,15 +61,12 @@ export default function Settings() {
 
   return (
     <div className="flex gap-6 animate-fade-in min-h-[calc(100vh-8rem)]">
-      {/* Internal sidebar */}
       <aside className="w-[220px] shrink-0 space-y-1">
         <h2 className="text-lg font-bold text-foreground px-3 mb-4">Configuración</h2>
         <SidebarGroup title="Personal" items={PERSONAL_ITEMS} />
         {isAdmin && <SidebarGroup title="Workspace" items={WORKSPACE_ITEMS} />}
         {isAdmin && <SidebarGroup title="Sistema" items={SYSTEM_ITEMS} />}
       </aside>
-
-      {/* Content */}
       <main className="flex-1 min-w-0">
         {section === "profile" && <SettingsProfile />}
         {section === "notifications" && <SettingsNotifications />}
@@ -82,7 +77,6 @@ export default function Settings() {
         {section === "sla" && <SettingsSLA />}
         {section === "integrations" && <SettingsIntegrations />}
         {section === "audit" && <SettingsAudit />}
-        {section === "incident_perms" && <SettingsIncidentPermissions />}
       </main>
     </div>
   );

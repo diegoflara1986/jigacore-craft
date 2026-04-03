@@ -104,7 +104,7 @@ export function ProjectTeamTab({ projectId, members, isArchived = false }: { pro
           <Tooltip>
             <TooltipTrigger asChild>
               <span>
-                <Button size="sm" disabled={isArchived} onClick={() => guardAction("management", "agregar un miembro al proyecto", () => setAddOpen(true))} className={isArchived ? "opacity-50" : "bg-accent text-accent-foreground hover:bg-accent/90"}>
+                <Button size="sm" disabled={isArchived} onClick={() => guardAction("members", "add", "agregar un miembro al proyecto", () => setAddOpen(true))} className={isArchived ? "opacity-50" : "bg-accent text-accent-foreground hover:bg-accent/90"}>
                   <Plus className="h-4 w-4 mr-1" />Agregar Miembro
                 </Button>
               </span>
@@ -144,7 +144,7 @@ export function ProjectTeamTab({ projectId, members, isArchived = false }: { pro
                         <TooltipTrigger asChild>
                           <span>
                             <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" disabled={isArchived || !canRemove}
-                              onClick={() => guardAction("management", "remover un miembro del proyecto", () => handleRemove(m))}>
+                              onClick={() => guardAction("members", "remove", "remover un miembro del proyecto", () => handleRemove(m))}>
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </span>
@@ -200,7 +200,7 @@ export function ProjectTeamTab({ projectId, members, isArchived = false }: { pro
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <PermissionDeniedDialog open={denied.open} onOpenChange={closeDenied} actionLabel={denied.actionLabel} requiredRoleLabel={denied.requiredRoleLabel} allowedMembers={denied.allowedMembers} />
+      <PermissionDeniedDialog open={denied.open} onOpenChange={closeDenied} actionLabel={denied.actionLabel} requiredPermission={denied.requiredPermission} />
     </div>
   );
 }

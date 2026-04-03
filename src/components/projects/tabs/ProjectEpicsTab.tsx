@@ -71,7 +71,7 @@ export function ProjectEpicsTab({ projectId, isArchived = false }: { projectId: 
         <Tooltip>
           <TooltipTrigger asChild>
             <span>
-              <Button size="sm" disabled={isArchived} className={isArchived ? "opacity-50" : ""} onClick={() => guardAction("lead", "crear una épica", openCreate)}>
+              <Button size="sm" disabled={isArchived} className={isArchived ? "opacity-50" : ""} onClick={() => guardAction("epics", "create", "crear una épica", openCreate)}>
                 <Plus className="h-4 w-4 mr-1" />Nueva Épica
               </Button>
             </span>
@@ -118,8 +118,8 @@ export function ProjectEpicsTab({ projectId, isArchived = false }: { projectId: 
                             <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0"><MoreHorizontal className="h-4 w-4" /></Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => guardAction("lead", "editar una épica", () => openEdit(e))}><Pencil className="h-3.5 w-3.5 mr-2" />Editar</DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive" onClick={() => guardAction("management", "eliminar una épica", () => deleteEpic.mutate({ id: e.id, projectId }))}>
+                            <DropdownMenuItem onClick={() => guardAction("epics", "edit", "editar una épica", () => openEdit(e))}><Pencil className="h-3.5 w-3.5 mr-2" />Editar</DropdownMenuItem>
+                            <DropdownMenuItem className="text-destructive" onClick={() => guardAction("epics", "delete", "eliminar una épica", () => deleteEpic.mutate({ id: e.id, projectId }))}>
                               <Trash2 className="h-3.5 w-3.5 mr-2" />Eliminar
                             </DropdownMenuItem>
                           </DropdownMenuContent>
@@ -162,7 +162,7 @@ export function ProjectEpicsTab({ projectId, isArchived = false }: { projectId: 
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <PermissionDeniedDialog open={denied.open} onOpenChange={closeDenied} actionLabel={denied.actionLabel} requiredRoleLabel={denied.requiredRoleLabel} allowedMembers={denied.allowedMembers} />
+      <PermissionDeniedDialog open={denied.open} onOpenChange={closeDenied} actionLabel={denied.actionLabel} requiredPermission={denied.requiredPermission} />
     </div>
   );
 }

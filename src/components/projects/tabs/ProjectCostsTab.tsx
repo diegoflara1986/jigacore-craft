@@ -92,7 +92,7 @@ export function ProjectCostsTab({ projectId, isArchived = false }: Props) {
   }, [sprints, logs, rateMap, budget]);
 
   const saveRates = () => {
-    guardAction("management", "configurar tarifas", async () => {
+    guardAction("costs", "configure", "configurar tarifas", async () => {
       for (const [userId, rateStr] of Object.entries(rates)) {
         const rate = parseFloat(rateStr);
         if (isNaN(rate)) continue;
@@ -339,7 +339,7 @@ export function ProjectCostsTab({ projectId, isArchived = false }: Props) {
         </TabsContent>
       </Tabs>
 
-      <PermissionDeniedDialog open={denied.open} onOpenChange={closeDenied} actionLabel={denied.actionLabel} requiredRoleLabel={denied.requiredRoleLabel} allowedMembers={denied.allowedMembers} />
+      <PermissionDeniedDialog open={denied.open} onOpenChange={closeDenied} actionLabel={denied.actionLabel} requiredPermission={denied.requiredPermission} />
     </div>
   );
 }

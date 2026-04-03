@@ -1,30 +1,24 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
+import { supabase } from "@/integrations/supabase/client";
 import { useProjectMembers, ProjectMember } from "@/hooks/useProjects";
 
-const ROLE_GROUPS = {
-  admin: ["admin", "super_admin"],
-  management: ["admin", "super_admin", "project_manager"],
-  lead: ["admin", "super_admin", "project_manager", "team_lead"],
-  team: [
-    "admin", "super_admin", "project_manager", "team_lead",
-    "developer", "qa", "designer", "architect", "analyst",
-  ],
-} as const;
+const fromTable = (table: string) => (supabase as any).from(table);
 
-export type PermissionLevel = keyof typeof ROLE_GROUPS;
-
-const PERMISSION_LABELS: Record<PermissionLevel, string> = {
-  admin: "Administrador",
-  management: "Project Manager o superior",
-  lead: "Team Lead o superior",
-  team: "Miembro del equipo",
-};
+export interface RoleInfo {
+  id: string;
+  name: string;
+  description: string | null;
+  color: string;
+  icon: string;
+  is_system_role: boolean;
+}
 
 export interface PermissionDeniedState {
   open: boolean;
   actionLabel: string;
-  requiredRoleLabel: string;
+  requiredPermission: string;
   allowedMembers: ProjectMember[];
 }
 
@@ -33,53 +27,100 @@ export function usePermissions(projectId?: string) {
   const { data: members } = useProjectMembers(projectId);
 
   const [denied, setDenied] = useState<PermissionDeniedState>({
-    open: false, actionLabel: "", requiredRoleLabel: "", allowedMembers: [],
+    open: false, actionLabel: "", requiredPermission: "", allowedMembers: [],
   });
 
-  const userRole = profile?.role ?? "external_user";
+  const roleId = profile?.role_id;
+  const baseRole = profile?.role ?? "external_user";
+  const isSuperAdmin = baseRole === "super_admin";
 
-  const hasPermission = (level: PermissionLevel): boolean => {
-    return (ROLE_GROUPS[level] as readonly string[]).includes(userRole);
-  };
+  // Fetch all permissions for the user's role (cached)
+  const { data: permissionSet } = useQuery({
+    queryKey: ["role-permissions-set", roleId],
+    enabled: !!roleId && !isSuperAdmin,
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      const { data, error } = await fromTable("role_permissions")
+        .select("module, action")
+        .eq("role_id", roleId!)
+        .eq("is_allowed", true);
+      if (error) throw error;
+      const set = new Set<string>();
+      (data ?? []).forEach((p: any) => set.add(`${p.module}:${p.action}`));
+      return set;
+    },
+  });
 
-  const getMembersWithPermission = (level: PermissionLevel): ProjectMember[] => {
-    if (!members) return [];
-    const roles = ROLE_GROUPS[level] as readonly string[];
-    return members.filter(
-      (m) => m.profiles && roles.includes(m.profiles.role)
-    );
-  };
+  // Fetch incident permissions
+  const { data: incidentPerms } = useQuery({
+    queryKey: ["role-incident-perms", roleId],
+    enabled: !!roleId && !isSuperAdmin,
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      const { data, error } = await fromTable("role_incident_permissions")
+        .select("can_create, can_manage, can_close")
+        .eq("role_id", roleId!)
+        .maybeSingle();
+      if (error) throw error;
+      return data ?? { can_create: false, can_manage: false, can_close: false };
+    },
+  });
 
-  /** Wrap an action: if allowed, run callback; otherwise show denied dialog */
+  // Fetch role info
+  const { data: roleInfo } = useQuery({
+    queryKey: ["custom-role-info", roleId],
+    enabled: !!roleId,
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      const { data, error } = await fromTable("custom_roles")
+        .select("id, name, description, color, icon, is_system_role")
+        .eq("id", roleId!)
+        .single();
+      if (error) throw error;
+      return data as RoleInfo;
+    },
+  });
+
+  const hasPermission = useCallback((module: string, action: string): boolean => {
+    if (isSuperAdmin) return true;
+    if (!permissionSet) return false;
+    return permissionSet.has(`${module}:${action}`);
+  }, [isSuperAdmin, permissionSet]);
+
+  const hasIncidentPermission = useCallback((permission: "can_create" | "can_manage" | "can_close"): boolean => {
+    if (isSuperAdmin || baseRole === "admin") return true;
+    if (!incidentPerms) return false;
+    return (incidentPerms as any)[permission] ?? false;
+  }, [isSuperAdmin, baseRole, incidentPerms]);
+
   const guardAction = useCallback(
-    (level: PermissionLevel, actionLabel: string, callback: () => void) => {
-      if ((ROLE_GROUPS[level] as readonly string[]).includes(userRole)) {
+    (module: string, action: string, actionLabel: string, callback: () => void) => {
+      if (hasPermission(module, action)) {
         callback();
       } else {
-        const allowed = members?.filter(
-          (m) => m.profiles && (ROLE_GROUPS[level] as readonly string[]).includes(m.profiles.role)
-        ) ?? [];
         setDenied({
           open: true,
           actionLabel,
-          requiredRoleLabel: PERMISSION_LABELS[level],
-          allowedMembers: allowed,
+          requiredPermission: `${module}:${action}`,
+          allowedMembers: [],
         });
       }
     },
-    [userRole, members]
+    [hasPermission]
   );
 
   const closeDenied = useCallback(() => {
-    setDenied((prev) => ({ ...prev, open: false }));
+    setDenied(prev => ({ ...prev, open: false }));
   }, []);
 
   return {
-    userRole,
+    userRole: roleInfo ?? null,
+    baseRole,
     hasPermission,
-    getMembersWithPermission,
+    hasIncidentPermission,
     guardAction,
     denied,
     closeDenied,
+    isLoading: !isSuperAdmin && !permissionSet && !!roleId,
   };
 }

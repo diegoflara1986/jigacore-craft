@@ -15,10 +15,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { UserPlus, Search, MoreVertical, Eye, EyeOff, Pencil } from "lucide-react";
-import { Constants } from "@/integrations/supabase/types";
+import { useCustomRoles } from "@/hooks/useCustomRoles";
 import { EditUserDialog } from "./EditUserDialog";
-
-const ROLES = Constants.public.Enums.app_role;
 
 export function SettingsUsers() {
   const { profile } = useAuth();
@@ -27,11 +25,12 @@ export function SettingsUsers() {
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("active");
   const [showCreate, setShowCreate] = useState(false);
-  const [createForm, setCreateForm] = useState({ email: "", password: "", full_name: "", role: "developer" });
+  const [createForm, setCreateForm] = useState({ email: "", password: "", full_name: "", role_id: "" });
   const [creating, setCreating] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [editUser, setEditUser] = useState<{ id: string; full_name: string | null; role: string; email: string } | null>(null);
+  const [editUser, setEditUser] = useState<{ id: string; full_name: string | null; role: string; role_id: string | null; email: string } | null>(null);
   const isAdmin = profile?.role === "admin" || profile?.role === "super_admin";
+  const { data: customRoles } = useCustomRoles();
 
   const { data: users } = useQuery({
     queryKey: ["workspace-users"],
@@ -48,7 +47,7 @@ export function SettingsUsers() {
 
   const filtered = users?.filter(u => {
     if (search && !(u.full_name?.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase()))) return false;
-    if (roleFilter !== "all" && u.role !== roleFilter) return false;
+    if (roleFilter !== "all" && (u as any).role_id !== roleFilter) return false;
     if (statusFilter === "active" && u.is_active === false) return false;
     if (statusFilter === "inactive" && u.is_active !== false) return false;
     return true;
@@ -80,7 +79,7 @@ export function SettingsUsers() {
   };
 
   const handleCreateUser = async () => {
-    if (!createForm.email || !createForm.password || !createForm.role) {
+    if (!createForm.email || !createForm.password || !createForm.role_id) {
       toast({ title: "Todos los campos son requeridos", variant: "destructive" });
       return;
     }
@@ -90,12 +89,14 @@ export function SettingsUsers() {
     }
     setCreating(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const selectedRole = customRoles?.find(r => r.id === createForm.role_id);
+      const baseRole = selectedRole?.base_role ?? "developer";
       const res = await supabase.functions.invoke("create-user", {
         body: {
           email: createForm.email,
           password: createForm.password,
-          role: createForm.role,
+          role: baseRole,
+          role_id: createForm.role_id,
           full_name: createForm.full_name || null,
         },
       });
@@ -103,8 +104,9 @@ export function SettingsUsers() {
       if (res.data?.error) throw new Error(res.data.error);
       toast({ title: "Usuario creado correctamente", description: `${createForm.email} puede iniciar sesión ahora.` });
       qc.invalidateQueries({ queryKey: ["workspace-users"] });
+      qc.invalidateQueries({ queryKey: ["custom-roles-with-count"] });
       setShowCreate(false);
-      setCreateForm({ email: "", password: "", full_name: "", role: "developer" });
+      setCreateForm({ email: "", password: "", full_name: "", role_id: "" });
       setShowPassword(false);
     } catch (e: any) {
       toast({ title: "Error al crear usuario", description: e.message, variant: "destructive" });
@@ -137,7 +139,7 @@ export function SettingsUsers() {
           <SelectTrigger className="w-40"><SelectValue placeholder="Rol" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos los roles</SelectItem>
-            {ROLES.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+            {(customRoles ?? []).map(r => <SelectItem key={r.id} value={r.id}>{r.icon} {r.name}</SelectItem>)}
           </SelectContent>
         </Select>
         <Tabs value={statusFilter} onValueChange={setStatusFilter}>
@@ -177,14 +179,15 @@ export function SettingsUsers() {
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">{u.email}</TableCell>
                   <TableCell>
-                    <Select value={u.role} onValueChange={v => changeRole(u.id, v)} disabled={u.id === profile?.id}>
-                      <SelectTrigger className="h-7 w-36 text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {ROLES.filter(r => r !== "super_admin").map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+                    {(() => {
+                      const userRoleId = (u as any).role_id;
+                      const roleName = customRoles?.find(r => r.id === userRoleId);
+                      return (
+                        <Badge variant="outline" className="text-xs" style={roleName ? { borderColor: roleName.color, color: roleName.color } : {}}>
+                          {roleName ? `${roleName.icon} ${roleName.name}` : u.role}
+                        </Badge>
+                      );
+                    })()}
                   </TableCell>
                   <TableCell>
                     <Badge variant={u.is_active !== false ? "default" : "destructive"} className="text-xs">
@@ -202,9 +205,9 @@ export function SettingsUsers() {
                         </DropdownMenuTrigger>
                          <DropdownMenuContent align="end">
                            {isAdmin && (
-                             <DropdownMenuItem onClick={() => setEditUser({ id: u.id, full_name: u.full_name, role: u.role, email: u.email })}>
-                               <Pencil className="h-3.5 w-3.5 mr-2" /> Editar usuario
-                             </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => setEditUser({ id: u.id, full_name: u.full_name, role: u.role, role_id: (u as any).role_id, email: u.email })}>
+                                <Pencil className="h-3.5 w-3.5 mr-2" /> Editar usuario
+                              </DropdownMenuItem>
                            )}
                            {u.is_active !== false ? (
                             <DropdownMenuItem onClick={() => toggleActive(u.id, false)} className="text-destructive">Desactivar usuario</DropdownMenuItem>
@@ -261,10 +264,10 @@ export function SettingsUsers() {
             </div>
             <div className="space-y-2">
               <Label>Rol *</Label>
-              <Select value={createForm.role} onValueChange={v => setCreateForm(f => ({ ...f, role: v }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select value={createForm.role_id} onValueChange={v => setCreateForm(f => ({ ...f, role_id: v }))}>
+                <SelectTrigger><SelectValue placeholder="Seleccionar rol" /></SelectTrigger>
                 <SelectContent>
-                  {ROLES.filter(r => r !== "super_admin").map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                  {(customRoles ?? []).filter(r => r.base_role !== "super_admin").map(r => <SelectItem key={r.id} value={r.id}>{r.icon} {r.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

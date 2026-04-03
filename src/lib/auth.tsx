@@ -3,12 +3,13 @@ import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 
-interface Profile {
+export interface Profile {
   id: string;
   email: string;
   full_name: string | null;
   avatar_url: string | null;
   role: string;
+  role_id: string | null;
   workspace_id: string | null;
   job_title: string | null;
 }
