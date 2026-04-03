@@ -87,17 +87,7 @@ export function getCategoryLabel(cat: string | null) {
   return CATEGORIES.find(c => c.value === cat)?.label ?? cat;
 }
 
-// ===== INCIDENT PERMISSIONS =====
-export function useIncidentPermissions() {
-  return useQuery({
-    queryKey: ["incident-permission-configs"],
-    queryFn: async () => {
-      const { data, error } = await fromTable("incident_permission_configs").select("*");
-      if (error) throw error;
-      return (data ?? []) as { id: string; role: string; can_create: boolean; can_manage: boolean; can_close: boolean; workspace_id: string }[];
-    },
-  });
-}
+// Legacy useIncidentPermissions removed - now using usePermissions hook with role_incident_permissions
 
 // ===== INCIDENTS LIST =====
 export function useIncidents(filters?: {

@@ -17,7 +17,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
-const projectRoles = ["project_manager", "team_lead", "developer", "qa", "designer", "architect", "analyst"];
+import { useCustomRoles } from "@/hooks/useCustomRoles";
 const ARCHIVED_TOOLTIP = "Proyecto archivado. Restaura el proyecto para editar";
 
 export function ProjectTeamTab({ projectId, members, isArchived = false }: { projectId: string; members: ProjectMember[]; isArchived?: boolean }) {
@@ -31,6 +31,7 @@ export function ProjectTeamTab({ projectId, members, isArchived = false }: { pro
   const { user } = useAuth();
   const { data: project } = useProject(projectId);
   const qc = useQueryClient();
+  const { data: customRoles } = useCustomRoles();
 
   const { data: workspaceUsers } = useQuery({
     queryKey: ["workspace-users"],
@@ -189,7 +190,9 @@ export function ProjectTeamTab({ projectId, members, isArchived = false }: { pro
               <Select value={selectedRole} onValueChange={setSelectedRole}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {projectRoles.map((r) => <SelectItem key={r} value={r}>{r.replace("_", " ")}</SelectItem>)}
+                  {(customRoles ?? []).filter(r => r.base_role !== "super_admin").map((r) => (
+                    <SelectItem key={r.id} value={r.base_role || r.name}>{r.icon} {r.name}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

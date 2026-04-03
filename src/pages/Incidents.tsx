@@ -1,11 +1,12 @@
 import { useState } from "react";
 import {
-  useIncidents, useIncidentStats, useSlaConfigs, useIncidentPermissions,
+  useIncidents, useIncidentStats, useSlaConfigs,
   Incident, STATUSES, SEVERITIES, CATEGORIES,
   getStatusInfo, getSeverityInfo, getCategoryLabel,
 } from "@/hooks/useIncidents";
 import { useQuery } from "@tanstack/react-query";
 import { usePageTitle } from "@/hooks/usePageTitle";
+import { usePermissions } from "@/hooks/usePermissions";
 import { EmptyState } from "@/components/EmptyState";
 import { TableSkeleton } from "@/components/TableSkeleton";
 import { supabase } from "@/integrations/supabase/client";
@@ -60,12 +61,11 @@ export default function Incidents() {
 
   const { data: stats } = useIncidentStats();
   const { data: slaConfigs } = useSlaConfigs();
-  const { data: permConfigs } = useIncidentPermissions();
+  const { hasIncidentPermission, hasPermission } = usePermissions();
 
-  const userRole = profile?.role ?? "external_user";
-  const isAdmin = ["admin", "super_admin"].includes(userRole);
-  const canCreate = isAdmin || (permConfigs ?? []).some(c => c.role === userRole && c.can_create);
-  const canManage = isAdmin || (permConfigs ?? []).some(c => c.role === userRole && c.can_manage);
+  const canCreate = hasIncidentPermission("can_create");
+  const canManage = hasIncidentPermission("can_manage");
+  const canClose = hasIncidentPermission("can_close");
 
   const filters: any = {
     search: search || undefined,
@@ -238,7 +238,7 @@ export default function Incidents() {
       )}
 
       <IncidentCreateModal open={createOpen} onOpenChange={setCreateOpen} onCreated={(id) => { setCreateOpen(false); setSelectedId(id); }} />
-      <IncidentDetailSheet incidentId={selectedId} onClose={() => setSelectedId(null)} canManage={canManage} canClose={isAdmin || (permConfigs ?? []).some(c => c.role === userRole && c.can_close)} />
+      <IncidentDetailSheet incidentId={selectedId} onClose={() => setSelectedId(null)} canManage={canManage} canClose={canClose} />
     </div>
   );
 }
