@@ -92,7 +92,7 @@ export function ProjectCostsTab({ projectId, isArchived = false }: Props) {
   }, [sprints, logs, rateMap, budget]);
 
   const saveRates = () => {
-    guardAction("management", "configurar tarifas", async () => {
+    guardAction("costs", "configure", "configurar tarifas", async () => {
       for (const [userId, rateStr] of Object.entries(rates)) {
         const rate = parseFloat(rateStr);
         if (isNaN(rate)) continue;
