@@ -269,10 +269,11 @@ export function useDeleteCustomRole() {
   return useMutation({
     mutationFn: async (params: { id: string; migrateToRoleId?: string }) => {
       if (params.migrateToRoleId) {
-        // Migrate users first
-        await supabase.from("profiles")
-          .update({ role_id: params.migrateToRoleId } as any)
-          .eq("role_id" as any, params.id);
+        // Migrate users first using raw update
+        const { error: migrateError } = await fromTable("profiles")
+          .update({ role_id: params.migrateToRoleId })
+          .eq("role_id", params.id);
+        if (migrateError) throw migrateError;
       }
       const { error } = await fromTable("custom_roles").delete().eq("id", params.id);
       if (error) throw error;

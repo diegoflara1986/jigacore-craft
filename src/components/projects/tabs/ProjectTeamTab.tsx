@@ -200,7 +200,7 @@ export function ProjectTeamTab({ projectId, members, isArchived = false }: { pro
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <PermissionDeniedDialog open={denied.open} onOpenChange={closeDenied} actionLabel={denied.actionLabel} requiredRoleLabel={denied.requiredRoleLabel} allowedMembers={denied.allowedMembers} />
+      <PermissionDeniedDialog open={denied.open} onOpenChange={closeDenied} actionLabel={denied.actionLabel} requiredPermission={denied.requiredPermission} />
     </div>
   );
 }

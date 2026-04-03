@@ -339,7 +339,7 @@ export function ProjectCostsTab({ projectId, isArchived = false }: Props) {
         </TabsContent>
       </Tabs>
 
-      <PermissionDeniedDialog open={denied.open} onOpenChange={closeDenied} actionLabel={denied.actionLabel} requiredRoleLabel={denied.requiredRoleLabel} allowedMembers={denied.allowedMembers} />
+      <PermissionDeniedDialog open={denied.open} onOpenChange={closeDenied} actionLabel={denied.actionLabel} requiredPermission={denied.requiredPermission} />
     </div>
   );
 }

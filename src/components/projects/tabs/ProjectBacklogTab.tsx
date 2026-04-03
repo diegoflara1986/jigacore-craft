@@ -579,7 +579,7 @@ export function ProjectBacklogTab({ projectId, estimationOnly = false, isArchive
       />
 
       <CreateEstimationRoundModal projectId={projectId} open={estimationModalOpen} onOpenChange={setEstimationModalOpen} />
-      <PermissionDeniedDialog open={denied.open} onOpenChange={closeDenied} actionLabel={denied.actionLabel} requiredRoleLabel={denied.requiredRoleLabel} allowedMembers={denied.allowedMembers} />
+      <PermissionDeniedDialog open={denied.open} onOpenChange={closeDenied} actionLabel={denied.actionLabel} requiredPermission={denied.requiredPermission} />
     </div>
   );
 }
