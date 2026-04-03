@@ -47,7 +47,7 @@ export function SettingsUsers() {
 
   const filtered = users?.filter(u => {
     if (search && !(u.full_name?.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase()))) return false;
-    if (roleFilter !== "all" && u.role !== roleFilter) return false;
+    if (roleFilter !== "all" && (u as any).role_id !== roleFilter) return false;
     if (statusFilter === "active" && u.is_active === false) return false;
     if (statusFilter === "inactive" && u.is_active !== false) return false;
     return true;
