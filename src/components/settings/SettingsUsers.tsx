@@ -15,10 +15,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { UserPlus, Search, MoreVertical, Eye, EyeOff, Pencil } from "lucide-react";
-import { Constants } from "@/integrations/supabase/types";
+import { useCustomRoles } from "@/hooks/useCustomRoles";
 import { EditUserDialog } from "./EditUserDialog";
-
-const ROLES = Constants.public.Enums.app_role;
 
 export function SettingsUsers() {
   const { profile } = useAuth();
