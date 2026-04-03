@@ -118,8 +118,8 @@ export function ProjectEpicsTab({ projectId, isArchived = false }: { projectId: 
                             <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0"><MoreHorizontal className="h-4 w-4" /></Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => guardAction("lead", "editar una épica", () => openEdit(e))}><Pencil className="h-3.5 w-3.5 mr-2" />Editar</DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive" onClick={() => guardAction("management", "eliminar una épica", () => deleteEpic.mutate({ id: e.id, projectId }))}>
+                            <DropdownMenuItem onClick={() => guardAction("epics", "edit", "editar una épica", () => openEdit(e))}><Pencil className="h-3.5 w-3.5 mr-2" />Editar</DropdownMenuItem>
+                            <DropdownMenuItem className="text-destructive" onClick={() => guardAction("epics", "delete", "eliminar una épica", () => deleteEpic.mutate({ id: e.id, projectId }))}>
                               <Trash2 className="h-3.5 w-3.5 mr-2" />Eliminar
                             </DropdownMenuItem>
                           </DropdownMenuContent>
