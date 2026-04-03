@@ -1,11 +1,13 @@
 import { useState } from "react";
+import { useState } from "react";
 import {
-  useIncidents, useIncidentStats, useSlaConfigs, useIncidentPermissions,
+  useIncidents, useIncidentStats, useSlaConfigs,
   Incident, STATUSES, SEVERITIES, CATEGORIES,
   getStatusInfo, getSeverityInfo, getCategoryLabel,
 } from "@/hooks/useIncidents";
 import { useQuery } from "@tanstack/react-query";
 import { usePageTitle } from "@/hooks/usePageTitle";
+import { usePermissions } from "@/hooks/usePermissions";
 import { EmptyState } from "@/components/EmptyState";
 import { TableSkeleton } from "@/components/TableSkeleton";
 import { supabase } from "@/integrations/supabase/client";
