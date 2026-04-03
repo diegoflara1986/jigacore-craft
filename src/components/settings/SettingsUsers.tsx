@@ -179,14 +179,15 @@ export function SettingsUsers() {
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">{u.email}</TableCell>
                   <TableCell>
-                    <Select value={u.role} onValueChange={v => changeRole(u.id, v)} disabled={u.id === profile?.id}>
-                      <SelectTrigger className="h-7 w-36 text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {ROLES.filter(r => r !== "super_admin").map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+                    {(() => {
+                      const userRoleId = (u as any).role_id;
+                      const roleName = customRoles?.find(r => r.id === userRoleId);
+                      return (
+                        <Badge variant="outline" className="text-xs" style={roleName ? { borderColor: roleName.color, color: roleName.color } : {}}>
+                          {roleName ? `${roleName.icon} ${roleName.name}` : u.role}
+                        </Badge>
+                      );
+                    })()}
                   </TableCell>
                   <TableCell>
                     <Badge variant={u.is_active !== false ? "default" : "destructive"} className="text-xs">
