@@ -240,7 +240,7 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
                     </Button>
                   )}
                   {!isArchived && (
-                    <Button size="sm" onClick={() => guardAction("lead", "completar un sprint", () => setCompleteReview(sprint))}>
+                    <Button size="sm" onClick={() => guardAction("sprints", "manage", "completar un sprint", () => setCompleteReview(sprint))}>
                       <CheckCircle2 className="h-3.5 w-3.5 mr-1" />Completar
                     </Button>
                   )}
