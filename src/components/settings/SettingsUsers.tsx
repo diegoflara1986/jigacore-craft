@@ -264,10 +264,10 @@ export function SettingsUsers() {
             </div>
             <div className="space-y-2">
               <Label>Rol *</Label>
-              <Select value={createForm.role} onValueChange={v => setCreateForm(f => ({ ...f, role: v }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select value={createForm.role_id} onValueChange={v => setCreateForm(f => ({ ...f, role_id: v }))}>
+                <SelectTrigger><SelectValue placeholder="Seleccionar rol" /></SelectTrigger>
                 <SelectContent>
-                  {ROLES.filter(r => r !== "super_admin").map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                  {(customRoles ?? []).filter(r => r.base_role !== "super_admin").map(r => <SelectItem key={r.id} value={r.id}>{r.icon} {r.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
