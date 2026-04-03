@@ -239,7 +239,7 @@ export default function Incidents() {
       )}
 
       <IncidentCreateModal open={createOpen} onOpenChange={setCreateOpen} onCreated={(id) => { setCreateOpen(false); setSelectedId(id); }} />
-      <IncidentDetailSheet incidentId={selectedId} onClose={() => setSelectedId(null)} canManage={canManage} canClose={isAdmin || (permConfigs ?? []).some(c => c.role === userRole && c.can_close)} />
+      <IncidentDetailSheet incidentId={selectedId} onClose={() => setSelectedId(null)} canManage={canManage} canClose={canClose} />
     </div>
   );
 }

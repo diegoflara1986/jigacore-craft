@@ -190,7 +190,9 @@ export function ProjectTeamTab({ projectId, members, isArchived = false }: { pro
               <Select value={selectedRole} onValueChange={setSelectedRole}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {projectRoles.map((r) => <SelectItem key={r} value={r}>{r.replace("_", " ")}</SelectItem>)}
+                  {(customRoles ?? []).filter(r => r.base_role !== "super_admin").map((r) => (
+                    <SelectItem key={r.id} value={r.base_role || r.name}>{r.icon} {r.name}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
