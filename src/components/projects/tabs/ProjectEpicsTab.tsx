@@ -71,7 +71,7 @@ export function ProjectEpicsTab({ projectId, isArchived = false }: { projectId: 
         <Tooltip>
           <TooltipTrigger asChild>
             <span>
-              <Button size="sm" disabled={isArchived} className={isArchived ? "opacity-50" : ""} onClick={() => guardAction("lead", "crear una épica", openCreate)}>
+              <Button size="sm" disabled={isArchived} className={isArchived ? "opacity-50" : ""} onClick={() => guardAction("epics", "create", "crear una épica", openCreate)}>
                 <Plus className="h-4 w-4 mr-1" />Nueva Épica
               </Button>
             </span>
