@@ -31,6 +31,7 @@ export function ProjectTeamTab({ projectId, members, isArchived = false }: { pro
   const { user } = useAuth();
   const { data: project } = useProject(projectId);
   const qc = useQueryClient();
+  const { data: customRoles } = useCustomRoles();
 
   const { data: workspaceUsers } = useQuery({
     queryKey: ["workspace-users"],
