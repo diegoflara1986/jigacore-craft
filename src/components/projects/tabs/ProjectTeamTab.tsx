@@ -17,7 +17,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
-const projectRoles = ["project_manager", "team_lead", "developer", "qa", "designer", "architect", "analyst"];
+import { useCustomRoles } from "@/hooks/useCustomRoles";
 const ARCHIVED_TOOLTIP = "Proyecto archivado. Restaura el proyecto para editar";
 
 export function ProjectTeamTab({ projectId, members, isArchived = false }: { projectId: string; members: ProjectMember[]; isArchived?: boolean }) {
