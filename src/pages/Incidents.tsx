@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useState } from "react";
 import {
   useIncidents, useIncidentStats, useSlaConfigs,
   Incident, STATUSES, SEVERITIES, CATEGORIES,
