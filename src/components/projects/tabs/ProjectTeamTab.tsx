@@ -144,7 +144,7 @@ export function ProjectTeamTab({ projectId, members, isArchived = false }: { pro
                         <TooltipTrigger asChild>
                           <span>
                             <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" disabled={isArchived || !canRemove}
-                              onClick={() => guardAction("management", "remover un miembro del proyecto", () => handleRemove(m))}>
+                              onClick={() => guardAction("members", "remove", "remover un miembro del proyecto", () => handleRemove(m))}>
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </span>
