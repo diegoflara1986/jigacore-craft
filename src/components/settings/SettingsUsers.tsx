@@ -139,7 +139,7 @@ export function SettingsUsers() {
           <SelectTrigger className="w-40"><SelectValue placeholder="Rol" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos los roles</SelectItem>
-            {ROLES.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+            {(customRoles ?? []).map(r => <SelectItem key={r.id} value={r.id}>{r.icon} {r.name}</SelectItem>)}
           </SelectContent>
         </Select>
         <Tabs value={statusFilter} onValueChange={setStatusFilter}>
