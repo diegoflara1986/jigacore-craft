@@ -205,9 +205,9 @@ export function SettingsUsers() {
                         </DropdownMenuTrigger>
                          <DropdownMenuContent align="end">
                            {isAdmin && (
-                             <DropdownMenuItem onClick={() => setEditUser({ id: u.id, full_name: u.full_name, role: u.role, email: u.email })}>
-                               <Pencil className="h-3.5 w-3.5 mr-2" /> Editar usuario
-                             </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => setEditUser({ id: u.id, full_name: u.full_name, role: u.role, role_id: (u as any).role_id, email: u.email })}>
+                                <Pencil className="h-3.5 w-3.5 mr-2" /> Editar usuario
+                              </DropdownMenuItem>
                            )}
                            {u.is_active !== false ? (
                             <DropdownMenuItem onClick={() => toggleActive(u.id, false)} className="text-destructive">Desactivar usuario</DropdownMenuItem>
