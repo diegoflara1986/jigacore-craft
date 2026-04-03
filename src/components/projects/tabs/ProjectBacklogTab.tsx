@@ -307,7 +307,7 @@ export function ProjectBacklogTab({ projectId, estimationOnly = false, isArchive
             <Tooltip>
               <TooltipTrigger asChild>
                 <span>
-                  <Button size="sm" disabled={isArchived} className={isArchived ? "opacity-50" : ""} onClick={() => guardAction("team", "crear una historia de usuario", () => setCreateOpen(true))}><Plus className="h-4 w-4 mr-1" />Agregar HU</Button>
+                  <Button size="sm" disabled={isArchived} className={isArchived ? "opacity-50" : ""} onClick={() => guardAction("backlog", "create", "crear una historia de usuario", () => setCreateOpen(true))}><Plus className="h-4 w-4 mr-1" />Agregar HU</Button>
                 </span>
               </TooltipTrigger>
               {isArchived && <TooltipContent>{ARCHIVED_TOOLTIP}</TooltipContent>}
