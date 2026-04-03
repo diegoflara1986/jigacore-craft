@@ -104,7 +104,7 @@ export function ProjectTeamTab({ projectId, members, isArchived = false }: { pro
           <Tooltip>
             <TooltipTrigger asChild>
               <span>
-                <Button size="sm" disabled={isArchived} onClick={() => guardAction("management", "agregar un miembro al proyecto", () => setAddOpen(true))} className={isArchived ? "opacity-50" : "bg-accent text-accent-foreground hover:bg-accent/90"}>
+                <Button size="sm" disabled={isArchived} onClick={() => guardAction("members", "add", "agregar un miembro al proyecto", () => setAddOpen(true))} className={isArchived ? "opacity-50" : "bg-accent text-accent-foreground hover:bg-accent/90"}>
                   <Plus className="h-4 w-4 mr-1" />Agregar Miembro
                 </Button>
               </span>
