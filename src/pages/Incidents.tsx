@@ -62,12 +62,11 @@ export default function Incidents() {
 
   const { data: stats } = useIncidentStats();
   const { data: slaConfigs } = useSlaConfigs();
-  const { data: permConfigs } = useIncidentPermissions();
+  const { hasIncidentPermission, hasPermission } = usePermissions();
 
-  const userRole = profile?.role ?? "external_user";
-  const isAdmin = ["admin", "super_admin"].includes(userRole);
-  const canCreate = isAdmin || (permConfigs ?? []).some(c => c.role === userRole && c.can_create);
-  const canManage = isAdmin || (permConfigs ?? []).some(c => c.role === userRole && c.can_manage);
+  const canCreate = hasIncidentPermission("can_create");
+  const canManage = hasIncidentPermission("can_manage");
+  const canClose = hasIncidentPermission("can_close");
 
   const filters: any = {
     search: search || undefined,
