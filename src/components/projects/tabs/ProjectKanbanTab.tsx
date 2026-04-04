@@ -21,6 +21,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 
 const COLUMNS = [
+  { id: "backlog", label: "📦 Backlog", limit: 0 },
   { id: "todo", label: "📋 Por Hacer", limit: 0 },
   { id: "in_progress", label: "⚡ En Progreso", limit: 5 },
   { id: "in_review", label: "👀 En Revisión", limit: 3 },
