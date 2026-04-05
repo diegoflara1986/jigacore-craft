@@ -643,6 +643,61 @@ export type Database = {
           },
         ]
       }
+      hu_attachments: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_size: number | null
+          file_type: string
+          file_url: string
+          id: string
+          uploaded_by: string | null
+          user_story_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_size?: number | null
+          file_type?: string
+          file_url: string
+          id?: string
+          uploaded_by?: string | null
+          user_story_id: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_size?: number | null
+          file_type?: string
+          file_url?: string
+          id?: string
+          uploaded_by?: string | null
+          user_story_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hu_attachments_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hu_attachments_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_safe_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hu_attachments_user_story_id_fkey"
+            columns: ["user_story_id"]
+            isOneToOne: false
+            referencedRelation: "user_stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       incident_attachments: {
         Row: {
           created_at: string

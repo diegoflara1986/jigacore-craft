@@ -58,7 +58,7 @@ export function ProjectKanbanTab({ projectId, isArchived = false }: Props) {
 
   const activeSprint = sprints?.find((s) => s.status === "active");
   const [selectedSprintId, setSelectedSprintId] = useState<string | undefined>(undefined);
-  const sprintId = selectedSprintId ?? activeSprint?.id;
+  const sprintId = selectedSprintId === "__none__" ? null : (selectedSprintId ?? activeSprint?.id);
 
   useEffect(() => {
     if (activeSprint && !selectedSprintId) setSelectedSprintId(activeSprint.id);
@@ -78,7 +78,13 @@ export function ProjectKanbanTab({ projectId, isArchived = false }: Props) {
   const [quickAddTitle, setQuickAddTitle] = useState("");
 
   const { data: allStories } = useUserStories(projectId);
-  const sprintStories = allStories?.filter((s) => s.sprint_id === sprintId) ?? [];
+  
+  // Filter stories by sprint selection
+  const sprintStories = sprintId === null
+    ? allStories?.filter((s) => !s.sprint_id) ?? []
+    : allStories?.filter((s) => s.sprint_id === sprintId) ?? [];
+
+  const isActiveSprint = sprintId ? sprints?.find(s => s.id === sprintId)?.status === "active" : false;
 
   // Fetch comment counts for sprint stories
   const storyIds = sprintStories.map((s) => s.id);
@@ -127,7 +133,7 @@ export function ProjectKanbanTab({ projectId, isArchived = false }: Props) {
     return true;
   });
 
-  const selectedSprint = sprints?.find((s) => s.id === sprintId);
+  const selectedSprint = sprintId ? sprints?.find((s) => s.id === sprintId) : null;
   const daysLeft = selectedSprint?.end_date ? Math.max(0, Math.ceil((new Date(selectedSprint.end_date).getTime() - Date.now()) / 86400000)) : null;
 
   const handleDragStart = useCallback((e: React.DragEvent, id: string) => {
@@ -165,12 +171,12 @@ export function ProjectKanbanTab({ projectId, isArchived = false }: Props) {
   }, [sprintStories, updateStory]);
 
   const handleQuickAdd = async (colId: string) => {
-    if (!quickAddTitle.trim() || !sprintId) return;
+    if (!quickAddTitle.trim()) return;
     await createStory.mutateAsync({
       project_id: projectId,
       title: quickAddTitle,
       status: colId,
-      sprint_id: sprintId,
+      sprint_id: sprintId || undefined,
     });
     setQuickAddTitle("");
     setQuickAddCol(null);
@@ -179,7 +185,6 @@ export function ProjectKanbanTab({ projectId, isArchived = false }: Props) {
   const initials = (name: string | null) => name ? name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase() : "?";
 
   const isBlocked = (story: UserStory) => {
-    // Check if title or description contains "bloqueado" or "blocked"
     const text = `${story.title} ${story.description || ""}`.toLowerCase();
     return text.includes("bloqueado") || text.includes("blocked") || text.includes("[blocked]");
   };
@@ -205,6 +210,7 @@ export function ProjectKanbanTab({ projectId, isArchived = false }: Props) {
           <div className="flex items-center gap-1.5">
             <span className="text-[10px] text-muted-foreground font-mono">HU-{story.id.slice(0, 4).toUpperCase()}</span>
             {blocked && <Lock className="h-3 w-3 text-destructive" />}
+            {isActiveSprint && <Lock className="h-3 w-3 text-blue-500" />}
           </div>
           {story.story_points != null && (
             <span className="text-[10px] font-bold bg-primary/10 text-primary rounded-full h-5 w-5 flex items-center justify-center">{story.story_points}</span>
@@ -434,10 +440,10 @@ export function ProjectKanbanTab({ projectId, isArchived = false }: Props) {
       <div className="flex flex-wrap items-end gap-3">
         <div className="space-y-0.5">
           <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Sprint</span>
-          <Select value={sprintId ?? "none"} onValueChange={(v) => setSelectedSprintId(v === "none" ? undefined : v)}>
+          <Select value={selectedSprintId ?? "none"} onValueChange={(v) => setSelectedSprintId(v)}>
             <SelectTrigger className="h-9 w-48"><SelectValue placeholder="Sprint" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="none">Sin sprint</SelectItem>
+              <SelectItem value="__none__">📦 Sin sprint (Backlog)</SelectItem>
               {sprints?.map((s) => <SelectItem key={s.id} value={s.id}>{s.name} {s.status === "active" ? "⚡" : ""}</SelectItem>)}
             </SelectContent>
           </Select>
@@ -521,11 +527,7 @@ export function ProjectKanbanTab({ projectId, isArchived = false }: Props) {
       </div>
 
       {/* Board / Swimlane */}
-      {!sprintId ? (
-        <Card className="p-10 text-center text-muted-foreground text-sm">
-          Selecciona un sprint para ver el tablero. {!activeSprint && "No hay sprints activos."}
-        </Card>
-      ) : viewMode === "board" ? (
+      {viewMode === "board" ? (
         renderGroupedBoard()
       ) : (
         renderSwimlane()
@@ -539,6 +541,7 @@ export function ProjectKanbanTab({ projectId, isArchived = false }: Props) {
         onOpenChange={(open) => { if (!open) setSelectedStoryId(null); }}
         epics={epics ?? []}
         members={members ?? []}
+        isInActiveSprint={isActiveSprint}
       />
       <PermissionDeniedDialog open={denied.open} onOpenChange={closeDenied} actionLabel={denied.actionLabel} requiredPermission={denied.requiredPermission} />
     </div>

@@ -19,11 +19,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Separator } from "@/components/ui/separator";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Plus, Play, CheckCircle2, LayoutDashboard, Pencil, Users } from "lucide-react";
+import { CalendarIcon, Plus, Play, CheckCircle2, LayoutDashboard, Pencil, Users, AlertTriangle, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
+import { useDeleteSprint } from "@/hooks/useSprints";
 
 
 const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
@@ -88,6 +90,7 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
   const [newSprint, setNewSprint] = useState({ name: "", goal: "", start_date: undefined as Date | undefined, end_date: undefined as Date | undefined });
   const [selectedBacklogIds, setSelectedBacklogIds] = useState<string[]>([]);
   const [createHUOpen, setCreateHUOpen] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<SprintWithStats | null>(null);
   
   const [newStory, setNewStory] = useState({ title: "", description: "", type: "story", priority: "medium", status: "backlog", story_points: "", epic_id: "", assigned_to: "", sprint_id: "" });
 
@@ -158,7 +161,6 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
       end_date: newSprint.end_date ? format(newSprint.end_date, "yyyy-MM-dd") : null,
       capacity: selectedPoints,
     });
-    // Sync story assignments: add newly selected, remove deselected
     const currentlyAssigned = backlogStories?.filter((s) => s.sprint_id === editSprint.id).map((s) => s.id) ?? [];
     const toAssign = selectedBacklogIds.filter((id) => !currentlyAssigned.includes(id));
     const toRemove = currentlyAssigned.filter((id) => !selectedBacklogIds.includes(id));
@@ -175,6 +177,16 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
     if (!startConfirm) return;
     await updateSprint.mutateAsync({ id: startConfirm.id, status: "active" });
     setStartConfirm(null);
+  };
+
+  const handleDeleteSprint = async () => {
+    if (!deleteConfirm) return;
+    // Move stories back to backlog
+    const sprintStories = backlogStories?.filter((s) => s.sprint_id === deleteConfirm.id) ?? [];
+    for (const story of sprintStories) {
+      await updateStory.mutateAsync({ id: story.id, sprint_id: null });
+    }
+    await supabase.from("sprints").delete().eq("id", deleteConfirm.id);
   };
 
   const handleMoveIncomplete = async (action: "next" | "backlog") => {
@@ -226,6 +238,9 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
                 <>
                   <Button size="sm" variant="ghost" onClick={() => guardAction("sprints", "edit", "editar un sprint", () => openEdit(sprint))}>
                     <Pencil className="h-3.5 w-3.5 mr-1" />Editar
+                  </Button>
+                  <Button size="sm" variant="ghost" className="text-destructive" onClick={() => guardAction("sprints", "delete", "eliminar un sprint", () => setDeleteConfirm(sprint))}>
+                    <Trash2 className="h-3.5 w-3.5" />
                   </Button>
                   <Button size="sm" variant="outline" onClick={() => guardAction("sprints", "manage", "iniciar un sprint", () => setStartConfirm(sprint))}>
                     <Play className="h-3.5 w-3.5 mr-1" />Iniciar
@@ -289,9 +304,7 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
         <h3 className="text-lg font-semibold text-foreground">Sprints</h3>
         <div className="flex gap-2">
           {!isArchived && (
-            <>
-              <Button size="sm" onClick={() => guardAction("sprints", "create", "crear un sprint", openCreate)}><Plus className="h-4 w-4 mr-1" />Nuevo Sprint</Button>
-            </>
+            <Button size="sm" onClick={() => guardAction("sprints", "create", "crear un sprint", openCreate)}><Plus className="h-4 w-4 mr-1" />Nuevo Sprint</Button>
           )}
         </div>
       </div>
@@ -487,24 +500,46 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
         </DialogContent>
       </Dialog>
 
-
+      {/* Start Sprint Confirmation - IMPROVED with warning banner */}
       <Dialog open={!!startConfirm} onOpenChange={() => setStartConfirm(null)}>
         <DialogContent className="sm:max-w-md">
-          <DialogHeader><DialogTitle>¿Iniciar Sprint?</DialogTitle></DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            Esto iniciará <strong>{startConfirm?.name}</strong>
-            {startConfirm?.start_date && startConfirm?.end_date
-              ? ` del ${format(new Date(startConfirm.start_date), "dd MMM yyyy", { locale: es })} al ${format(new Date(startConfirm.end_date), "dd MMM yyyy", { locale: es })}`
-              : ""}.
-          </p>
-          <p className="text-sm">{startConfirm?.totalStories} historias · {startConfirm?.totalPoints} story points</p>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              🚀 ¿Iniciar Sprint {startConfirm?.name}?
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              {startConfirm?.start_date && startConfirm?.end_date
+                ? `Del ${format(new Date(startConfirm.start_date), "dd MMM yyyy", { locale: es })} al ${format(new Date(startConfirm.end_date), "dd MMM yyyy", { locale: es })}`
+                : "Sin fechas definidas"}.
+            </p>
+            <p className="text-sm">{startConfirm?.totalStories} historias · {startConfirm?.totalPoints} story points</p>
+            
+            {/* Warning banner */}
+            <div className="flex items-start gap-3 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30 text-yellow-700 dark:text-yellow-400">
+              <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
+              <div className="text-sm space-y-1">
+                <p className="font-medium">⚠️ Importante</p>
+                <p>Al iniciar el sprint, las Historias de Usuario asociadas quedarán bloqueadas para edición. Solo se permitirá:</p>
+                <ul className="list-disc pl-4 space-y-0.5 text-xs">
+                  <li>Cambiar el estado</li>
+                  <li>Cambiar el asignado</li>
+                  <li>Agregar comentarios</li>
+                </ul>
+              </div>
+            </div>
+          </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setStartConfirm(null)}>Cancelar</Button>
-            <Button onClick={handleStartSprint}>Iniciar Sprint</Button>
+            <Button onClick={handleStartSprint} className="bg-accent text-accent-foreground hover:bg-accent/90">
+              <Play className="h-4 w-4 mr-1" />Iniciar Sprint
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
+      {/* Sprint Review / Complete */}
       <Dialog open={!!completeReview} onOpenChange={() => setCompleteReview(null)}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader><DialogTitle>Sprint Review — {completeReview?.name}</DialogTitle></DialogHeader>
@@ -561,6 +596,15 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Sprint Confirmation */}
+      <ConfirmDeleteDialog
+        open={!!deleteConfirm}
+        onOpenChange={() => setDeleteConfirm(null)}
+        onConfirm={handleDeleteSprint}
+        title={`¿Eliminar ${deleteConfirm?.name}?`}
+        description="Las historias de usuario del sprint volverán al backlog automáticamente."
+      />
 
       {/* Create HU Dialog */}
       <Dialog open={createHUOpen} onOpenChange={setCreateHUOpen}>

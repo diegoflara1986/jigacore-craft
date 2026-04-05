@@ -17,7 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
-import { Plus, Search, Trash2, BarChart3, Vote, Eye, ChevronDown, ChevronRight } from "lucide-react";
+import { Plus, Search, Trash2, BarChart3, Vote, Eye, ChevronDown, ChevronRight, Lock } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { UserStoryDetailSheet } from "../UserStoryDetailSheet";
 import { CreateEstimationRoundModal } from "../CreateEstimationRoundModal";
@@ -85,7 +85,6 @@ export function ProjectBacklogTab({ projectId, estimationOnly = false, isArchive
   const openRounds = useMemo(() => allRounds?.filter((r) => r.status === "abierta") ?? [], [allRounds]);
   const closedRounds = useMemo(() => allRounds?.filter((r) => r.status === "cerrada") ?? [], [allRounds]);
 
-  // Get vote counts for open rounds (for each round, how many votes does the current user have)
   const { data: myVoteCounts } = useQuery({
     queryKey: ["my-round-vote-counts", projectId, user?.id],
     queryFn: async () => {
@@ -102,7 +101,6 @@ export function ProjectBacklogTab({ projectId, estimationOnly = false, isArchive
     enabled: !!user && openRounds.length > 0,
   });
 
-  // Get story counts per round
   const { data: roundStoryCounts } = useQuery({
     queryKey: ["round-story-counts", projectId],
     queryFn: async () => {
@@ -118,7 +116,6 @@ export function ProjectBacklogTab({ projectId, estimationOnly = false, isArchive
     enabled: (allRounds?.length ?? 0) > 0,
   });
 
-  // Get participant counts per round
   const { data: roundParticipantCounts } = useQuery({
     queryKey: ["round-participant-counts", projectId],
     queryFn: async () => {
@@ -134,7 +131,6 @@ export function ProjectBacklogTab({ projectId, estimationOnly = false, isArchive
     enabled: (allRounds?.length ?? 0) > 0,
   });
 
-  // Get total vote counts per round (all users)
   const { data: totalVoteCounts } = useQuery({
     queryKey: ["total-round-vote-counts", projectId],
     queryFn: async () => {
@@ -143,7 +139,6 @@ export function ProjectBacklogTab({ projectId, estimationOnly = false, isArchive
       const { data } = await fromTable("estimation_round_votes")
         .select("round_id, user_id")
         .in("round_id", roundIds);
-      // Count distinct users per round
       const userSets: Record<string, Set<string>> = {};
       (data ?? []).forEach((v: any) => {
         if (!userSets[v.round_id]) userSets[v.round_id] = new Set();
@@ -165,13 +160,16 @@ export function ProjectBacklogTab({ projectId, estimationOnly = false, isArchive
     },
   });
 
+  const isStoryInActiveSprint = (s: UserStory) => {
+    if (!s.sprint_id) return false;
+    const sprint = sprints?.find(sp => sp.id === s.sprint_id);
+    return sprint?.status === "active";
+  };
+
   const isStoryReadOnly = (s: UserStory) => {
     if (s.deleted_at) return true;
     if (s.status === "done") return true;
-    if (s.sprint_id) {
-      const sprint = sprints?.find(sp => sp.id === s.sprint_id);
-      if (sprint && sprint.status === "active") return true;
-    }
+    if (isStoryInActiveSprint(s)) return true;
     return false;
   };
 
@@ -195,14 +193,11 @@ export function ProjectBacklogTab({ projectId, estimationOnly = false, isArchive
 
   const initials = (name: string | null) => name ? name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() : "?";
 
-  const isCreatorOrAdmin = (round: any) => round.created_by === user?.id || ["admin", "super_admin", "project_manager"].includes(user?.id ? "" : "");
-
   return (
     <div className="mt-4 space-y-4">
       {/* Estimation Rounds Section */}
       {estimationOnly && (
         <>
-          {/* Open Rounds */}
           {openRounds.length > 0 && (
             <div className="space-y-2">
               <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
@@ -262,7 +257,6 @@ export function ProjectBacklogTab({ projectId, estimationOnly = false, isArchive
             </div>
           )}
 
-          {/* Closed Rounds */}
           {closedRounds.length > 0 && (
             <Collapsible open={closedRoundsOpen} onOpenChange={setClosedRoundsOpen}>
               <CollapsibleTrigger asChild>
@@ -274,7 +268,6 @@ export function ProjectBacklogTab({ projectId, estimationOnly = false, isArchive
               <CollapsibleContent className="space-y-2 mt-2">
                 {closedRounds.map((round) => {
                   const storyCount = roundStoryCounts?.[round.id] ?? 0;
-                  const isCreator = round.created_by === user?.id;
                   return (
                     <Card key={round.id} className="border-muted">
                       <CardContent className="py-3 px-4">
@@ -428,7 +421,12 @@ export function ProjectBacklogTab({ projectId, estimationOnly = false, isArchive
             <TableBody>
               {stories.map((s) => (
                 <TableRow key={s.id} className={`cursor-pointer hover:bg-muted/50 ${s.deleted_at ? 'opacity-50' : ''}`} onClick={() => setSelectedStoryId(s.id)}>
-                  <TableCell className="text-xs text-muted-foreground font-mono">HU-{String(s.story_number ?? 0).padStart(3, "0")}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground font-mono">
+                    <span className="flex items-center gap-1">
+                      {isStoryInActiveSprint(s) && <Lock className="h-3 w-3 text-blue-500" />}
+                      HU-{String(s.story_number ?? 0).padStart(3, "0")}
+                    </span>
+                  </TableCell>
                   <TableCell className="text-center text-base">{typeIcon(s.type)}</TableCell>
                   <TableCell>
                     <span className="font-medium text-foreground">{s.title}</span>
@@ -575,7 +573,8 @@ export function ProjectBacklogTab({ projectId, estimationOnly = false, isArchive
         onOpenChange={(open) => { if (!open) setSelectedStoryId(null); }}
         epics={epics ?? []}
         members={members ?? []}
-        readOnly={(() => { const s = stories?.find(st => st.id === selectedStoryId); return s ? isStoryReadOnly(s) : false; })()}
+        readOnly={(() => { const s = stories?.find(st => st.id === selectedStoryId); return s ? (s.deleted_at != null || s.status === "done") : false; })()}
+        isInActiveSprint={(() => { const s = stories?.find(st => st.id === selectedStoryId); return s ? isStoryInActiveSprint(s) : false; })()}
       />
 
       <CreateEstimationRoundModal projectId={projectId} open={estimationModalOpen} onOpenChange={setEstimationModalOpen} />

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,7 @@ import { useAuth } from "@/lib/auth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { X, Send, ArrowRight, Link2, Download, Calendar, FileText, Image as ImageIcon } from "lucide-react";
+import { X, Send, ArrowRight, Link2, Download, Calendar, FileText, Image as ImageIcon, Upload } from "lucide-react";
 
 function timeAgo(date: string) {
   const diff = Date.now() - new Date(date).getTime();
@@ -48,8 +48,9 @@ export function IncidentDetailSheet({ incidentId, onClose, canManage, canClose }
   const createNote = useCreateIncidentNote();
   const { data: history } = useIncidentHistory(incidentId ?? undefined);
   const createHistory = useCreateIncidentHistory();
-  const { data: attachments } = useIncidentAttachments(incidentId ?? undefined);
+  const { data: attachments, refetch: refetchAttachments } = useIncidentAttachments(incidentId ?? undefined);
   const { data: slaConfigs } = useSlaConfigs();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [noteText, setNoteText] = useState("");
   const [noteTab, setNoteTab] = useState("conversation");
@@ -120,7 +121,6 @@ export function IncidentDetailSheet({ incidentId, onClose, canManage, canClose }
       createHistory.mutate({ incident_id: incident.id, user_id: profile.id, field_name: "status", old_value: incident.status, new_value: newStatus });
     }
 
-    // Notify creator on status changes
     if (incident.created_by && incident.created_by !== user?.id) {
       const statusLabel = STATUSES.find(s => s.value === newStatus)?.label ?? newStatus;
       await supabase.from("notifications").insert({
@@ -155,7 +155,6 @@ export function IncidentDetailSheet({ incidentId, onClose, canManage, canClose }
     if (field === "severity" && value !== "no_aplica") {
       updates.is_requirement = false;
     }
-    // Auto-move to revision on first evaluation
     if (incident.status === "pendiente" && (field === "severity" || field === "assigned_to")) {
       updates.status = "revision";
       updates.reviewed_by = user?.id;
@@ -165,7 +164,6 @@ export function IncidentDetailSheet({ incidentId, onClose, canManage, canClose }
     if (profile) {
       createHistory.mutate({ incident_id: incident.id, user_id: profile.id, field_name: field, old_value: String((incident as any)[field] ?? ""), new_value: String(value ?? "") });
     }
-    // Notify creator when severity is assigned
     if (field === "severity" && incident.created_by && incident.created_by !== user?.id) {
       await supabase.from("notifications").insert({
         user_id: incident.created_by,
@@ -182,7 +180,6 @@ export function IncidentDetailSheet({ incidentId, onClose, canManage, canClose }
     if (!noteText.trim() || !profile) return;
     const isInternal = noteTab === "internal";
     await createNote.mutateAsync({ incident_id: incident.id, user_id: profile.id, content: noteText, is_internal: isInternal });
-    // Notify involved parties
     if (!isInternal && incident.created_by && incident.created_by !== user?.id) {
       await supabase.from("notifications").insert({
         user_id: incident.created_by,
@@ -218,7 +215,32 @@ export function IncidentDetailSheet({ incidentId, onClose, canManage, canClose }
     toast({ title: "HU vinculada" });
   };
 
-  // SLA suggestion
+  const handleFileUpload = async (files: FileList | null) => {
+    if (!files || !profile || !incident) return;
+    for (const file of Array.from(files)) {
+      if (file.size > 15 * 1024 * 1024) {
+        toast({ title: `${file.name} supera 15MB`, variant: "destructive" });
+        continue;
+      }
+      const filePath = `${incident.ticket_code}/${Date.now()}_${file.name}`;
+      const { error } = await supabase.storage.from("incident-attachments").upload(filePath, file);
+      if (error) {
+        toast({ title: "Error al subir", description: error.message, variant: "destructive" });
+        continue;
+      }
+      const fileType = file.type.startsWith("image/") ? "image" : "document";
+      await supabase.from("incident_attachments").insert({
+        incident_id: incident.id,
+        file_name: file.name,
+        file_url: filePath,
+        file_type: fileType,
+        file_size: file.size,
+        uploaded_by: profile.id,
+      });
+    }
+    refetchAttachments();
+  };
+
   const getSlaDate = () => {
     if (!incident.severity || incident.severity === "no_aplica" || !slaConfigs?.length) return null;
     const sla = slaConfigs.find((s: any) => s.severity === incident.severity);
@@ -231,7 +253,6 @@ export function IncidentDetailSheet({ incidentId, onClose, canManage, canClose }
   const conversationNotes = (notes ?? []).filter((n: any) => !n.is_internal);
   const internalNotes = (notes ?? []).filter((n: any) => n.is_internal);
 
-  // Client can approve closure
   const isCreator = incident.created_by === user?.id;
   const showApproveClose = isCreator && incident.status === "listo_para_cerrar";
 
@@ -253,12 +274,11 @@ export function IncidentDetailSheet({ incidentId, onClose, canManage, canClose }
           </SheetHeader>
 
           <div className="p-4 space-y-6">
-            {/* Approve close banner for creator */}
             {showApproveClose && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-center justify-between">
+              <div className="bg-yellow-50 dark:bg-yellow-500/10 border border-yellow-200 dark:border-yellow-500/30 rounded-lg p-4 flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-yellow-800">✅ Este incidente está listo para cerrar</p>
-                  <p className="text-sm text-yellow-700">El equipo completó la solución. ¿Apruebas el cierre?</p>
+                  <p className="font-medium text-yellow-800 dark:text-yellow-400">✅ Este incidente está listo para cerrar</p>
+                  <p className="text-sm text-yellow-700 dark:text-yellow-500">El equipo completó la solución. ¿Apruebas el cierre?</p>
                 </div>
                 <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => handleStatusChange("cerrado")}>
                   Aprobar Cierre
@@ -295,25 +315,48 @@ export function IncidentDetailSheet({ incidentId, onClose, canManage, canClose }
               )}
             </section>
 
-            {/* Attachments */}
-            {(attachments ?? []).length > 0 && (
-              <>
-                <Separator />
-                <section>
-                  <h3 className="text-sm font-semibold text-muted-foreground mb-2">ARCHIVOS ADJUNTOS</h3>
-                  <div className="grid grid-cols-2 gap-2">
-                    {(attachments ?? []).map((a: any) => (
-                      <div key={a.id} className="flex items-center gap-2 p-2 border rounded-lg">
-                        {a.file_type === "image" ? <ImageIcon className="h-4 w-4 text-blue-500" /> : <FileText className="h-4 w-4 text-orange-500" />}
-                        <span className="text-xs flex-1 truncate">{a.file_name}</span>
-                        <span className="text-xs text-muted-foreground">{a.file_size ? `${(a.file_size / 1024 / 1024).toFixed(1)}MB` : ""}</span>
-                        <a href={a.file_url} target="_blank" rel="noopener noreferrer"><Download className="h-3 w-3 text-muted-foreground hover:text-foreground" /></a>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              </>
-            )}
+            {/* Attachments - REDESIGNED with larger drop zone */}
+            <Separator />
+            <section>
+              <h3 className="text-sm font-semibold text-muted-foreground mb-3">ARCHIVOS ADJUNTOS</h3>
+              
+              {/* Existing files */}
+              {(attachments ?? []).length > 0 && (
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                  {(attachments ?? []).map((a: any) => (
+                    <div key={a.id} className="flex items-center gap-2 p-2 border border-border rounded-lg">
+                      {a.file_type === "image" ? <ImageIcon className="h-4 w-4 text-blue-500" /> : <FileText className="h-4 w-4 text-orange-500" />}
+                      <span className="text-xs flex-1 truncate">{a.file_name}</span>
+                      <span className="text-xs text-muted-foreground">{a.file_size ? `${(a.file_size / 1024 / 1024).toFixed(1)}MB` : ""}</span>
+                      <a href={a.file_url} target="_blank" rel="noopener noreferrer"><Download className="h-3 w-3 text-muted-foreground hover:text-foreground" /></a>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Large upload zone */}
+              {canManage && (
+                <div
+                  className="border-2 border-dashed border-border rounded-lg min-h-[120px] flex flex-col items-center justify-center cursor-pointer transition-colors hover:border-accent hover:bg-accent/5 group"
+                  onClick={() => fileInputRef.current?.click()}
+                  onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("border-accent", "bg-accent/5"); }}
+                  onDragLeave={(e) => { e.currentTarget.classList.remove("border-accent", "bg-accent/5"); }}
+                  onDrop={(e) => { e.preventDefault(); e.currentTarget.classList.remove("border-accent", "bg-accent/5"); handleFileUpload(e.dataTransfer.files); }}
+                >
+                  <Upload className="h-8 w-8 text-muted-foreground group-hover:text-accent transition-colors mb-2" />
+                  <p className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">Haz clic aquí o arrastra archivos</p>
+                  <p className="text-xs text-muted-foreground mt-1">PNG, JPG, PDF, DOC, MP4 · Máx 15MB</p>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    className="hidden"
+                    multiple
+                    accept=".png,.jpg,.jpeg,.pdf,.doc,.docx,.mp4"
+                    onChange={(e) => handleFileUpload(e.target.files)}
+                  />
+                </div>
+              )}
+            </section>
 
             {/* Evaluation Section - Managers Only */}
             {canManage && (
@@ -371,7 +414,7 @@ export function IncidentDetailSheet({ incidentId, onClose, canManage, canClose }
               </>
             )}
 
-            {/* Status Management - Managers Only */}
+            {/* Status Management */}
             {canManage && incident.status !== "cerrado" && (
               <>
                 <Separator />
