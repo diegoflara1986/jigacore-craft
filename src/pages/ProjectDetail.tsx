@@ -3,7 +3,7 @@ import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useProject, useUpdateProject, useProjectMembers, useProjectStats } from "@/hooks/useProjects";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, LayoutDashboard, Settings, Lock, RotateCcw, ShieldAlert } from "lucide-react";
+import { ArrowLeft, LayoutDashboard, Lock, RotateCcw, ShieldAlert } from "lucide-react";
 import { ProjectOverviewTab } from "@/components/projects/tabs/ProjectOverviewTab";
 import { ProjectTeamTab } from "@/components/projects/tabs/ProjectTeamTab";
 import { ProjectEpicsTab } from "@/components/projects/tabs/ProjectEpicsTab";
@@ -26,7 +26,6 @@ export default function ProjectDetail() {
   const navigate = useNavigate();
   const { profile } = useAuth();
 
-  // Handle ?tab= URL param
   useEffect(() => {
     const tab = searchParams.get("tab");
     if (tab === "estimation") setActiveTab("estimation");
@@ -38,7 +37,6 @@ export default function ProjectDetail() {
 
   const isArchived = project?.status === "archived";
 
-  // Fetch completion data for steps
   const { data: epicsCount } = useQuery({
     queryKey: ["epics-count", id],
     queryFn: async () => {
@@ -95,8 +93,6 @@ export default function ProjectDetail() {
   }
 
   if (!project) {
-    // Check if it's an access denied (project exists but user can't see it)
-    const isAccessDenied = projectError || (!isLoading && !project);
     return (
       <div className="flex flex-col items-center justify-center py-20 space-y-4 animate-fade-in">
         <div className="h-16 w-16 rounded-full bg-destructive/10 flex items-center justify-center">
@@ -146,7 +142,7 @@ export default function ProjectDetail() {
         </div>
       )}
 
-      {/* Header */}
+      {/* Header - removed Configuración button */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => navigate("/proyectos")}>
@@ -163,9 +159,6 @@ export default function ProjectDetail() {
         <div className="flex items-center gap-1">
           <Button variant={activeTab === "overview" ? "secondary" : "ghost"} size="sm" onClick={() => setActiveTab("overview")}>
             <LayoutDashboard className="h-4 w-4 mr-1" /> Overview
-          </Button>
-          <Button variant={activeTab === "settings" ? "secondary" : "ghost"} size="sm" onClick={() => setActiveTab("settings")}>
-            <Settings className="h-4 w-4 mr-1" /> Configuración
           </Button>
         </div>
       </div>
@@ -203,9 +196,6 @@ export default function ProjectDetail() {
       )}
       {activeTab === "costs" && (
         <ProjectCostsTab projectId={project.id} isArchived={isArchived} />
-      )}
-      {activeTab === "settings" && (
-        <ProjectTeamTab projectId={project.id} members={members ?? []} isArchived={isArchived} />
       )}
 
       {/* Restore Dialog */}
