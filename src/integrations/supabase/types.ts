@@ -1126,9 +1126,11 @@ export type Database = {
           id: string
           is_active: boolean | null
           job_title: string | null
+          project_id: string | null
           role: Database["public"]["Enums"]["app_role"]
           role_id: string | null
           timezone: string | null
+          user_type: string
           workspace_id: string | null
         }
         Insert: {
@@ -1139,9 +1141,11 @@ export type Database = {
           id: string
           is_active?: boolean | null
           job_title?: string | null
+          project_id?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           role_id?: string | null
           timezone?: string | null
+          user_type?: string
           workspace_id?: string | null
         }
         Update: {
@@ -1152,12 +1156,21 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           job_title?: string | null
+          project_id?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           role_id?: string | null
           timezone?: string | null
+          user_type?: string
           workspace_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "profiles_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "profiles_role_id_fkey"
             columns: ["role_id"]
@@ -1829,6 +1842,10 @@ export type Database = {
           name: string
         }[]
       }
+      get_external_user_project_id: {
+        Args: { _user_id: string }
+        Returns: string
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -1846,6 +1863,7 @@ export type Database = {
         Returns: boolean
       }
       has_team_role: { Args: { _user_id: string }; Returns: boolean }
+      is_external_user: { Args: { _user_id: string }; Returns: boolean }
       is_project_member: {
         Args: { _project_id: string; _user_id: string }
         Returns: boolean
