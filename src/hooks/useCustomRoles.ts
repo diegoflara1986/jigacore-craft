@@ -36,87 +36,204 @@ export interface RoleIncidentPermission {
 }
 
 export const PERMISSION_MODULES = [
-  { module: "projects", label: "Proyectos", icon: "📁", actions: [
-    { action: "view", label: "Ver proyectos asignados" },
-    { action: "create", label: "Crear nuevos proyectos" },
-    { action: "edit", label: "Editar proyectos" },
-    { action: "delete", label: "Eliminar proyectos" },
-    { action: "archive", label: "Archivar y restaurar proyectos" },
-  ]},
-  { module: "backlog", label: "Backlog / Historias de Usuario", icon: "📋", actions: [
-    { action: "view", label: "Ver historias de usuario" },
-    { action: "create", label: "Crear historias de usuario" },
-    { action: "edit", label: "Editar historias de usuario" },
-    { action: "delete", label: "Eliminar historias de usuario" },
-  ]},
-  { module: "sprints", label: "Sprints", icon: "🏃", actions: [
-    { action: "view", label: "Ver sprints" },
-    { action: "create", label: "Crear sprints" },
-    { action: "edit", label: "Editar sprints" },
-    { action: "delete", label: "Eliminar sprints" },
-    { action: "manage", label: "Iniciar y completar sprints" },
-  ]},
-  { module: "kanban", label: "Tablero Kanban", icon: "📌", actions: [
-    { action: "view", label: "Ver el tablero" },
-    { action: "move_cards", label: "Mover tarjetas entre columnas" },
-  ]},
-  { module: "epics", label: "Épicas", icon: "🗂️", actions: [
-    { action: "view", label: "Ver épicas" },
-    { action: "create", label: "Crear épicas" },
-    { action: "edit", label: "Editar épicas" },
-    { action: "delete", label: "Eliminar épicas" },
-  ]},
-  { module: "estimation", label: "Estimación", icon: "📊", actions: [
-    { action: "view", label: "Ver sesiones de estimación" },
-    { action: "vote", label: "Votar en estimaciones" },
-    { action: "manage", label: "Gestionar sesiones (crear, moderar)" },
-    { action: "close", label: "Cerrar sesiones y aplicar puntos" },
-  ]},
-  { module: "time", label: "Tiempo", icon: "⏱️", actions: [
-    { action: "view_own", label: "Ver mis registros de tiempo" },
-    { action: "view_team", label: "Ver tiempo de todo el equipo" },
-    { action: "log", label: "Registrar tiempo" },
-    { action: "approve", label: "Aprobar registros del equipo" },
-  ]},
-  { module: "costs", label: "Costos", icon: "💰", actions: [
-    { action: "view", label: "Ver costos del proyecto" },
-    { action: "configure", label: "Configurar tarifas" },
-  ]},
-  { module: "incidents", label: "Incidentes", icon: "🐛", actions: [
-    { action: "view", label: "Ver incidentes" },
-    { action: "create", label: "Crear incidentes (requiere ser miembro del proyecto)" },
-    { action: "manage", label: "Gestionar incidentes (evaluar, cambiar estado)" },
-    { action: "close", label: "Cerrar incidentes (aprobar cierre)" },
-  ]},
-  { module: "reports", label: "Reportes", icon: "📈", actions: [
-    { action: "view_basic", label: "Ver reportes básicos" },
-    { action: "view_financial", label: "Ver reportes financieros" },
-    { action: "export", label: "Exportar reportes" },
-  ]},
-  { module: "members", label: "Equipo del Proyecto", icon: "👥", actions: [
-    { action: "view", label: "Ver miembros" },
-    { action: "add", label: "Agregar miembros" },
-    { action: "remove", label: "Remover miembros" },
-    { action: "change_role", label: "Cambiar roles de miembros" },
-  ]},
-  { module: "settings", label: "Configuración", icon: "⚙️", actions: [
-    { action: "view", label: "Ver configuración" },
-    { action: "edit_workspace", label: "Editar configuración del workspace" },
-    { action: "edit_project", label: "Editar configuración del proyecto" },
-  ]},
-  { module: "users", label: "Usuarios", icon: "👤", actions: [
-    { action: "view", label: "Ver usuarios del workspace" },
-    { action: "invite", label: "Invitar usuarios" },
-    { action: "deactivate", label: "Desactivar usuarios" },
-    { action: "change_role", label: "Cambiar roles de usuarios" },
-  ]},
-  { module: "audit", label: "Auditoría", icon: "📋", actions: [
-    { action: "view", label: "Ver log de auditoría" },
-  ]},
-  { module: "billing", label: "Facturación", icon: "💳", actions: [
-    { action: "view", label: "Ver facturación" },
-    { action: "manage", label: "Gestionar suscripción" },
-  ]},
+  { module: "proyectos", label: "Proyectos", icon: "📁",
+    scope: { field: "proyectos_scope",
+             options: ["solo_asignados", "todos"],
+             required: true },
+    actions: [
+      { action: "ver", label: "Ver proyectos" },
+      { action: "crear", label: "Crear proyectos" },
+      { action: "editar", label: "Editar proyectos" },
+      { action: "eliminar", label: "Eliminar proyectos" },
+      { action: "archivar", label: "Archivar y desarchivar" },
+      { action: "duplicar", label: "Duplicar proyecto" },
+    ]
+  },
+  { module: "mi_trabajo", label: "Mi Trabajo", icon: "📋",
+    scope: { field: "mi_trabajo_scope",
+             options: ["solo_propios", "todos"],
+             required: true },
+    actions: [
+      { action: "ver", label: "Ver trabajo" },
+    ]
+  },
+  { module: "equipo", label: "Equipo del Proyecto", icon: "👥",
+    actions: [
+      { action: "ver", label: "Ver miembros" },
+      { action: "agregar", label: "Agregar miembros" },
+      { action: "eliminar", label: "Eliminar miembros" },
+      { action: "cambiar_rol", label: "Cambiar roles de miembros" },
+    ]
+  },
+  { module: "backlog", label: "Backlog / Historias", icon: "📋",
+    actions: [
+      { action: "ver", label: "Ver historias" },
+      { action: "crear", label: "Crear historias" },
+      { action: "editar", label: "Editar historias" },
+      { action: "eliminar", label: "Eliminar historias" },
+      { action: "duplicar", label: "Duplicar historias" },
+      { action: "bloquear", label: "Bloquear historias" },
+      { action: "desbloquear", label: "Desbloquear historias" },
+    ]
+  },
+  { module: "estimacion", label: "Estimación", icon: "📊",
+    actions: [
+      { action: "ver", label: "Ver sesiones de estimación" },
+      { action: "votar", label: "Votar en estimación" },
+      { action: "crear", label: "Crear sesión de estimación" },
+      { action: "cerrar", label: "Cerrar sesión y aplicar puntos" },
+    ]
+  },
+  { module: "epicas", label: "Épicas", icon: "🗂️",
+    actions: [
+      { action: "ver", label: "Ver épicas" },
+      { action: "crear", label: "Crear épicas" },
+      { action: "editar", label: "Editar épicas" },
+      { action: "eliminar", label: "Eliminar épicas" },
+    ]
+  },
+  { module: "sprints", label: "Sprints", icon: "🏃",
+    actions: [
+      { action: "ver", label: "Ver sprints" },
+      { action: "crear", label: "Crear sprints" },
+      { action: "editar", label: "Editar sprints" },
+      { action: "eliminar", label: "Eliminar sprints" },
+      { action: "gestionar", label: "Iniciar y completar sprints" },
+    ]
+  },
+  { module: "tablero", label: "Tablero Kanban", icon: "📌",
+    actions: [
+      { action: "ver", label: "Ver tablero" },
+      { action: "mover_tarjetas", label: "Mover tarjetas entre columnas" },
+    ]
+  },
+  { module: "tiempo", label: "Tiempo", icon: "⏱️",
+    scope: { field: "tiempo_scope",
+             options: ["solo_propios", "todos"],
+             required: true },
+    actions: [
+      { action: "ver", label: "Ver registros de tiempo" },
+      { action: "crear", label: "Crear registro de tiempo" },
+      { action: "editar", label: "Editar registro de tiempo" },
+      { action: "eliminar", label: "Eliminar registro de tiempo" },
+      { action: "aprobar", label: "Aprobar registros del equipo" },
+    ]
+  },
+  { module: "costos", label: "Costos", icon: "💰",
+    actions: [
+      { action: "ver", label: "Ver costos del proyecto" },
+      { action: "editar_tarifas", label: "Editar tarifas por miembro" },
+    ]
+  },
+  { module: "reportes", label: "Reportes", icon: "📈",
+    scope: { field: "reportes_scope",
+             options: ["solo_asignados", "todos"],
+             required: true },
+    actions: [
+      { action: "ver", label: "Ver reportes" },
+    ]
+  },
+  { module: "incidentes", label: "Incidentes Externos", icon: "🐛",
+    scope: { field: "incidentes_scope",
+             options: ["solo_asignados", "todos"],
+             required: true },
+    actions: [
+      { action: "ver", label: "Ver incidentes" },
+      { action: "crear", label: "Crear incidentes" },
+      { action: "gestionar", label: "Gestionar incidente" },
+      { action: "cerrar", label: "Cerrar incidente" },
+      { action: "reabrir", label: "Reabrir incidente" },
+      { action: "duplicar", label: "Duplicar incidente" },
+    ]
+  },
+  { module: "notificaciones", label: "Notificaciones", icon: "🔔",
+    scope: { field: "notificaciones_scope",
+             options: ["solo_propias", "todas"],
+             required: true },
+    actions: [
+      { action: "ver", label: "Ver notificaciones" },
+    ]
+  },
+  { module: "sig", label: "SIG / Formularios", icon: "📄",
+    actions: [
+      { action: "ver", label: "Ver registros de formularios" },
+      { action: "registrar", label: "Registrar formularios" },
+      { action: "eliminar", label: "Eliminar registros" },
+      { action: "duplicar", label: "Duplicar registros" },
+      { action: "editar", label: "Editar registros" },
+    ]
+  },
+  { module: "config_perfil", label: "Mi Perfil", icon: "👤",
+    actions: [
+      { action: "ver", label: "Ver mi perfil" },
+      { action: "editar", label: "Editar mi perfil" },
+    ]
+  },
+  { module: "config_notificaciones", label: "Mis Notificaciones",
+    icon: "🔔",
+    actions: [
+      { action: "ver", label: "Ver preferencias" },
+      { action: "editar", label: "Editar preferencias" },
+    ]
+  },
+  { module: "config_apariencia", label: "Apariencia", icon: "🎨",
+    actions: [
+      { action: "editar", label: "Editar apariencia" },
+    ]
+  },
+  { module: "config_general", label: "Configuración General",
+    icon: "⚙️",
+    actions: [
+      { action: "ver", label: "Ver configuración general" },
+      { action: "editar", label: "Editar configuración general" },
+    ]
+  },
+  { module: "config_usuarios", label: "Gestión de Usuarios",
+    icon: "👥",
+    actions: [
+      { action: "crear", label: "Crear usuarios" },
+      { action: "editar", label: "Editar usuarios" },
+      { action: "eliminar", label: "Eliminar usuarios" },
+      { action: "activar", label: "Activar usuarios" },
+      { action: "desactivar", label: "Desactivar usuarios" },
+    ]
+  },
+  { module: "configuracion_roles", label: "Roles y Permisos",
+    icon: "🔐",
+    actions: [
+      { action: "ver", label: "Ver roles" },
+      { action: "crear", label: "Crear roles" },
+      { action: "editar", label: "Editar roles" },
+      { action: "eliminar", label: "Eliminar roles" },
+      { action: "duplicar", label: "Duplicar roles" },
+    ]
+  },
+  { module: "config_sla", label: "SLA de Incidentes", icon: "⏱️",
+    actions: [
+      { action: "ver", label: "Ver SLA" },
+      { action: "editar", label: "Editar SLA" },
+    ]
+  },
+  { module: "config_auditoria", label: "Auditoría", icon: "📋",
+    actions: [
+      { action: "ver", label: "Ver auditoría" },
+    ]
+  },
+  { module: "config_integraciones", label: "Integraciones",
+    icon: "🔌",
+    actions: [
+      { action: "ver", label: "Ver integraciones" },
+      { action: "editar", label: "Editar integraciones" },
+    ]
+  },
+  { module: "config_flujos_sig", label: "Flujos SIG", icon: "🔄",
+    actions: [
+      { action: "ver", label: "Ver flujos" },
+      { action: "crear", label: "Crear flujo" },
+      { action: "editar", label: "Editar flujo" },
+      { action: "eliminar", label: "Eliminar flujo" },
+    ]
+  },
 ];
 
 export function useCustomRoles() {
