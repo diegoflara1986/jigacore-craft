@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 import {
-  useCustomRolesWithCount, useRolePermissions, useRoleIncidentPermissions,
+  useCustomRolesWithCount, useRolePermissions,
   useCreateCustomRole, useUpdateCustomRole, useDeleteCustomRole,
-  useUpdateRolePermission, useUpdateRoleIncidentPermission,
+  useUpdateRolePermission,
   CustomRole, PERMISSION_MODULES,
 } from "@/hooks/useCustomRoles";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,7 +20,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
-import { Plus, MoreVertical, Copy, Trash2, Info, Shield, Pencil } from "lucide-react";
+import { Plus, MoreVertical, Copy, Trash2, Info, Pencil, AlertTriangle } from "lucide-react";
 
 const ROLE_COLORS = ["#1E3A5F","#2563EB","#F97316","#8B5CF6","#10B981","#EF4444","#EC4899","#F59E0B","#06B6D4","#6B7280","#059669","#DC2626"];
 const ROLE_ICONS = ["👨‍💻","🎨","🔍","📊","🏗️","📱","🚀","⚙️","🎯","📝","🔧","👥","🦊","🎪","🏆","💡","🔑","🎭","🌟","💼","🛠️","🔬","📡","🎮"];
@@ -160,9 +160,7 @@ function RoleListItem({ role, selected, onSelect, onDuplicate, onDelete }: {
 
 function RoleDetail({ role, isAdmin }: { role: CustomRole; isAdmin: boolean }) {
   const { data: permissions } = useRolePermissions(role.id);
-  const { data: incidentPerms } = useRoleIncidentPermissions(role.id);
   const updatePerm = useUpdateRolePermission();
-  const updateIncidentPerm = useUpdateRoleIncidentPermission();
   const updateRole = useUpdateCustomRole();
 
   const [editingName, setEditingName] = useState(false);
