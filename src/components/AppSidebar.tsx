@@ -1,31 +1,58 @@
 import {
   LayoutDashboard, FolderKanban, ClipboardList, Bug,
-  BarChart3, Settings, Hexagon, ChevronLeft, Bell
+  BarChart3, Settings, Hexagon, ChevronLeft, Bell,
+  ChevronRight, ShieldAlert, FileText, GraduationCap
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
   SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
   SidebarHeader, SidebarFooter, useSidebar,
+  Collapsible, CollapsibleContent, CollapsibleTrigger,
 } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
-const mainNav = [
+// Navegación simple
+const simpleNav = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Proyectos", url: "/proyectos", icon: FolderKanban },
-  { title: "Mi Trabajo", url: "/my-work", icon: ClipboardList },
   { title: "Incidentes", url: "/incidents", icon: Bug },
   { title: "Reportes", url: "/reports", icon: BarChart3 },
   { title: "Notificaciones", url: "/notificaciones", icon: Bell },
   { title: "Configuración", url: "/settings", icon: Settings },
 ];
 
+// Sub-ítems de Proyectos
+const proyectosSubItems = [
+  { title: "Todos los proyectos", url: "/proyectos" },
+  { title: "Mi trabajo", url: "/my-work" },
+  { title: "Mis estimaciones", url: "/my-work" },
+];
+
+// Sub-ítems de SIG
+const sigSubItems = [
+  { title: "Incidentes de seguridad", url: "/sig/incidentes-seguridad" },
+  { title: "Solicitud de cambios", url: "/sig/solicitud-cambios" },
+  { title: "Capacitación y mejoras", url: "/sig/capacitacion-mejoras" },
+];
+
+function isActivePath(currentPath: string, targetPath: string) {
+  if (targetPath === "/") return currentPath === "/";
+  return currentPath === targetPath || currentPath.startsWith(targetPath + "/");
+}
+
 export function AppSidebar() {
   const { state, toggleSidebar } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
+  const navigate = useNavigate();
+  const currentPath = location.pathname;
+
+  // Determinar si los grupos están abiertos
+  const isProyectosActive = isActivePath(currentPath, "/proyectos") || isActivePath(currentPath, "/my-work");
+  const isSigActive = currentPath.startsWith("/sig");
 
   return (
     <Sidebar collapsible="icon" className="border-r-0">
@@ -50,21 +77,159 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {mainNav.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink
-                      to={item.url}
-                      end={item.url === "/"}
-                      className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
-                      activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold"
-                    >
-                      <item.icon className="h-5 w-5 shrink-0" />
-                      {!collapsed && <span className="text-sm">{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
+              {/* Dashboard */}
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <NavLink
+                    to="/"
+                    end
+                    className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+                    activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold"
+                  >
+                    <LayoutDashboard className="h-5 w-5 shrink-0" />
+                    {!collapsed && <span className="text-sm">Dashboard</span>}
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              {/* Grupo Proyectos - colapsable */}
+              <Collapsible defaultOpen={isProyectosActive} className="group/collapsible">
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors">
+                      <div className="flex items-center gap-3">
+                        <FolderKanban className="h-5 w-5 shrink-0" />
+                        {!collapsed && <span className="text-sm">Proyectos</span>}
+                      </div>
+                      {!collapsed && (
+                        <ChevronRight className="h-4 w-4 shrink-0 transition-transform group-data-[state=open]/collapsible:rotate-90" />
+                      )}
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
                 </SidebarMenuItem>
-              ))}
+                {!collapsed && (
+                  <CollapsibleContent>
+                    <SidebarMenu className="pl-4 border-l border-sidebar-border/50 ml-4 mt-1 space-y-1">
+                      {proyectosSubItems.map((item) => (
+                        <SidebarMenuItem key={item.title}>
+                          <SidebarMenuButton asChild>
+                            <NavLink
+                              to={item.url}
+                              className={cn(
+                                "flex items-center gap-2 px-3 py-1.5 rounded-md text-xs transition-colors",
+                                isActivePath(currentPath, item.url)
+                                  ? "text-sidebar-primary font-medium"
+                                  : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+                              )}
+                            >
+                              <span>{item.title}</span>
+                            </NavLink>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      ))}
+                    </SidebarMenu>
+                  </CollapsibleContent>
+                )}
+              </Collapsible>
+
+              {/* Incidentes */}
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <NavLink
+                    to="/incidents"
+                    className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+                    activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold"
+                  >
+                    <Bug className="h-5 w-5 shrink-0" />
+                    {!collapsed && <span className="text-sm">Incidentes</span>}
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              {/* Grupo SIG - colapsable */}
+              <Collapsible defaultOpen={isSigActive} className="group/collapsible">
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors">
+                      <div className="flex items-center gap-3">
+                        <ShieldAlert className="h-5 w-5 shrink-0" />
+                        {!collapsed && <span className="text-sm">SIG</span>}
+                      </div>
+                      {!collapsed && (
+                        <ChevronRight className="h-4 w-4 shrink-0 transition-transform group-data-[state=open]/collapsible:rotate-90" />
+                      )}
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                </SidebarMenuItem>
+                {!collapsed && (
+                  <CollapsibleContent>
+                    <SidebarMenu className="pl-4 border-l border-sidebar-border/50 ml-4 mt-1 space-y-1">
+                      {sigSubItems.map((item) => (
+                        <SidebarMenuItem key={item.title}>
+                          <SidebarMenuButton asChild>
+                            <NavLink
+                              to={item.url}
+                              className={cn(
+                                "flex items-center gap-2 px-3 py-1.5 rounded-md text-xs transition-colors",
+                                isActivePath(currentPath, item.url)
+                                  ? "text-sidebar-primary font-medium"
+                                  : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+                              )}
+                            >
+                              {item.title === "Incidentes de seguridad" && <ShieldAlert className="h-3 w-3" />}
+                              {item.title === "Solicitud de cambios" && <FileText className="h-3 w-3" />}
+                              {item.title === "Capacitación y mejoras" && <GraduationCap className="h-3 w-3" />}
+                              <span>{item.title}</span>
+                            </NavLink>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      ))}
+                    </SidebarMenu>
+                  </CollapsibleContent>
+                )}
+              </Collapsible>
+
+              {/* Reportes */}
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <NavLink
+                    to="/reports"
+                    className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+                    activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold"
+                  >
+                    <BarChart3 className="h-5 w-5 shrink-0" />
+                    {!collapsed && <span className="text-sm">Reportes</span>}
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              {/* Notificaciones */}
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <NavLink
+                    to="/notificaciones"
+                    className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+                    activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold"
+                  >
+                    <Bell className="h-5 w-5 shrink-0" />
+                    {!collapsed && <span className="text-sm">Notificaciones</span>}
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              {/* Configuración */}
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <NavLink
+                    to="/settings"
+                    className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+                    activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold"
+                  >
+                    <Settings className="h-5 w-5 shrink-0" />
+                    {!collapsed && <span className="text-sm">Configuración</span>}
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
