@@ -79,7 +79,8 @@ export function useCreateUserStory() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (story: Partial<UserStory> & { project_id: string; title: string }) => {
-      const { data, error } = await supabase.from("user_stories").insert(story).select().single();
+      const { epics, assigned_profile, sprints, ...insertData } = story as any;
+      const { data, error } = await supabase.from("user_stories").insert(insertData).select().single();
       if (error) throw error;
       return data;
     },
@@ -97,7 +98,8 @@ export function useUpdateUserStory() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<UserStory> & { id: string; _projectId?: string }) => {
-      const { error } = await supabase.from("user_stories").update(updates).eq("id", id);
+      const { epics, assigned_profile, sprints, _projectId, ...updateData } = updates as any;
+      const { error } = await supabase.from("user_stories").update(updateData).eq("id", id);
       if (error) throw error;
       return { id };
     },
