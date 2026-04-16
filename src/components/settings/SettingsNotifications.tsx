@@ -44,10 +44,12 @@ export function SettingsNotifications() {
     mutationFn: async ({ type, field, value }: { type: string; field: "in_app" | "by_email"; value: boolean }) => {
       const existing = prefsMap[type];
       if (existing) {
-        const { error } = await supabase.from("notification_preferences").update({ [field]: value }).eq("id", existing.id);
+        const updateData = field === "in_app" ? { in_app: value } : { by_email: value };
+        const { error } = await supabase.from("notification_preferences").update(updateData).eq("id", existing.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("notification_preferences").insert({ user_id: user!.id, notification_type: type, [field]: value });
+        const insertData = { user_id: user!.id, notification_type: type, in_app: field === "in_app" ? value : true, by_email: field === "by_email" ? value : false };
+        const { error } = await supabase.from("notification_preferences").insert(insertData);
         if (error) throw error;
       }
     },
