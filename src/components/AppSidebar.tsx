@@ -47,7 +47,6 @@ export function AppSidebar() {
   const { state, toggleSidebar } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
-  const navigate = useNavigate();
   const currentPath = location.pathname;
 
   // Determinar si los grupos están abiertos
