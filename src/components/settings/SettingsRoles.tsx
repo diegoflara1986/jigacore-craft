@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 import {
-  useCustomRolesWithCount, useRolePermissions, useRoleIncidentPermissions,
+  useCustomRolesWithCount, useRolePermissions,
   useCreateCustomRole, useUpdateCustomRole, useDeleteCustomRole,
-  useUpdateRolePermission, useUpdateRoleIncidentPermission,
+  useUpdateRolePermission,
   CustomRole, PERMISSION_MODULES,
 } from "@/hooks/useCustomRoles";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,7 +20,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
-import { Plus, MoreVertical, Copy, Trash2, Info, Shield, Pencil } from "lucide-react";
+import { Plus, MoreVertical, Copy, Trash2, Info, Pencil, AlertTriangle } from "lucide-react";
 
 const ROLE_COLORS = ["#1E3A5F","#2563EB","#F97316","#8B5CF6","#10B981","#EF4444","#EC4899","#F59E0B","#06B6D4","#6B7280","#059669","#DC2626"];
 const ROLE_ICONS = ["👨‍💻","🎨","🔍","📊","🏗️","📱","🚀","⚙️","🎯","📝","🔧","👥","🦊","🎪","🏆","💡","🔑","🎭","🌟","💼","🛠️","🔬","📡","🎮"];
@@ -160,9 +160,7 @@ function RoleListItem({ role, selected, onSelect, onDuplicate, onDelete }: {
 
 function RoleDetail({ role, isAdmin }: { role: CustomRole; isAdmin: boolean }) {
   const { data: permissions } = useRolePermissions(role.id);
-  const { data: incidentPerms } = useRoleIncidentPermissions(role.id);
   const updatePerm = useUpdateRolePermission();
-  const updateIncidentPerm = useUpdateRoleIncidentPermission();
   const updateRole = useUpdateCustomRole();
 
   const [editingName, setEditingName] = useState(false);
@@ -256,6 +254,32 @@ function RoleDetail({ role, isAdmin }: { role: CustomRole; isAdmin: boolean }) {
           const allActions = mod.actions.map(a => a.action);
           const fullyEnabled = isModuleFullyEnabled(mod.module, allActions);
           const partiallyEnabled = isModulePartiallyEnabled(mod.module, allActions);
+          const scope = (mod as any).scope as { field: string; options: string[]; required: boolean } | undefined;
+          const scopeLabels: Record<string, string> = {
+            solo_asignados: "Solo proyectos asignados",
+            todos: "Todos los proyectos",
+            solo_propios: "Solo los propios",
+            solo_propias: "Solo las propias",
+            todas: "Todas",
+          };
+          const selectedScope = scope
+            ? scope.options.find(opt => permSet.has(`${mod.module}:scope_${opt}`)) ?? null
+            : null;
+          const scopeMissing = !!scope && !selectedScope;
+
+          const handleScopeChange = (opt: string) => {
+            if (!isEditable || !scope) return;
+            // Disable other scope options first, then enable selected
+            scope.options.forEach(o => {
+              if (o !== opt && permSet.has(`${mod.module}:scope_${o}`)) {
+                updatePerm.mutate({ roleId: role.id, module: mod.module, action: `scope_${o}`, isAllowed: false });
+              }
+            });
+            updatePerm.mutate(
+              { roleId: role.id, module: mod.module, action: `scope_${opt}`, isAllowed: true },
+              { onSuccess: () => toast({ title: "Alcance actualizado", duration: 1500 }) }
+            );
+          };
 
           return (
             <Card key={mod.module}>
@@ -272,6 +296,43 @@ function RoleDetail({ role, isAdmin }: { role: CustomRole; isAdmin: boolean }) {
                     className={partiallyEnabled ? "data-[state=unchecked]:bg-accent/50" : ""}
                   />
                 </div>
+
+                {scope && (
+                  <div className={`ml-7 mb-3 rounded-md border p-2.5 ${scopeMissing ? "border-destructive/40 bg-destructive/5" : "border-amber-400/40 bg-amber-50 dark:bg-amber-500/10"}`}>
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <AlertTriangle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                      <span className="text-xs font-semibold text-amber-700 dark:text-amber-300">
+                        Alcance (obligatorio)
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {scope.options.map(opt => {
+                        const active = selectedScope === opt;
+                        return (
+                          <button
+                            key={opt}
+                            type="button"
+                            disabled={!isEditable}
+                            onClick={() => handleScopeChange(opt)}
+                            className={`text-xs px-2.5 py-1 rounded-md border transition-colors ${
+                              active
+                                ? "bg-primary text-primary-foreground border-primary"
+                                : "bg-background text-foreground border-border hover:bg-muted"
+                            } ${!isEditable ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
+                          >
+                            {scopeLabels[opt] ?? opt}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {scopeMissing && (
+                      <p className="mt-2 text-xs text-destructive">
+                        Debes seleccionar un alcance para activar este módulo
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 <div className="space-y-1.5 ml-7">
                   {mod.actions.map(action => {
                     const key = `${mod.module}:${action.action}`;
@@ -294,37 +355,6 @@ function RoleDetail({ role, isAdmin }: { role: CustomRole; isAdmin: boolean }) {
             </Card>
           );
         })}
-
-        {/* Incident-specific permissions (legacy mapping) */}
-        <Card>
-          <CardContent className="pt-4 pb-3">
-            <div className="flex items-center gap-2 mb-3">
-              <Shield className="h-4 w-4 text-muted-foreground" />
-              <h4 className="font-semibold text-sm text-foreground">Permisos Avanzados de Incidentes</h4>
-            </div>
-            <div className="space-y-2 ml-6">
-              {(["can_create", "can_manage", "can_close"] as const).map(field => {
-                const labels = { can_create: "Crear incidentes", can_manage: "Gestionar incidentes", can_close: "Cerrar incidentes" };
-                const checked = incidentPerms?.[field] ?? false;
-                return (
-                  <label key={field} className="flex items-center gap-2.5 cursor-pointer group">
-                    <Checkbox
-                      checked={checked}
-                      disabled={!isEditable}
-                      onCheckedChange={v => {
-                        if (!isEditable) return;
-                        updateIncidentPerm.mutate({ roleId: role.id, field, value: v === true }, {
-                          onSuccess: () => toast({ title: "Permiso actualizado", duration: 1500 }),
-                        });
-                      }}
-                    />
-                    <span className={`text-sm ${checked ? "text-foreground" : "text-muted-foreground"}`}>{labels[field]}</span>
-                  </label>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </ScrollArea>
   );

@@ -27,13 +27,6 @@ export interface RolePermission {
   is_allowed: boolean;
 }
 
-export interface RoleIncidentPermission {
-  id: string;
-  role_id: string;
-  can_create: boolean;
-  can_manage: boolean;
-  can_close: boolean;
-}
 
 export const PERMISSION_MODULES = [
   { module: "proyectos", label: "Proyectos", icon: "📁",
@@ -293,20 +286,6 @@ export function useRolePermissions(roleId: string | null) {
   });
 }
 
-export function useRoleIncidentPermissions(roleId: string | null) {
-  return useQuery({
-    queryKey: ["role-incident-perms-detail", roleId],
-    enabled: !!roleId,
-    queryFn: async () => {
-      const { data, error } = await fromTable("role_incident_permissions")
-        .select("*")
-        .eq("role_id", roleId!)
-        .maybeSingle();
-      if (error) throw error;
-      return data as RoleIncidentPermission | null;
-    },
-  });
-}
 
 export function useCreateCustomRole() {
   const qc = useQueryClient();
