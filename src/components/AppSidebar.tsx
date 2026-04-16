@@ -28,7 +28,6 @@ const simpleNav = [
 const proyectosSubItems = [
   { title: "Todos los proyectos", url: "/proyectos" },
   { title: "Mi trabajo", url: "/my-work" },
-  { title: "Mis estimaciones", url: "/my-work" },
 ];
 
 // Sub-ítems de SIG
