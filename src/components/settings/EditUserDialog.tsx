@@ -97,10 +97,11 @@ export function EditUserDialog({ open, onOpenChange, user, onSaved }: EditUserDi
           </div>
           <div className="space-y-2">
             <Label>Rol</Label>
-            <Select value={roleId} onValueChange={setRoleId}>
+            {(() => { console.log("roles disponibles:", customRoles); return null; })()}
+            <Select value={roleId || undefined} onValueChange={setRoleId}>
               <SelectTrigger><SelectValue placeholder="Seleccionar rol" /></SelectTrigger>
               <SelectContent>
-                {(customRoles ?? []).filter((r) => r.base_role !== "super_admin").map((r) => (
+                {(customRoles ?? []).filter((r) => r.name?.toLowerCase() !== "super admin" && r.base_role !== "super_admin").map((r) => (
                   <SelectItem key={r.id} value={r.id}>{r.icon} {r.name}</SelectItem>
                 ))}
               </SelectContent>
