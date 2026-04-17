@@ -69,14 +69,16 @@ export function SettingsRoles() {
             </Button>
           )}
 
-          <div>
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold px-1 mb-1.5">Roles del Sistema</p>
-            <div className="space-y-0.5">
-              {systemRoles.map(r => (
-                <RoleListItem key={r.id} role={r} selected={selectedRoleId === r.id} onSelect={() => setSelectedRoleId(r.id)} />
-              ))}
+          {systemRoles.length > 0 && (
+            <div>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold px-1 mb-1.5">Roles del Sistema</p>
+              <div className="space-y-0.5">
+                {systemRoles.map(r => (
+                  <RoleListItem key={r.id} role={r} selected={selectedRoleId === r.id} onSelect={() => setSelectedRoleId(r.id)} badgeLabel="Super Admin" locked />
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {customRoles.length > 0 && (
             <div>
@@ -86,6 +88,7 @@ export function SettingsRoles() {
                   <RoleListItem
                     key={r.id} role={r} selected={selectedRoleId === r.id}
                     onSelect={() => setSelectedRoleId(r.id)}
+                    badgeLabel="Custom"
                     onDuplicate={isAdmin ? () => handleDuplicate(r) : undefined}
                     onDelete={isAdmin ? () => setDeleteTarget(r) : undefined}
                   />
