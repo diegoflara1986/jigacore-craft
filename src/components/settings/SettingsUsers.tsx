@@ -180,8 +180,9 @@ export function SettingsUsers() {
                   <TableCell className="text-sm text-muted-foreground">{u.email}</TableCell>
                   <TableCell>
                     {(() => {
+                      const cr = (u as any).custom_role;
                       const userRoleId = (u as any).role_id;
-                      const roleName = customRoles?.find(r => r.id === userRoleId);
+                      const roleName = cr ?? customRoles?.find(r => r.id === userRoleId);
                       return (
                         <Badge variant="outline" className="text-xs" style={roleName ? { borderColor: roleName.color, color: roleName.color } : {}}>
                           {roleName ? `${roleName.icon} ${roleName.name}` : u.role}
