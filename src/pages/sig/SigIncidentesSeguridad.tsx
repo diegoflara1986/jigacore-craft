@@ -1023,28 +1023,55 @@ function FlowSidebar({ row, onBack }: { row: SigForm001Row; onBack: () => void }
     label: string;
     stepType?: string;
     requireComment: boolean;
+    nextStepType?: string | null;
+    goToCreator?: boolean;
+    closeRequest?: boolean;
   }>({ open: false, to: null, label: "", requireComment: false });
   const [comment, setComment] = useState("");
 
   const status = row.request?.status ?? "borrador";
+  const currentStepType = row.request?.current_step?.step_type ?? null;
   const isCreator = row.request?.created_by === profile?.id;
   const isAssignedToStep =
     row.request?.current_step?.step_users?.some(
       (su: any) => su.user_id === profile?.id
     ) ?? false;
 
-  const openAction = (
-    to: Form001Status,
-    label: string,
-    stepType: string | undefined,
-    requireComment: boolean
-  ) => {
-    setActionDialog({ open: true, to, label, stepType, requireComment });
+  const flowConfigId = (row.request as any)?.flow_config_id ?? null;
+
+  const openAction = (params: {
+    to: Form001Status;
+    label: string;
+    stepType: string | undefined;
+    requireComment: boolean;
+    nextStepType?: string | null;
+    goToCreator?: boolean;
+    closeRequest?: boolean;
+  }) => {
+    setActionDialog({ open: true, ...params });
     setComment("");
   };
 
   const closeDialog = () =>
     setActionDialog({ open: false, to: null, label: "", requireComment: false });
+
+  // Resolver el siguiente paso (id + primer asignado) por step_type dentro del flow_config
+  const resolveNextStep = async (
+    stepType: string
+  ): Promise<{ stepId: string | null; assignee: string | null }> => {
+    if (!flowConfigId) return { stepId: null, assignee: null };
+    const { data: steps } = await (supabase as any)
+      .from("sig_flow_steps")
+      .select("id, step_type, step_order, step_users:sig_flow_step_users(user_id)")
+      .eq("flow_config_id", flowConfigId)
+      .eq("step_type", stepType)
+      .order("step_order", { ascending: true })
+      .limit(1);
+    const step = (steps ?? [])[0];
+    if (!step) return { stepId: null, assignee: null };
+    const assignee = (step.step_users ?? []).map((u: any) => u.user_id)[0] ?? null;
+    return { stepId: step.id, assignee };
+  };
 
   const confirmAction = async () => {
     if (!actionDialog.to) return;
@@ -1053,12 +1080,32 @@ function FlowSidebar({ row, onBack }: { row: SigForm001Row; onBack: () => void }
       return;
     }
     try {
+      let nextStepId: string | null | undefined = undefined;
+      let nextAssignee: string | null | undefined = undefined;
+
+      if (actionDialog.goToCreator) {
+        // Devolver al solicitante: paso 'solicitar' + asignar al creador original
+        const next = await resolveNextStep("solicitar");
+        nextStepId = next.stepId;
+        nextAssignee = row.request?.created_by ?? null;
+      } else if (actionDialog.closeRequest) {
+        // Aprobado / Rechazado: cerrar flujo
+        nextStepId = null;
+        nextAssignee = null;
+      } else if (actionDialog.nextStepType) {
+        const next = await resolveNextStep(actionDialog.nextStepType);
+        nextStepId = next.stepId;
+        nextAssignee = next.assignee;
+      }
+
       await transition.mutateAsync({
         requestId,
         fromStatus: status,
         toStatus: actionDialog.to,
         stepType: actionDialog.stepType,
         comment: comment.trim() || undefined,
+        nextStepId,
+        nextAssignee,
       });
       toast.success("Estado actualizado");
       closeDialog();
@@ -1077,6 +1124,17 @@ function FlowSidebar({ row, onBack }: { row: SigForm001Row; onBack: () => void }
     }
   };
 
+  // ── Determinar qué botones mostrar según step_type ──
+  const showBorrador = status === "borrador" && isCreator;
+  const showRevisar =
+    status === "solicitado" && currentStepType === "revisar" && isAssignedToStep;
+  const showAprobarFromRevision =
+    status === "en_revision" && currentStepType === "aprobar" && isAssignedToStep;
+  const showAprobarDirect =
+    status === "solicitado" && currentStepType === "aprobar" && isAssignedToStep;
+  const hasActions =
+    showBorrador || showRevisar || showAprobarFromRevision || showAprobarDirect;
+
   return (
     <div className="space-y-4">
       <Card>
@@ -1093,23 +1151,36 @@ function FlowSidebar({ row, onBack }: { row: SigForm001Row; onBack: () => void }
           <Separator />
 
           <div className="space-y-2">
-            {status === "borrador" && isCreator && (
+            {showBorrador && (
               <Button
                 className="w-full"
                 onClick={() =>
-                  openAction("solicitado", "Validar y enviar", "solicitar", false)
+                  openAction({
+                    to: "solicitado",
+                    label: "Validar y enviar",
+                    stepType: "solicitar",
+                    requireComment: false,
+                    nextStepType: "revisar",
+                  })
                 }
               >
                 <Send className="h-4 w-4 mr-2" />
                 Validar y enviar
               </Button>
             )}
-            {status === "solicitado" && isAssignedToStep && (
+
+            {showRevisar && (
               <>
                 <Button
                   className="w-full bg-green-600 hover:bg-green-700 text-white"
                   onClick={() =>
-                    openAction("en_revision", "Aprobar revisión", "revisar", false)
+                    openAction({
+                      to: "en_revision",
+                      label: "Aprobar revisión",
+                      stepType: "revisar",
+                      requireComment: false,
+                      nextStepType: "aprobar",
+                    })
                   }
                 >
                   <Check className="h-4 w-4 mr-2" />
@@ -1118,19 +1189,34 @@ function FlowSidebar({ row, onBack }: { row: SigForm001Row; onBack: () => void }
                 <Button
                   className="w-full bg-orange-500 hover:bg-orange-600 text-white"
                   onClick={() =>
-                    openAction("borrador", "Devolver", "revisar", true)
+                    openAction({
+                      to: "solicitado",
+                      label: "Devolver al solicitante",
+                      stepType: "revisar",
+                      requireComment: true,
+                      goToCreator: true,
+                    })
                   }
                 >
                   <Undo2 className="h-4 w-4 mr-2" />
-                  Devolver
+                  Devolver al solicitante
                 </Button>
               </>
             )}
-            {status === "en_revision" && isAssignedToStep && (
+
+            {(showAprobarFromRevision || showAprobarDirect) && (
               <>
                 <Button
                   className="w-full bg-green-600 hover:bg-green-700 text-white"
-                  onClick={() => openAction("aprobado", "Aprobar", "aprobar", false)}
+                  onClick={() =>
+                    openAction({
+                      to: "aprobado",
+                      label: "Aprobar",
+                      stepType: "aprobar",
+                      requireComment: false,
+                      closeRequest: true,
+                    })
+                  }
                 >
                   <Check className="h-4 w-4 mr-2" />
                   Aprobar
@@ -1138,19 +1224,25 @@ function FlowSidebar({ row, onBack }: { row: SigForm001Row; onBack: () => void }
                 <Button
                   variant="destructive"
                   className="w-full"
-                  onClick={() => openAction("rechazado", "Rechazar", "aprobar", true)}
+                  onClick={() =>
+                    openAction({
+                      to: "rechazado",
+                      label: "Rechazar",
+                      stepType: "aprobar",
+                      requireComment: true,
+                      closeRequest: true,
+                    })
+                  }
                 >
                   <X className="h-4 w-4 mr-2" />
                   Rechazar
                 </Button>
               </>
             )}
-            {!(
-              (status === "borrador" && isCreator) ||
-              ((status === "solicitado" || status === "en_revision") && isAssignedToStep)
-            ) && (
+
+            {!hasActions && (
               <p className="text-xs text-muted-foreground">
-                No tienes acciones en este estado.
+                No tienes acciones disponibles en este estado.
               </p>
             )}
           </div>
