@@ -668,29 +668,51 @@ export function IncidentDetailSheet({ incidentId, onClose, canManage, canClose }
             </section>
 
             {/* Status Management */}
-            {canManage && incident.status !== "cerrado" && (
+            {canManage && (
               <>
                 <Separator />
                 <section>
                   <h3 className="text-sm font-semibold text-muted-foreground mb-2">GESTIÓN DE ESTADO</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {allowedTransitions.map(s => {
-                      const si = getStatusInfo(s);
-                      const disabled = s === "cerrado" && !canClose;
-                      return (
-                        <Button
-                          key={s}
-                          size="sm"
-                          variant="outline"
-                          disabled={disabled}
-                          onClick={() => handleStatusChange(s)}
-                          className={disabled ? "opacity-50" : ""}
-                        >
-                          {si.icon} {si.label}
-                        </Button>
-                      );
-                    })}
-                  </div>
+                  {incident.status !== "cerrado" && allowedTransitions.length > 0 && (
+                    <div className="space-y-2">
+                      <label className="text-xs text-muted-foreground">Cambiar estado</label>
+                      <Select
+                        value={incident.status}
+                        onValueChange={(newStatus) => {
+                          if (newStatus === incident.status) return;
+                          if (newStatus === "suspendido") {
+                            setPendingStatus(newStatus);
+                            setShowSuspendDialog(true);
+                          } else {
+                            handleStatusChange(newStatus);
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="h-9">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={incident.status} disabled>
+                            {getStatusInfo(incident.status).icon} {getStatusInfo(incident.status).label} (actual)
+                          </SelectItem>
+                          {allowedTransitions.map(s => {
+                            const si = getStatusInfo(s);
+                            const disabled = s === "cerrado" && !canClose;
+                            return (
+                              <SelectItem key={s} value={s} disabled={disabled}>
+                                {si.icon} {si.label}
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  {incident.status === "cerrado" && canReopen && (
+                    <Button size="sm" variant="outline" onClick={handleReopen}>
+                      <RotateCcw className="h-3 w-3 mr-1" /> Reabrir incidente
+                    </Button>
+                  )}
                   {incident.suspension_reason && incident.status === "suspendido" && (
                     <div className="mt-2 p-2 bg-muted rounded text-sm">
                       <span className="font-medium">Motivo:</span> {incident.suspension_reason}
