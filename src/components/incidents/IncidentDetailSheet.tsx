@@ -65,7 +65,7 @@ export function IncidentDetailSheet({ incidentId, onClose, canManage, canClose }
     queryFn: async () => {
       if (!incident?.project_id) return [];
       const { data } = await supabase.from("project_members")
-        .select("user_id, project_role, profiles:profiles(id, full_name, email, avatar_url, role)")
+        .select("user_id, project_role, profile:profiles(id, full_name, email, avatar_url)")
         .eq("project_id", incident.project_id);
       return data ?? [];
     },
