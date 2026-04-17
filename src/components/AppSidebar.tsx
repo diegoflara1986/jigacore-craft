@@ -14,6 +14,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { usePermissions } from "@/hooks/usePermissions";
 
 // Navegación simple
 const simpleNav = [
@@ -30,13 +31,6 @@ const proyectosSubItems = [
   { title: "Mi trabajo", url: "/my-work" },
 ];
 
-// Sub-ítems de SIG
-const sigSubItems = [
-  { title: "Incidentes de seguridad", url: "/sig/incidentes-seguridad" },
-  { title: "Solicitud de cambios", url: "/sig/solicitud-cambios" },
-  { title: "Capacitación y mejoras", url: "/sig/capacitacion-mejoras" },
-];
-
 function isActivePath(currentPath: string, targetPath: string) {
   if (targetPath === "/") return currentPath === "/";
   return currentPath === targetPath || currentPath.startsWith(targetPath + "/");
@@ -47,6 +41,29 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const location = useLocation();
   const currentPath = location.pathname;
+  const { hasPermission } = usePermissions();
+
+  // Visibilidad de sub-ítems SIG según permisos granulares
+  const canSeeIncidentesSeguridad =
+    hasPermission("sig_form_001", "ver") || hasPermission("sig_form_001", "registrar");
+  const canSeeAccesosUsuarios =
+    hasPermission("sig_form_002", "ver") || hasPermission("sig_form_002", "registrar") ||
+    hasPermission("sig_form_003", "ver") || hasPermission("sig_form_003", "registrar");
+  const canSeeSolicitudCambios =
+    hasPermission("sig_form_004", "ver") || hasPermission("sig_form_004", "registrar") ||
+    hasPermission("sig_form_006", "ver") || hasPermission("sig_form_006", "registrar");
+  const canSeeCapacitacionMejoras =
+    hasPermission("sig_reg_001", "ver") || hasPermission("sig_reg_001", "registrar") ||
+    hasPermission("sig_reg_002", "ver") || hasPermission("sig_reg_002", "registrar");
+
+  const sigSubItems = [
+    canSeeIncidentesSeguridad && { title: "Incidentes de seguridad", url: "/sig/incidentes-seguridad" },
+    canSeeAccesosUsuarios && { title: "Accesos y usuarios", url: "/sig/accesos-usuarios" },
+    canSeeSolicitudCambios && { title: "Solicitud de cambios", url: "/sig/solicitud-cambios" },
+    canSeeCapacitacionMejoras && { title: "Capacitación y mejoras", url: "/sig/capacitacion-mejoras" },
+  ].filter(Boolean) as { title: string; url: string }[];
+
+  const canSeeSig = sigSubItems.length > 0;
 
   // Determinar si los grupos están abiertos
   const isProyectosActive = isActivePath(currentPath, "/proyectos") || isActivePath(currentPath, "/my-work");
@@ -144,48 +161,51 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
-              {/* Grupo SIG - colapsable */}
-              <Collapsible defaultOpen={isSigActive} className="group/collapsible">
-                <SidebarMenuItem>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors">
-                      <div className="flex items-center gap-3">
-                        <ShieldAlert className="h-5 w-5 shrink-0" />
-                        {!collapsed && <span className="text-sm">SIG</span>}
-                      </div>
-                      {!collapsed && (
-                        <ChevronRight className="h-4 w-4 shrink-0 transition-transform group-data-[state=open]/collapsible:rotate-90" />
-                      )}
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
-                </SidebarMenuItem>
-                {!collapsed && (
-                  <CollapsibleContent>
-                    <SidebarMenu className="pl-4 border-l border-sidebar-border/50 ml-4 mt-1 space-y-1">
-                      {sigSubItems.map((item) => (
-                        <SidebarMenuItem key={item.title}>
-                          <SidebarMenuButton asChild>
-                            <NavLink
-                              to={item.url}
-                              className={cn(
-                                "flex items-center gap-2 px-3 py-1.5 rounded-md text-xs transition-colors",
-                                isActivePath(currentPath, item.url)
-                                  ? "text-sidebar-primary font-medium"
-                                  : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
-                              )}
-                            >
-                              {item.title === "Incidentes de seguridad" && <ShieldAlert className="h-3 w-3" />}
-                              {item.title === "Solicitud de cambios" && <FileText className="h-3 w-3" />}
-                              {item.title === "Capacitación y mejoras" && <GraduationCap className="h-3 w-3" />}
-                              <span>{item.title}</span>
-                            </NavLink>
-                          </SidebarMenuButton>
-                        </SidebarMenuItem>
-                      ))}
-                    </SidebarMenu>
-                  </CollapsibleContent>
-                )}
-              </Collapsible>
+              {/* Grupo SIG - colapsable (solo si tiene algún sub-ítem visible) */}
+              {canSeeSig && (
+                <Collapsible defaultOpen={isSigActive} className="group/collapsible">
+                  <SidebarMenuItem>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors">
+                        <div className="flex items-center gap-3">
+                          <ShieldAlert className="h-5 w-5 shrink-0" />
+                          {!collapsed && <span className="text-sm">SIG</span>}
+                        </div>
+                        {!collapsed && (
+                          <ChevronRight className="h-4 w-4 shrink-0 transition-transform group-data-[state=open]/collapsible:rotate-90" />
+                        )}
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                  </SidebarMenuItem>
+                  {!collapsed && (
+                    <CollapsibleContent>
+                      <SidebarMenu className="pl-4 border-l border-sidebar-border/50 ml-4 mt-1 space-y-1">
+                        {sigSubItems.map((item) => (
+                          <SidebarMenuItem key={item.title}>
+                            <SidebarMenuButton asChild>
+                              <NavLink
+                                to={item.url}
+                                className={cn(
+                                  "flex items-center gap-2 px-3 py-1.5 rounded-md text-xs transition-colors",
+                                  isActivePath(currentPath, item.url)
+                                    ? "text-sidebar-primary font-medium"
+                                    : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+                                )}
+                              >
+                                {item.title === "Incidentes de seguridad" && <ShieldAlert className="h-3 w-3" />}
+                                {item.title === "Accesos y usuarios" && <FileText className="h-3 w-3" />}
+                                {item.title === "Solicitud de cambios" && <FileText className="h-3 w-3" />}
+                                {item.title === "Capacitación y mejoras" && <GraduationCap className="h-3 w-3" />}
+                                <span>{item.title}</span>
+                              </NavLink>
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                        ))}
+                      </SidebarMenu>
+                    </CollapsibleContent>
+                  )}
+                </Collapsible>
+              )}
 
               {/* Reportes */}
               <SidebarMenuItem>
