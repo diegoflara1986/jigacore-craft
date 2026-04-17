@@ -40,6 +40,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 
 import { useAuth } from "@/lib/auth";
+import { usePermissions } from "@/hooks/usePermissions";
 import {
   useSigForm001List,
   useSigForm001Detail,
@@ -49,10 +50,29 @@ import {
   useSigRequestNotes,
   useTransitionSigRequest,
   useAddSigRequestNote,
+  useDuplicateSigForm001,
+  useDeleteSigForm001,
   type SigForm001Row,
   type Form001Status,
 } from "@/hooks/useSigForm001";
 import { useWorkspaceUsersForSig } from "@/hooks/useSigFlows";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // ── Catálogos ──
 const MEDIO_REPORTE = [
