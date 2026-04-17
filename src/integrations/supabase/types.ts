@@ -753,6 +753,62 @@ export type Database = {
           },
         ]
       }
+      incident_generated_stories: {
+        Row: {
+          classification: string
+          created_at: string | null
+          created_by: string | null
+          id: string
+          incident_id: string
+          user_story_id: string | null
+        }
+        Insert: {
+          classification: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          incident_id: string
+          user_story_id?: string | null
+        }
+        Update: {
+          classification?: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          incident_id?: string
+          user_story_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incident_generated_stories_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incident_generated_stories_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_safe_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incident_generated_stories_incident_id_fkey"
+            columns: ["incident_id"]
+            isOneToOne: false
+            referencedRelation: "incidents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incident_generated_stories_user_story_id_fkey"
+            columns: ["user_story_id"]
+            isOneToOne: false
+            referencedRelation: "user_stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       incident_history: {
         Row: {
           created_at: string
@@ -801,6 +857,59 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles_safe_view"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      incident_linked_stories: {
+        Row: {
+          created_at: string | null
+          id: string
+          incident_id: string
+          linked_by: string | null
+          user_story_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          incident_id: string
+          linked_by?: string | null
+          user_story_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          incident_id?: string
+          linked_by?: string | null
+          user_story_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incident_linked_stories_incident_id_fkey"
+            columns: ["incident_id"]
+            isOneToOne: false
+            referencedRelation: "incidents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incident_linked_stories_linked_by_fkey"
+            columns: ["linked_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incident_linked_stories_linked_by_fkey"
+            columns: ["linked_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_safe_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incident_linked_stories_user_story_id_fkey"
+            columns: ["user_story_id"]
+            isOneToOne: false
+            referencedRelation: "user_stories"
             referencedColumns: ["id"]
           },
         ]
