@@ -40,15 +40,27 @@ export function EditUserDialog({ open, onOpenChange, user, onSaved }: EditUserDi
     setSaving(true);
     try {
       const selectedRole = customRoles?.find(r => r.id === roleId);
-      const baseRole = selectedRole?.base_role ?? user.role;
+      const baseRole = (selectedRole?.base_role ?? "external_user") as any;
 
-      const body: Record<string, unknown> = {
-        action: "update",
-        user_id: user.id,
+      console.log("Guardando:", {
+        userId: user.id,
+        role_id: roleId,
         role: baseRole,
-        role_id: roleId || null,
         full_name: fullName,
-      };
+      });
+
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({
+          full_name: fullName,
+          role_id: roleId || null,
+          role: baseRole,
+        })
+        .eq("id", user.id);
+
+      if (updateError) throw updateError;
+
+      // Password change still uses the edge function (admin auth API)
       if (password.length > 0) {
         const hasMinLength = password.length >= 8;
         const hasUppercase = /[A-Z]/.test(password);
@@ -62,18 +74,20 @@ export function EditUserDialog({ open, onOpenChange, user, onSaved }: EditUserDi
           setSaving(false);
           return;
         }
-        body.password = password;
+        const res = await supabase.functions.invoke("create-user", {
+          body: { action: "update", user_id: user.id, password },
+        });
+        if (res.error) throw new Error(res.error.message);
+        if (res.data?.error) throw new Error(res.data.error);
       }
-
-      const res = await supabase.functions.invoke("create-user", { body });
-      if (res.error) throw new Error(res.error.message);
-      if (res.data?.error) throw new Error(res.data.error);
 
       toast({ title: "Usuario actualizado correctamente" });
       onSaved();
+      qc.invalidateQueries({ queryKey: ["workspace-users"] });
       qc.invalidateQueries({ queryKey: ["custom-roles-with-count"] });
       onOpenChange(false);
     } catch (e: any) {
+      console.error("Error al guardar usuario:", e);
       toast({ title: "Error", description: e.message, variant: "destructive" });
     } finally {
       setSaving(false);
