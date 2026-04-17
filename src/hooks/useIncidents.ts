@@ -38,13 +38,13 @@ export interface Incident {
 }
 
 export const STATUSES = [
-  { value: "pendiente", label: "Pendiente", color: "bg-gray-200 text-gray-800", icon: "⚪" },
-  { value: "revision", label: "En Revisión", color: "bg-blue-100 text-blue-800", icon: "🔵" },
-  { value: "en_proceso", label: "En Proceso", color: "bg-orange-100 text-orange-800", icon: "🟠" },
-  { value: "en_qa", label: "En QA", color: "bg-purple-100 text-purple-800", icon: "🟣" },
-  { value: "listo_para_cerrar", label: "Listo p/Cerrar", color: "bg-yellow-100 text-yellow-800", icon: "🟡" },
-  { value: "cerrado", label: "Cerrado", color: "bg-green-100 text-green-800", icon: "✅" },
-  { value: "suspendido", label: "Suspendido", color: "bg-gray-400 text-white", icon: "⏸️" },
+  { value: "sin_evaluar", label: "Sin evaluar", icon: "⚪", color: "bg-gray-100 text-gray-700" },
+  { value: "en_revision", label: "En revisión", icon: "🔵", color: "bg-blue-100 text-blue-700" },
+  { value: "en_ejecucion", label: "En ejecución", icon: "🟠", color: "bg-orange-100 text-orange-700" },
+  { value: "en_qa", label: "En QA", icon: "🟣", color: "bg-purple-100 text-purple-700" },
+  { value: "suspendido", label: "Suspendido", icon: "⏸️", color: "bg-yellow-100 text-yellow-700" },
+  { value: "listo_para_cerrar", label: "Listo para cerrar", icon: "✅", color: "bg-green-100 text-green-700" },
+  { value: "cerrado", label: "Cerrado", icon: "🔒", color: "bg-gray-200 text-gray-600" },
 ];
 
 export const SEVERITIES = [
@@ -65,12 +65,13 @@ export const CATEGORIES = [
 ];
 
 export const STATUS_TRANSITIONS: Record<string, string[]> = {
-  pendiente: ["revision", "suspendido"],
-  revision: ["en_proceso", "suspendido"],
-  en_proceso: ["en_qa", "suspendido"],
-  en_qa: ["listo_para_cerrar", "en_proceso", "suspendido"],
-  listo_para_cerrar: ["cerrado", "en_proceso"],
-  suspendido: ["pendiente", "revision"],
+  sin_evaluar: ["en_revision", "suspendido"],
+  en_revision: ["en_ejecucion", "suspendido"],
+  en_ejecucion: ["en_qa", "suspendido"],
+  en_qa: ["listo_para_cerrar", "en_ejecucion", "suspendido"],
+  suspendido: ["en_revision"],
+  listo_para_cerrar: ["cerrado"],
+  cerrado: [],
 };
 
 export function getStatusInfo(status: string) {
@@ -255,8 +256,8 @@ export function useIncidentStats() {
       const { data: all, error } = await supabase.from("incidents").select("id, status, severity, assigned_to, created_at, updated_at, is_requirement");
       if (error) throw error;
       const items = all ?? [];
-      const pendingNoSeverity = items.filter(i => i.status === "pendiente" && !i.severity).length;
-      const inProcess = items.filter(i => ["en_proceso", "revision", "en_qa"].includes(i.status)).length;
+      const pendingNoSeverity = items.filter(i => i.status === "sin_evaluar" && !i.severity).length;
+      const inProcess = items.filter(i => ["en_ejecucion", "en_revision", "en_qa"].includes(i.status)).length;
       const now = new Date();
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
       const resolvedThisMonth = items.filter(i => i.status === "cerrado" && i.updated_at && new Date(i.updated_at) >= monthStart).length;
@@ -291,5 +292,264 @@ export function useUpsertSlaConfig() {
       toast({ title: "Configuración SLA guardada" });
     },
     onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+}
+
+// ===== GENERATED STORIES =====
+export function useIncidentGeneratedStories(incidentId?: string) {
+  return useQuery({
+    queryKey: ["incident-generated-stories", incidentId],
+    enabled: !!incidentId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("incident_generated_stories")
+        .select(`
+          *,
+          user_story:user_stories(
+            id, title, story_number, type, status
+          )
+        `)
+        .eq("incident_id", incidentId!)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+// ===== LINKED STORIES =====
+export function useIncidentLinkedStories(incidentId?: string) {
+  return useQuery({
+    queryKey: ["incident-linked-stories", incidentId],
+    enabled: !!incidentId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("incident_linked_stories")
+        .select(`
+          *,
+          user_story:user_stories(
+            id, title, story_number, type, status
+          )
+        `)
+        .eq("incident_id", incidentId!)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+// ===== CLASSIFY INCIDENT =====
+export function useClassifyIncident() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ 
+      incidentId, 
+      classification,
+      projectId,
+      incidentTitle,
+      incidentDescription,
+      severity,
+      userId
+    }: { 
+      incidentId: string;
+      classification: 'bug' | 'requerimiento';
+      projectId: string;
+      incidentTitle: string;
+      incidentDescription: string;
+      severity: string;
+      userId: string;
+    }) => {
+      const storyType = classification === 'bug' ? 'bug' : 'historia';
+      const priority = 
+        severity === 'critica' ? 'critical' :
+        severity === 'alta' ? 'high' :
+        severity === 'baja' ? 'low' : 'medium';
+
+      const { data: story, error: storyError } = await supabase
+        .from("user_stories")
+        .insert({
+          project_id: projectId,
+          title: `[${classification === 'bug' ? 'Bug' : 'Req'}] ${incidentTitle}`,
+          description: incidentDescription,
+          type: storyType,
+          priority,
+          status: "backlog",
+          created_by: userId,
+        })
+        .select("id, story_number")
+        .single();
+
+      if (storyError) throw storyError;
+
+      const { error: linkError } = await supabase
+        .from("incident_generated_stories")
+        .insert({
+          incident_id: incidentId,
+          user_story_id: story.id,
+          classification,
+          created_by: userId,
+        });
+
+      if (linkError) throw linkError;
+      return story;
+    },
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ 
+        queryKey: ["incident-generated-stories", vars.incidentId] 
+      });
+      qc.invalidateQueries({ 
+        queryKey: ["user-stories"] 
+      });
+    },
+  });
+}
+
+// ===== LINK STORY TO INCIDENT =====
+export function useLinkStoryToIncident() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ 
+      incidentId, 
+      userStoryId,
+      linkedBy
+    }: { 
+      incidentId: string;
+      userStoryId: string;
+      linkedBy: string;
+    }) => {
+      const { error } = await supabase
+        .from("incident_linked_stories")
+        .insert({
+          incident_id: incidentId,
+          user_story_id: userStoryId,
+          linked_by: linkedBy,
+        });
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ 
+        queryKey: ["incident-linked-stories", vars.incidentId] 
+      });
+    },
+  });
+}
+
+// ===== UNLINK STORY FROM INCIDENT =====
+export function useUnlinkStoryFromIncident() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ 
+      incidentId, 
+      userStoryId 
+    }: { 
+      incidentId: string;
+      userStoryId: string;
+    }) => {
+      const { error } = await supabase
+        .from("incident_linked_stories")
+        .delete()
+        .eq("incident_id", incidentId)
+        .eq("user_story_id", userStoryId);
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ 
+        queryKey: ["incident-linked-stories", vars.incidentId] 
+      });
+    },
+  });
+}
+
+// ===== DUPLICATE INCIDENT =====
+export function useDuplicateIncident() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ 
+      incident,
+      userId 
+    }: { 
+      incident: any;
+      userId: string;
+    }) => {
+      const { data, error } = await supabase
+        .from("incidents")
+        .insert({
+          project_id: incident.project_id,
+          title: `[Copia] ${incident.title}`,
+          description: incident.description,
+          category: incident.category,
+          severity: null,
+          status: "sin_evaluar",
+          reporter_name: incident.reporter_name,
+          reported_by_email: incident.reported_by_email,
+          created_by: userId,
+          steps_to_reproduce: incident.steps_to_reproduce,
+          expected_result: incident.expected_result,
+          actual_result: incident.actual_result,
+          version: incident.version,
+          browser_info: incident.browser_info,
+        })
+        .select("id, ticket_code")
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ 
+        queryKey: ["incidents"] 
+      });
+    },
+  });
+}
+
+// ===== REOPEN INCIDENT =====
+export function useReopenIncident() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ 
+      incidentId,
+      userId,
+      profileId
+    }: { 
+      incidentId: string;
+      userId: string;
+      profileId: string;
+    }) => {
+      const { error } = await supabase
+        .from("incidents")
+        .update({
+          status: "en_revision",
+          reopened_at: new Date().toISOString(),
+          reopened_by: profileId,
+          closed_at: null,
+        })
+        .eq("id", incidentId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ 
+        queryKey: ["incidents"] 
+      });
+    },
+  });
+}
+
+// ===== DELETE INCIDENT =====
+export function useDeleteIncident() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (incidentId: string) => {
+      const { error } = await supabase
+        .from("incidents")
+        .delete()
+        .eq("id", incidentId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ 
+        queryKey: ["incidents"] 
+      });
+    },
   });
 }
