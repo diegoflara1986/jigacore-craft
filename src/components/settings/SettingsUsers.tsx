@@ -183,11 +183,17 @@ export function SettingsUsers() {
                       const cr = (u as any).custom_role;
                       const userRoleId = (u as any).role_id;
                       const roleName = cr ?? customRoles?.find(r => r.id === userRoleId);
-                      return (
-                        <Badge variant="outline" className="text-xs" style={roleName ? { borderColor: roleName.color, color: roleName.color } : {}}>
-                          {roleName ? `${roleName.icon} ${roleName.name}` : u.role}
-                        </Badge>
-                      );
+                      if (roleName) {
+                        return (
+                          <Badge variant="outline" className="text-xs" style={{ borderColor: roleName.color, color: roleName.color }}>
+                            {roleName.icon} {roleName.name}
+                          </Badge>
+                        );
+                      }
+                      if (u.role === "super_admin") {
+                        return <Badge variant="outline" className="text-xs">👑 Super Admin</Badge>;
+                      }
+                      return <Badge variant="outline" className="text-xs text-muted-foreground">Sin rol</Badge>;
                     })()}
                   </TableCell>
                   <TableCell>
