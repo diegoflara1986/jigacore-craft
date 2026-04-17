@@ -65,7 +65,7 @@ export function IncidentDetailSheet({ incidentId, onClose, canManage, canClose }
     queryFn: async () => {
       if (!incident?.project_id) return [];
       const { data } = await supabase.from("project_members")
-        .select("user_id, project_role, profiles:profiles(id, full_name, email, avatar_url, role)")
+        .select("user_id, project_role, profile:profiles(id, full_name, email, avatar_url)")
         .eq("project_id", incident.project_id);
       return data ?? [];
     },
@@ -381,8 +381,8 @@ export function IncidentDetailSheet({ incidentId, onClose, canManage, canClose }
                         <SelectTrigger className="h-9"><SelectValue placeholder="Sin asignar" /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="none">Sin asignar</SelectItem>
-                          {members?.filter((m: any) => ["developer", "qa", "team_lead"].includes(m.profiles?.role)).map((m: any) => (
-                            <SelectItem key={m.user_id} value={m.user_id}>{m.profiles?.full_name || m.profiles?.email}</SelectItem>
+                          {members?.map((m: any) => (
+                            <SelectItem key={m.user_id} value={m.user_id}>{m.profile?.full_name || m.profile?.email}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
