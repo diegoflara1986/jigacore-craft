@@ -790,14 +790,19 @@ export function IncidentDetailSheet({ incidentId, onClose, canManage, canClose }
                 <p className="text-xs text-muted-foreground">Sin cambios registrados</p>
               ) : (
                 <div className="space-y-2">
-                  {(history ?? []).map((h: any) => (
-                    <div key={h.id} className="text-xs text-muted-foreground">
-                      <span className="font-medium text-foreground">{h.profiles?.full_name || "Sistema"}</span>{" "}
-                      cambió <span className="font-medium">{h.field_name}</span>{" "}
-                      de "{h.old_value || "—"}" a "{h.new_value || "—"}"{" "}
-                      <span>— {timeAgo(h.created_at)}</span>
-                    </div>
-                  ))}
+              {(history ?? []).map((h: any) => {
+                const isStatus = h.field_name === "status";
+                const oldValue = isStatus ? getStatusLabel(h.old_value) : (h.old_value || "—");
+                const newValue = isStatus ? getStatusLabel(h.new_value) : (h.new_value || "—");
+                return (
+                  <div key={h.id} className="text-xs text-muted-foreground">
+                    <span className="font-medium text-foreground">{h.profiles?.full_name || "Sistema"}</span>{" "}
+                    cambió <span className="font-medium">{h.field_name}</span>{" "}
+                    de "{oldValue}" a "{newValue}"{" "}
+                    <span>— {timeAgo(h.created_at)}</span>
+                  </div>
+                );
+              })}
                 </div>
               )}
             </section>
