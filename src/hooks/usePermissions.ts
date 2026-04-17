@@ -51,21 +51,6 @@ export function usePermissions(projectId?: string) {
     },
   });
 
-  // Fetch incident permissions
-  const { data: incidentPerms } = useQuery({
-    queryKey: ["role-incident-perms", roleId],
-    enabled: !!roleId && !isSuperAdmin,
-    staleTime: 5 * 60 * 1000,
-    queryFn: async () => {
-      const { data, error } = await fromTable("role_incident_permissions")
-        .select("can_create, can_manage, can_close")
-        .eq("role_id", roleId!)
-        .maybeSingle();
-      if (error) throw error;
-      return data ?? { can_create: false, can_manage: false, can_close: false };
-    },
-  });
-
   // Fetch role info
   const { data: roleInfo } = useQuery({
     queryKey: ["custom-role-info", roleId],
@@ -87,11 +72,11 @@ export function usePermissions(projectId?: string) {
     return permissionSet.has(`${module}:${action}`);
   }, [isSuperAdmin, permissionSet]);
 
-  const hasIncidentPermission = useCallback((permission: "can_create" | "can_manage" | "can_close"): boolean => {
-    if (isSuperAdmin || baseRole === "admin") return true;
-    if (!incidentPerms) return false;
-    return (incidentPerms as any)[permission] ?? false;
-  }, [isSuperAdmin, baseRole, incidentPerms]);
+  const hasScope = useCallback((module: string, scope: string): boolean => {
+    if (isSuperAdmin) return true;
+    if (!permissionSet) return false;
+    return permissionSet.has(`${module}:scope_${scope}`);
+  }, [isSuperAdmin, permissionSet]);
 
   const guardAction = useCallback(
     (module: string, action: string, actionLabel: string, callback: () => void) => {
@@ -117,7 +102,7 @@ export function usePermissions(projectId?: string) {
     userRole: roleInfo ?? null,
     baseRole,
     hasPermission,
-    hasIncidentPermission,
+    hasScope,
     guardAction,
     denied,
     closeDenied,

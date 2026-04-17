@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
+import { usePermissions } from "@/hooks/usePermissions";
 import { cn } from "@/lib/utils";
 import { User, Bell, Palette, Building2, Users, Shield, Clock, Puzzle, ClipboardList } from "lucide-react";
 import { SettingsProfile } from "@/components/settings/SettingsProfile";
@@ -34,9 +35,8 @@ const SYSTEM_ITEMS = [
 
 export default function Settings() {
   const { profile } = useAuth();
+  const { hasPermission } = usePermissions();
   const [section, setSection] = useState<Section>("profile");
-  const role = profile?.role ?? "developer";
-  const isAdmin = ["admin", "super_admin"].includes(role);
 
   const SidebarGroup = ({ title, items }: { title: string; items: typeof PERSONAL_ITEMS }) => (
     <div className="mb-4">
@@ -64,8 +64,8 @@ export default function Settings() {
       <aside className="w-[220px] shrink-0 space-y-1">
         <h2 className="text-lg font-bold text-foreground px-3 mb-4">Configuración</h2>
         <SidebarGroup title="Personal" items={PERSONAL_ITEMS} />
-        {isAdmin && <SidebarGroup title="Workspace" items={WORKSPACE_ITEMS} />}
-        {isAdmin && <SidebarGroup title="Sistema" items={SYSTEM_ITEMS} />}
+        {hasPermission("config_general", "ver") && <SidebarGroup title="Workspace" items={WORKSPACE_ITEMS} />}
+        {hasPermission("config_usuarios", "crear") && <SidebarGroup title="Sistema" items={SYSTEM_ITEMS} />}
       </aside>
       <main className="flex-1 min-w-0">
         {section === "profile" && <SettingsProfile />}

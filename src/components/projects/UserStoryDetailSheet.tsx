@@ -19,6 +19,7 @@ import { Trash2, Plus, X, Copy, Lock, Upload, FileText, Image as ImageIcon, Vide
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
+import { usePermissions } from "@/hooks/usePermissions";
 import { toast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
 
@@ -68,6 +69,7 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
   const deleteStory = useDeleteUserStory();
   const createStory = useCreateUserStory();
   const { profile, user } = useAuth();
+  const { hasPermission } = usePermissions();
   const qc = useQueryClient();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
@@ -91,7 +93,7 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
   });
 
   const storyInActiveSprint = isInActiveSprint || (story?.sprint_id ? sprints?.find(s => s.id === story.sprint_id)?.status === "active" : false);
-  const isAdmin = profile?.role === "super_admin" || profile?.role === "admin";
+  const isAdmin = hasPermission("backlog", "bloquear");
   const sprintLocked = storyInActiveSprint && !isAdmin;
   const effectiveReadOnly = readOnly || (storyInActiveSprint && !isAdmin);
 

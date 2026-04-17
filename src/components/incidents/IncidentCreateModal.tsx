@@ -94,12 +94,15 @@ export function IncidentCreateModal({ open, onOpenChange, onCreated }: {
       }
 
       // Notify managers
-      const { data: managePerm } = await fromTable("incident_permission_configs").select("role").eq("can_manage", true);
-      const manageRoles = (managePerm ?? []).map((p: any) => p.role);
-      manageRoles.push("admin", "super_admin");
-      const { data: projectMembers } = await supabase.from("project_members").select("user_id, profiles:profiles(role)").eq("project_id", form.project_id);
+      const { data: managePerms } = await fromTable("role_permissions")
+        .select("role_id")
+        .eq("module", "incidentes")
+        .eq("action", "gestionar")
+        .eq("is_allowed", true);
+      const manageRoleIds = (managePerms ?? []).map((p: any) => p.role_id);
+      const { data: projectMembers } = await supabase.from("project_members").select("user_id, profiles:profiles(role_id)").eq("project_id", form.project_id);
       const notifyIds = (projectMembers ?? [])
-        .filter((m: any) => m.profiles && manageRoles.includes(m.profiles.role) && m.user_id !== user?.id)
+        .filter((m: any) => m.profiles && manageRoleIds.includes(m.profiles.role_id) && m.user_id !== user?.id)
         .map((m: any) => m.user_id);
 
       for (const uid of notifyIds) {
