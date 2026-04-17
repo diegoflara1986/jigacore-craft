@@ -61,11 +61,11 @@ export default function Incidents() {
 
   const { data: stats } = useIncidentStats();
   const { data: slaConfigs } = useSlaConfigs();
-  const { hasIncidentPermission, hasPermission } = usePermissions();
+  const { hasPermission } = usePermissions();
 
-  const canCreate = hasIncidentPermission("can_create");
-  const canManage = hasIncidentPermission("can_manage");
-  const canClose = hasIncidentPermission("can_close");
+  const canCreate = hasPermission("incidentes", "crear");
+  const canManage = hasPermission("incidentes", "gestionar");
+  const canClose = hasPermission("incidentes", "cerrar");
 
   const filters: any = {
     search: search || undefined,
