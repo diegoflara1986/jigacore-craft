@@ -40,7 +40,7 @@ function SlaIndicator({ incident, slaConfigs }: { incident: Incident; slaConfigs
   if (incident.status === "cerrado") return <span className="text-xs text-green-600">✅</span>;
   if (incident.is_requirement || incident.severity === "no_aplica") return <span className="text-xs text-muted-foreground">⚫</span>;
   if (!incident.severity) return <span className="text-xs text-muted-foreground">—</span>;
-  const sla = slaConfigs.find((s: any) => s.severity === incident.severity);
+  const sla = slaConfigs.find((s: any) => s.severity?.toLowerCase() === incident.severity?.toLowerCase());
   if (!sla) return <span className="text-xs text-muted-foreground">—</span>;
   const elapsed = (Date.now() - new Date(incident.created_at).getTime()) / 3600000;
   const remaining = sla.resolution_hours - elapsed;
