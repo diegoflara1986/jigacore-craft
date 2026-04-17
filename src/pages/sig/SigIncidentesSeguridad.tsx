@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ShieldAlert, Plus, ArrowLeft, Send, Check, X, Undo2, MessageSquare } from "lucide-react";
+import { ShieldAlert, Plus, ArrowLeft, Send, Check, X, Undo2, MessageSquare, MoreHorizontal, Eye, Copy, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
