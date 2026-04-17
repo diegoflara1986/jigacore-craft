@@ -192,8 +192,16 @@ function RoleDetail({ role, isAdmin }: { role: CustomRole; isAdmin: boolean }) {
     });
   };
 
-  const toggleModuleMaster = (module: string, actions: string[], checked: boolean) => {
+  const toggleModuleMaster = (module: string, actions: string[], checked: boolean, scopeRequiredButMissing?: boolean) => {
     if (!isEditable) return;
+    if (checked && scopeRequiredButMissing) {
+      toast({
+        title: "Debes seleccionar un alcance para activar este módulo",
+        variant: "destructive",
+        duration: 2500,
+      });
+      return;
+    }
     actions.forEach(action => {
       updatePerm.mutate({ roleId: role.id, module, action, isAllowed: checked });
     });
