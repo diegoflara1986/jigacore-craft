@@ -14,6 +14,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { usePermissions } from "@/hooks/usePermissions";
 
 // Navegación simple
 const simpleNav = [
@@ -30,13 +31,6 @@ const proyectosSubItems = [
   { title: "Mi trabajo", url: "/my-work" },
 ];
 
-// Sub-ítems de SIG
-const sigSubItems = [
-  { title: "Incidentes de seguridad", url: "/sig/incidentes-seguridad" },
-  { title: "Solicitud de cambios", url: "/sig/solicitud-cambios" },
-  { title: "Capacitación y mejoras", url: "/sig/capacitacion-mejoras" },
-];
-
 function isActivePath(currentPath: string, targetPath: string) {
   if (targetPath === "/") return currentPath === "/";
   return currentPath === targetPath || currentPath.startsWith(targetPath + "/");
@@ -47,6 +41,29 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const location = useLocation();
   const currentPath = location.pathname;
+  const { hasPermission } = usePermissions();
+
+  // Visibilidad de sub-ítems SIG según permisos granulares
+  const canSeeIncidentesSeguridad =
+    hasPermission("sig_form_001", "ver") || hasPermission("sig_form_001", "registrar");
+  const canSeeAccesosUsuarios =
+    hasPermission("sig_form_002", "ver") || hasPermission("sig_form_002", "registrar") ||
+    hasPermission("sig_form_003", "ver") || hasPermission("sig_form_003", "registrar");
+  const canSeeSolicitudCambios =
+    hasPermission("sig_form_004", "ver") || hasPermission("sig_form_004", "registrar") ||
+    hasPermission("sig_form_006", "ver") || hasPermission("sig_form_006", "registrar");
+  const canSeeCapacitacionMejoras =
+    hasPermission("sig_reg_001", "ver") || hasPermission("sig_reg_001", "registrar") ||
+    hasPermission("sig_reg_002", "ver") || hasPermission("sig_reg_002", "registrar");
+
+  const sigSubItems = [
+    canSeeIncidentesSeguridad && { title: "Incidentes de seguridad", url: "/sig/incidentes-seguridad" },
+    canSeeAccesosUsuarios && { title: "Accesos y usuarios", url: "/sig/accesos-usuarios" },
+    canSeeSolicitudCambios && { title: "Solicitud de cambios", url: "/sig/solicitud-cambios" },
+    canSeeCapacitacionMejoras && { title: "Capacitación y mejoras", url: "/sig/capacitacion-mejoras" },
+  ].filter(Boolean) as { title: string; url: string }[];
+
+  const canSeeSig = sigSubItems.length > 0;
 
   // Determinar si los grupos están abiertos
   const isProyectosActive = isActivePath(currentPath, "/proyectos") || isActivePath(currentPath, "/my-work");
