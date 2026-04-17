@@ -1,6 +1,7 @@
 import { useState } from "react";
 import {
   useIncidents, useIncidentStats, useSlaConfigs,
+  useDuplicateIncident, useDeleteIncident,
   Incident, STATUSES, SEVERITIES, CATEGORIES,
   getStatusInfo, getSeverityInfo, getCategoryLabel,
 } from "@/hooks/useIncidents";
@@ -9,6 +10,7 @@ import { usePageTitle } from "@/hooks/usePageTitle";
 import { usePermissions } from "@/hooks/usePermissions";
 import { EmptyState } from "@/components/EmptyState";
 import { TableSkeleton } from "@/components/TableSkeleton";
+import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -18,7 +20,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { AlertTriangle, Bug, CheckCircle2, Clock, Search, X, ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { toast } from "@/hooks/use-toast";
+import { AlertTriangle, Bug, CheckCircle2, Clock, Search, X, ChevronLeft, ChevronRight, Plus, MoreVertical, Eye, Copy, Trash2 } from "lucide-react";
 import { IncidentDetailSheet } from "@/components/incidents/IncidentDetailSheet";
 import { IncidentCreateModal } from "@/components/incidents/IncidentCreateModal";
 import { useAuth } from "@/lib/auth";
