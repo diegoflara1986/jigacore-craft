@@ -1379,6 +1379,335 @@ export type Database = {
           },
         ]
       }
+      sig_flow_configs: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          form_code: string
+          form_name: string
+          id: string
+          is_active: boolean | null
+          updated_at: string | null
+          workspace_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          form_code: string
+          form_name: string
+          id?: string
+          is_active?: boolean | null
+          updated_at?: string | null
+          workspace_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          form_code?: string
+          form_name?: string
+          id?: string
+          is_active?: boolean | null
+          updated_at?: string | null
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sig_flow_configs_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sig_flow_configs_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_safe_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sig_flow_configs_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sig_flow_step_users: {
+        Row: {
+          created_at: string | null
+          id: string
+          step_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          step_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          step_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sig_flow_step_users_step_id_fkey"
+            columns: ["step_id"]
+            isOneToOne: false
+            referencedRelation: "sig_flow_steps"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sig_flow_step_users_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sig_flow_step_users_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_safe_view"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sig_flow_steps: {
+        Row: {
+          created_at: string | null
+          flow_config_id: string
+          id: string
+          step_order: number
+          step_type: string
+        }
+        Insert: {
+          created_at?: string | null
+          flow_config_id: string
+          id?: string
+          step_order: number
+          step_type: string
+        }
+        Update: {
+          created_at?: string | null
+          flow_config_id?: string
+          id?: string
+          step_order?: number
+          step_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sig_flow_steps_flow_config_id_fkey"
+            columns: ["flow_config_id"]
+            isOneToOne: false
+            referencedRelation: "sig_flow_configs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sig_request_history: {
+        Row: {
+          action_by: string
+          comment: string | null
+          created_at: string | null
+          from_status: string | null
+          id: string
+          request_id: string
+          step_type: string | null
+          to_status: string
+        }
+        Insert: {
+          action_by: string
+          comment?: string | null
+          created_at?: string | null
+          from_status?: string | null
+          id?: string
+          request_id: string
+          step_type?: string | null
+          to_status: string
+        }
+        Update: {
+          action_by?: string
+          comment?: string | null
+          created_at?: string | null
+          from_status?: string | null
+          id?: string
+          request_id?: string
+          step_type?: string | null
+          to_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sig_request_history_action_by_fkey"
+            columns: ["action_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sig_request_history_action_by_fkey"
+            columns: ["action_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_safe_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sig_request_history_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "sig_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sig_request_notes: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          is_internal: boolean | null
+          request_id: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          is_internal?: boolean | null
+          request_id: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          is_internal?: boolean | null
+          request_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sig_request_notes_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "sig_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sig_request_notes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sig_request_notes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_safe_view"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sig_requests: {
+        Row: {
+          closed_at: string | null
+          created_at: string | null
+          created_by: string
+          current_assignee: string | null
+          current_step_id: string | null
+          flow_config_id: string | null
+          form_code: string
+          id: string
+          status: string
+          submitted_at: string | null
+          updated_at: string | null
+          workspace_id: string
+        }
+        Insert: {
+          closed_at?: string | null
+          created_at?: string | null
+          created_by: string
+          current_assignee?: string | null
+          current_step_id?: string | null
+          flow_config_id?: string | null
+          form_code: string
+          id?: string
+          status?: string
+          submitted_at?: string | null
+          updated_at?: string | null
+          workspace_id: string
+        }
+        Update: {
+          closed_at?: string | null
+          created_at?: string | null
+          created_by?: string
+          current_assignee?: string | null
+          current_step_id?: string | null
+          flow_config_id?: string | null
+          form_code?: string
+          id?: string
+          status?: string
+          submitted_at?: string | null
+          updated_at?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sig_requests_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sig_requests_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles_safe_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sig_requests_current_assignee_fkey"
+            columns: ["current_assignee"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sig_requests_current_assignee_fkey"
+            columns: ["current_assignee"]
+            isOneToOne: false
+            referencedRelation: "profiles_safe_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sig_requests_current_step_id_fkey"
+            columns: ["current_step_id"]
+            isOneToOne: false
+            referencedRelation: "sig_flow_steps"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sig_requests_flow_config_id_fkey"
+            columns: ["flow_config_id"]
+            isOneToOne: false
+            referencedRelation: "sig_flow_configs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sig_requests_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sla_configs: {
         Row: {
           created_at: string
