@@ -317,17 +317,24 @@ function FlowEditor({ config }: { config: SigFlowConfig }) {
                         onCheckedChange={(v) => toggleStep(def.type, v)}
                       />
                     </div>
-                    {state.active && (
+                    {state.active && def.type === "solicitar" && (
+                      <div className="ml-9 mt-2">
+                        <p className="text-xs text-muted-foreground bg-muted/50 border border-border rounded-md px-3 py-2">
+                          Cualquier usuario con permiso{" "}
+                          <span className="font-medium text-foreground">
+                            "Registrar formularios"
+                          </span>{" "}
+                          en su rol puede crear solicitudes.
+                        </p>
+                      </div>
+                    )}
+                    {state.active && def.type !== "solicitar" && (
                       <div className="ml-9 mt-2">
                         <UserMultiSelect
                           users={workspaceUsers ?? []}
                           selected={state.user_ids}
                           onChange={(ids) => updateUsers(def.type, ids)}
-                          placeholder={
-                            def.type === "solicitar"
-                              ? "Quién puede iniciar la solicitud..."
-                              : "Asignar usuarios..."
-                          }
+                          placeholder="Asignar usuarios..."
                         />
                       </div>
                     )}
