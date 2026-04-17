@@ -256,12 +256,25 @@ export function useIncidentStats() {
       const { data: all, error } = await supabase.from("incidents").select("id, status, severity, assigned_to, created_at, updated_at, is_requirement");
       if (error) throw error;
       const items = all ?? [];
-      const pendingNoSeverity = items.filter(i => i.status === "sin_evaluar" && !i.severity).length;
-      const inProcess = items.filter(i => ["en_ejecucion", "en_revision", "en_qa"].includes(i.status)).length;
+      const pendingNoSeverity = items.filter(i => i.status === "sin_evaluar").length;
+      const inProcess = items.filter(i => ["en_revision", "en_ejecucion", "en_qa", "listo_para_cerrar"].includes(i.status)).length;
       const now = new Date();
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
       const resolvedThisMonth = items.filter(i => i.status === "cerrado" && i.updated_at && new Date(i.updated_at) >= monthStart).length;
-      return { pendingNoSeverity, inProcess, resolvedThisMonth };
+
+      // SLA Overdue: not closed, not sin_evaluar, has severity (not no_aplica), elapsed > resolution_hours
+      const { data: slas } = await supabase.from("sla_configs").select("severity, resolution_hours");
+      const slaMap = new Map((slas ?? []).map((s: any) => [s.severity, s.resolution_hours as number]));
+      const slaOverdue = items.filter(i => {
+        if (i.status === "cerrado" || i.status === "sin_evaluar") return false;
+        if (!i.severity || i.severity === "no_aplica" || i.is_requirement) return false;
+        const hours = slaMap.get(i.severity);
+        if (!hours) return false;
+        const elapsed = (Date.now() - new Date(i.created_at).getTime()) / 3600000;
+        return elapsed > hours;
+      }).length;
+
+      return { pendingNoSeverity, inProcess, resolvedThisMonth, slaOverdue };
     },
   });
 }
