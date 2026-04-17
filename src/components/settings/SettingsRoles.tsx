@@ -37,8 +37,8 @@ export function SettingsRoles() {
   const [migrateToId, setMigrateToId] = useState("");
 
   const selectedRole = roles?.find(r => r.id === selectedRoleId) ?? null;
-  const systemRoles = roles?.filter(r => r.is_system_role) ?? [];
-  const customRoles = roles?.filter(r => !r.is_system_role) ?? [];
+  const systemRoles = roles?.filter(r => isSuperAdminRole(r)) ?? [];
+  const customRoles = roles?.filter(r => !isSuperAdminRole(r)) ?? [];
 
   const isAdmin = profile?.role === "admin" || profile?.role === "super_admin";
 
