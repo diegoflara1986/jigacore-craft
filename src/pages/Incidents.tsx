@@ -155,7 +155,7 @@ export default function Incidents() {
           <MetricCard title="Pendientes sin evaluar" value={stats?.pendingNoSeverity ?? 0}
             icon={AlertTriangle} color={`${(stats?.pendingNoSeverity ?? 0) > 0 ? "bg-red-500/10 text-red-600" : "bg-gray-500/10 text-gray-600"}`} />
           <MetricCard title="En proceso" value={stats?.inProcess ?? 0} icon={Bug} color="bg-blue-500/10 text-blue-600" />
-          <MetricCard title="SLA Vencidos" value={0} icon={Clock} color="bg-red-500/10 text-red-600" />
+          <MetricCard title="SLA Vencidos" value={stats?.slaOverdue ?? 0} icon={Clock} color={`${(stats?.slaOverdue ?? 0) > 0 ? "bg-red-500/10 text-red-600" : "bg-gray-500/10 text-gray-600"}`} />
           <MetricCard title="Resueltos este mes" value={stats?.resolvedThisMonth ?? 0} icon={CheckCircle2} color="bg-green-500/10 text-green-600" />
         </div>
       ) : (
