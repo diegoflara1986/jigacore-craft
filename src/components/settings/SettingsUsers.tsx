@@ -37,7 +37,7 @@ export function SettingsUsers() {
     queryFn: async () => {
       const { data: wsId } = await supabase.rpc("get_user_workspace_id");
       const { data, error } = await supabase.from("profiles")
-        .select("*")
+        .select("*, custom_role:custom_roles!profiles_role_id_fkey(id, name, color, icon)")
         .eq("workspace_id", wsId!)
         .order("created_at", { ascending: true });
       if (error) throw error;
@@ -180,8 +180,9 @@ export function SettingsUsers() {
                   <TableCell className="text-sm text-muted-foreground">{u.email}</TableCell>
                   <TableCell>
                     {(() => {
+                      const cr = (u as any).custom_role;
                       const userRoleId = (u as any).role_id;
-                      const roleName = customRoles?.find(r => r.id === userRoleId);
+                      const roleName = cr ?? customRoles?.find(r => r.id === userRoleId);
                       return (
                         <Badge variant="outline" className="text-xs" style={roleName ? { borderColor: roleName.color, color: roleName.color } : {}}>
                           {roleName ? `${roleName.icon} ${roleName.name}` : u.role}
