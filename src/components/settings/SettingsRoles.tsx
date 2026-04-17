@@ -20,7 +20,10 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
-import { Plus, MoreVertical, Copy, Trash2, Info, Pencil, AlertTriangle } from "lucide-react";
+import { Plus, MoreVertical, Copy, Trash2, Info, Pencil, AlertTriangle, Lock, ShieldCheck } from "lucide-react";
+
+const isSuperAdminRole = (r: CustomRole) =>
+  r.base_role === "super_admin" || r.name?.toLowerCase() === "super admin" || r.name?.toLowerCase() === "super_admin";
 
 const ROLE_COLORS = ["#1E3A5F","#2563EB","#F97316","#8B5CF6","#10B981","#EF4444","#EC4899","#F59E0B","#06B6D4","#6B7280","#059669","#DC2626"];
 const ROLE_ICONS = ["👨‍💻","🎨","🔍","📊","🏗️","📱","🚀","⚙️","🎯","📝","🔧","👥","🦊","🎪","🏆","💡","🔑","🎭","🌟","💼","🛠️","🔬","📡","🎮"];
@@ -34,8 +37,8 @@ export function SettingsRoles() {
   const [migrateToId, setMigrateToId] = useState("");
 
   const selectedRole = roles?.find(r => r.id === selectedRoleId) ?? null;
-  const systemRoles = roles?.filter(r => r.is_system_role) ?? [];
-  const customRoles = roles?.filter(r => !r.is_system_role) ?? [];
+  const systemRoles = roles?.filter(r => isSuperAdminRole(r)) ?? [];
+  const customRoles = roles?.filter(r => !isSuperAdminRole(r)) ?? [];
 
   const isAdmin = profile?.role === "admin" || profile?.role === "super_admin";
 
@@ -66,14 +69,16 @@ export function SettingsRoles() {
             </Button>
           )}
 
-          <div>
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold px-1 mb-1.5">Roles del Sistema</p>
-            <div className="space-y-0.5">
-              {systemRoles.map(r => (
-                <RoleListItem key={r.id} role={r} selected={selectedRoleId === r.id} onSelect={() => setSelectedRoleId(r.id)} />
-              ))}
+          {systemRoles.length > 0 && (
+            <div>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold px-1 mb-1.5">Roles del Sistema</p>
+              <div className="space-y-0.5">
+                {systemRoles.map(r => (
+                  <RoleListItem key={r.id} role={r} selected={selectedRoleId === r.id} onSelect={() => setSelectedRoleId(r.id)} badgeLabel="Super Admin" locked />
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {customRoles.length > 0 && (
             <div>
@@ -83,6 +88,7 @@ export function SettingsRoles() {
                   <RoleListItem
                     key={r.id} role={r} selected={selectedRoleId === r.id}
                     onSelect={() => setSelectedRoleId(r.id)}
+                    badgeLabel="Custom"
                     onDuplicate={isAdmin ? () => handleDuplicate(r) : undefined}
                     onDelete={isAdmin ? () => setDeleteTarget(r) : undefined}
                   />
@@ -120,9 +126,10 @@ export function SettingsRoles() {
   }
 }
 
-function RoleListItem({ role, selected, onSelect, onDuplicate, onDelete }: {
+function RoleListItem({ role, selected, onSelect, onDuplicate, onDelete, badgeLabel, locked }: {
   role: CustomRole; selected: boolean; onSelect: () => void;
   onDuplicate?: () => void; onDelete?: () => void;
+  badgeLabel?: string; locked?: boolean;
 }) {
   return (
     <div
@@ -134,13 +141,16 @@ function RoleListItem({ role, selected, onSelect, onDuplicate, onDelete }: {
       <div className="flex items-center gap-2 min-w-0">
         <span className="text-base shrink-0">{role.icon}</span>
         <div className="min-w-0">
-          <p className="truncate text-sm">{role.name}</p>
+          <p className="truncate text-sm flex items-center gap-1">
+            {role.name}
+            {locked && <Lock className="h-3 w-3 text-muted-foreground" />}
+          </p>
           <p className="text-[10px] text-muted-foreground">{role.user_count ?? 0} usuarios</p>
         </div>
       </div>
       <div className="flex items-center gap-1 shrink-0">
         <Badge variant="outline" className="text-[9px] px-1.5" style={{ borderColor: role.color, color: role.color }}>
-          {role.is_system_role ? "Sistema" : "Custom"}
+          {badgeLabel ?? (role.is_system_role ? "Sistema" : "Custom")}
         </Badge>
         {(onDuplicate || onDelete) && (
           <DropdownMenu>
@@ -167,7 +177,8 @@ function RoleDetail({ role, isAdmin }: { role: CustomRole; isAdmin: boolean }) {
   const [nameVal, setNameVal] = useState(role.name);
   const [descVal, setDescVal] = useState(role.description ?? "");
 
-  const isEditable = isAdmin && !role.is_system_role;
+  const isSuperAdmin = isSuperAdminRole(role);
+  const isEditable = isAdmin && !isSuperAdmin;
 
   const permSet = new Set<string>();
   permissions?.forEach(p => {
@@ -234,23 +245,22 @@ function RoleDetail({ role, isAdmin }: { role: CustomRole; isAdmin: boolean }) {
                 )}
                 <div className="flex items-center gap-2 mt-2">
                   <Badge variant="outline" style={{ borderColor: role.color, color: role.color }}>
-                    {role.is_system_role ? "Rol del Sistema" : "Rol Personalizado"}
+                    {isSuperAdmin ? "Super Admin" : "Rol Personalizado"}
                   </Badge>
                   <span className="text-xs text-muted-foreground">{role.user_count ?? 0} usuarios con este rol</span>
                 </div>
               </div>
             </div>
-            {role.is_system_role && (
-              <div className="mt-3 flex items-center gap-2 rounded-md bg-blue-500/10 p-2.5 text-xs text-blue-700 dark:text-blue-300">
-                <Info className="h-3.5 w-3.5 shrink-0" />
-                Los roles del sistema no se pueden modificar. Crea un rol personalizado para ajustar permisos.
+            {isSuperAdmin && (
+              <div className="mt-3 flex items-center gap-2 rounded-md bg-primary/10 p-2.5 text-xs text-primary">
+                <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
+                El Super Admin tiene acceso total a todos los módulos y no puede ser modificado.
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Permission modules */}
-        {PERMISSION_MODULES.map(mod => {
+        {!isSuperAdmin && PERMISSION_MODULES.map(mod => {
           const allActions = mod.actions.map(a => a.action);
           const fullyEnabled = isModuleFullyEnabled(mod.module, allActions);
           const partiallyEnabled = isModulePartiallyEnabled(mod.module, allActions);
