@@ -268,7 +268,46 @@ function RoleDetail({ role, isAdmin }: { role: CustomRole; isAdmin: boolean }) {
           </CardContent>
         </Card>
 
-        {!isSuperAdmin && PERMISSION_MODULES.map(mod => {
+        {!isSuperAdmin && (() => {
+          // Group SIG modules by their `group` property; render others normally inline.
+          const sigGroups = new Map<string, typeof PERMISSION_MODULES>();
+          const flatItems: Array<{ kind: "module"; mod: typeof PERMISSION_MODULES[number] } | { kind: "sig-group"; name: string; mods: typeof PERMISSION_MODULES }> = [];
+          const seenGroups = new Set<string>();
+
+          PERMISSION_MODULES.forEach(mod => {
+            const group = (mod as any).group as string | undefined;
+            if (group) {
+              if (!sigGroups.has(group)) sigGroups.set(group, [] as any);
+              (sigGroups.get(group) as any).push(mod);
+              if (!seenGroups.has(group)) {
+                seenGroups.add(group);
+                flatItems.push({ kind: "sig-group", name: group, mods: sigGroups.get(group) as any });
+              }
+            } else {
+              flatItems.push({ kind: "module", mod });
+            }
+          });
+
+          return flatItems.map(item => {
+            if (item.kind === "sig-group") {
+              return (
+                <div key={`group-${item.name}`} className="space-y-3">
+                  <div className="flex items-center gap-2 rounded-md border border-amber-400/40 bg-amber-50 dark:bg-amber-500/10 px-3 py-2">
+                    <span className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300">
+                      {item.name}
+                    </span>
+                  </div>
+                  <div className="space-y-3 pl-3 border-l-2 border-amber-400/30">
+                    {item.mods.map(mod => renderModuleCard(mod))}
+                  </div>
+                </div>
+              );
+            }
+            return renderModuleCard(item.mod);
+          });
+        })()}
+
+        {false && PERMISSION_MODULES.map(mod => {
           const allActions = mod.actions.map(a => a.action);
           const fullyEnabled = isModuleFullyEnabled(mod.module, allActions);
           const partiallyEnabled = isModulePartiallyEnabled(mod.module, allActions);
