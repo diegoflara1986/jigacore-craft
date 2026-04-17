@@ -161,48 +161,51 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
-              {/* Grupo SIG - colapsable */}
-              <Collapsible defaultOpen={isSigActive} className="group/collapsible">
-                <SidebarMenuItem>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors">
-                      <div className="flex items-center gap-3">
-                        <ShieldAlert className="h-5 w-5 shrink-0" />
-                        {!collapsed && <span className="text-sm">SIG</span>}
-                      </div>
-                      {!collapsed && (
-                        <ChevronRight className="h-4 w-4 shrink-0 transition-transform group-data-[state=open]/collapsible:rotate-90" />
-                      )}
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
-                </SidebarMenuItem>
-                {!collapsed && (
-                  <CollapsibleContent>
-                    <SidebarMenu className="pl-4 border-l border-sidebar-border/50 ml-4 mt-1 space-y-1">
-                      {sigSubItems.map((item) => (
-                        <SidebarMenuItem key={item.title}>
-                          <SidebarMenuButton asChild>
-                            <NavLink
-                              to={item.url}
-                              className={cn(
-                                "flex items-center gap-2 px-3 py-1.5 rounded-md text-xs transition-colors",
-                                isActivePath(currentPath, item.url)
-                                  ? "text-sidebar-primary font-medium"
-                                  : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
-                              )}
-                            >
-                              {item.title === "Incidentes de seguridad" && <ShieldAlert className="h-3 w-3" />}
-                              {item.title === "Solicitud de cambios" && <FileText className="h-3 w-3" />}
-                              {item.title === "Capacitación y mejoras" && <GraduationCap className="h-3 w-3" />}
-                              <span>{item.title}</span>
-                            </NavLink>
-                          </SidebarMenuButton>
-                        </SidebarMenuItem>
-                      ))}
-                    </SidebarMenu>
-                  </CollapsibleContent>
-                )}
-              </Collapsible>
+              {/* Grupo SIG - colapsable (solo si tiene algún sub-ítem visible) */}
+              {canSeeSig && (
+                <Collapsible defaultOpen={isSigActive} className="group/collapsible">
+                  <SidebarMenuItem>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors">
+                        <div className="flex items-center gap-3">
+                          <ShieldAlert className="h-5 w-5 shrink-0" />
+                          {!collapsed && <span className="text-sm">SIG</span>}
+                        </div>
+                        {!collapsed && (
+                          <ChevronRight className="h-4 w-4 shrink-0 transition-transform group-data-[state=open]/collapsible:rotate-90" />
+                        )}
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                  </SidebarMenuItem>
+                  {!collapsed && (
+                    <CollapsibleContent>
+                      <SidebarMenu className="pl-4 border-l border-sidebar-border/50 ml-4 mt-1 space-y-1">
+                        {sigSubItems.map((item) => (
+                          <SidebarMenuItem key={item.title}>
+                            <SidebarMenuButton asChild>
+                              <NavLink
+                                to={item.url}
+                                className={cn(
+                                  "flex items-center gap-2 px-3 py-1.5 rounded-md text-xs transition-colors",
+                                  isActivePath(currentPath, item.url)
+                                    ? "text-sidebar-primary font-medium"
+                                    : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+                                )}
+                              >
+                                {item.title === "Incidentes de seguridad" && <ShieldAlert className="h-3 w-3" />}
+                                {item.title === "Accesos y usuarios" && <FileText className="h-3 w-3" />}
+                                {item.title === "Solicitud de cambios" && <FileText className="h-3 w-3" />}
+                                {item.title === "Capacitación y mejoras" && <GraduationCap className="h-3 w-3" />}
+                                <span>{item.title}</span>
+                              </NavLink>
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                        ))}
+                      </SidebarMenu>
+                    </CollapsibleContent>
+                  )}
+                </Collapsible>
+              )}
 
               {/* Reportes */}
               <SidebarMenuItem>
