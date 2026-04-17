@@ -177,7 +177,8 @@ function RoleDetail({ role, isAdmin }: { role: CustomRole; isAdmin: boolean }) {
   const [nameVal, setNameVal] = useState(role.name);
   const [descVal, setDescVal] = useState(role.description ?? "");
 
-  const isEditable = isAdmin && !role.is_system_role;
+  const isSuperAdmin = isSuperAdminRole(role);
+  const isEditable = isAdmin && !isSuperAdmin;
 
   const permSet = new Set<string>();
   permissions?.forEach(p => {
