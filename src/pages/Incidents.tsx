@@ -210,13 +210,14 @@ export default function Incidents() {
                 {canManage && <TableHead>Asignado</TableHead>}
                 <TableHead>Fecha</TableHead>
                 {canManage && <TableHead>SLA</TableHead>}
+                <TableHead className="w-12">Acción</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow><TableCell colSpan={canManage ? 8 : 6}><TableSkeleton rows={5} cols={canManage ? 8 : 6} /></TableCell></TableRow>
+                <TableRow><TableCell colSpan={canManage ? 9 : 7}><TableSkeleton rows={5} cols={canManage ? 9 : 7} /></TableCell></TableRow>
               ) : !incidents.length ? (
-                <TableRow><TableCell colSpan={canManage ? 8 : 6}><EmptyState type="incidents" /></TableCell></TableRow>
+                <TableRow><TableCell colSpan={canManage ? 9 : 7}><EmptyState type="incidents" /></TableCell></TableRow>
               ) : incidents.map(inc => {
                 const statusInfo = getStatusInfo(inc.status);
                 const sevInfo = getSeverityInfo(inc.severity);
@@ -248,6 +249,36 @@ export default function Incidents() {
                     )}
                     <TableCell><span className="text-xs text-muted-foreground">{timeAgo(inc.created_at)}</span></TableCell>
                     {canManage && <TableCell><SlaIndicator incident={inc} slaConfigs={slaConfigs ?? []} /></TableCell>}
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48 bg-popover">
+                          <DropdownMenuItem onClick={() => setSelectedId(inc.id)}>
+                            <Eye className="h-4 w-4 mr-2" /> Ver detalle
+                          </DropdownMenuItem>
+                          {canDuplicate && (
+                            <DropdownMenuItem onClick={() => handleDuplicate(inc)}>
+                              <Copy className="h-4 w-4 mr-2" /> Duplicar
+                            </DropdownMenuItem>
+                          )}
+                          {canDelete && (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="text-destructive focus:text-destructive"
+                                onClick={() => setDeleteTarget(inc)}
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" /> Eliminar
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
                   </TableRow>
                 );
               })}
@@ -269,6 +300,16 @@ export default function Incidents() {
 
       <IncidentCreateModal open={createOpen} onOpenChange={setCreateOpen} onCreated={(id) => { setCreateOpen(false); setSelectedId(id); }} />
       <IncidentDetailSheet incidentId={selectedId} onClose={() => setSelectedId(null)} canManage={canManage} canClose={canClose} />
+
+      <ConfirmDeleteDialog
+        open={!!deleteTarget}
+        onOpenChange={(v) => { if (!v) setDeleteTarget(null); }}
+        onConfirm={handleDelete}
+        title="Eliminar incidente"
+        description={`Esta acción eliminará permanentemente el incidente ${deleteTarget?.ticket_code} y todos sus datos asociados.`}
+        requireTyping={deleteTarget?.ticket_code || "ELIMINAR"}
+        confirmText="Eliminar incidente"
+      />
     </div>
   );
 }
