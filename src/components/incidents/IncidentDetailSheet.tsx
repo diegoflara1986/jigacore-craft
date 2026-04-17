@@ -34,7 +34,11 @@ function timeAgo(date: string) {
   const hrs = Math.floor(mins / 60);
   if (hrs < 24) return `hace ${hrs}h`;
   return `hace ${Math.floor(hrs / 24)}d`;
-}
+const getStatusLabel = (value: string) => {
+  const found = STATUSES.find(s => s.value === value);
+  return found ? `${found.icon} ${found.label}` : value;
+};
+
 
 interface Props {
   incidentId: string | null;
