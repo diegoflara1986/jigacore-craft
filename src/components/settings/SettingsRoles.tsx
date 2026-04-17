@@ -20,7 +20,10 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
-import { Plus, MoreVertical, Copy, Trash2, Info, Pencil, AlertTriangle } from "lucide-react";
+import { Plus, MoreVertical, Copy, Trash2, Info, Pencil, AlertTriangle, Lock, ShieldCheck } from "lucide-react";
+
+const isSuperAdminRole = (r: CustomRole) =>
+  r.base_role === "super_admin" || r.name?.toLowerCase() === "super admin" || r.name?.toLowerCase() === "super_admin";
 
 const ROLE_COLORS = ["#1E3A5F","#2563EB","#F97316","#8B5CF6","#10B981","#EF4444","#EC4899","#F59E0B","#06B6D4","#6B7280","#059669","#DC2626"];
 const ROLE_ICONS = ["👨‍💻","🎨","🔍","📊","🏗️","📱","🚀","⚙️","🎯","📝","🔧","👥","🦊","🎪","🏆","💡","🔑","🎭","🌟","💼","🛠️","🔬","📡","🎮"];
