@@ -69,7 +69,7 @@ export function IncidentCreateModal({ open, onOpenChange, onCreated }: {
         steps_to_reproduce: form.steps_to_reproduce || null,
         expected_result: form.expected_result || null,
         actual_result: form.actual_result || null,
-        status: "pendiente",
+        status: "sin_evaluar",
         created_by: user?.id,
       } as any).select("id, ticket_code").single();
       if (error) throw error;
