@@ -37,7 +37,7 @@ export function SettingsUsers() {
     queryFn: async () => {
       const { data: wsId } = await supabase.rpc("get_user_workspace_id");
       const { data, error } = await supabase.from("profiles")
-        .select("*")
+        .select("*, custom_role:custom_roles!profiles_role_id_fkey(id, name, color, icon)")
         .eq("workspace_id", wsId!)
         .order("created_at", { ascending: true });
       if (error) throw error;
