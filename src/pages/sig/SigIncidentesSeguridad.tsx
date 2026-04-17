@@ -41,6 +41,7 @@ import { toast } from "sonner";
 
 import { useAuth } from "@/lib/auth";
 import { usePermissions } from "@/hooks/usePermissions";
+import { supabase } from "@/integrations/supabase/client";
 import {
   useSigForm001List,
   useSigForm001Detail,
