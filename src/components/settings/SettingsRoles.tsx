@@ -126,9 +126,10 @@ export function SettingsRoles() {
   }
 }
 
-function RoleListItem({ role, selected, onSelect, onDuplicate, onDelete }: {
+function RoleListItem({ role, selected, onSelect, onDuplicate, onDelete, badgeLabel, locked }: {
   role: CustomRole; selected: boolean; onSelect: () => void;
   onDuplicate?: () => void; onDelete?: () => void;
+  badgeLabel?: string; locked?: boolean;
 }) {
   return (
     <div
@@ -140,13 +141,16 @@ function RoleListItem({ role, selected, onSelect, onDuplicate, onDelete }: {
       <div className="flex items-center gap-2 min-w-0">
         <span className="text-base shrink-0">{role.icon}</span>
         <div className="min-w-0">
-          <p className="truncate text-sm">{role.name}</p>
+          <p className="truncate text-sm flex items-center gap-1">
+            {role.name}
+            {locked && <Lock className="h-3 w-3 text-muted-foreground" />}
+          </p>
           <p className="text-[10px] text-muted-foreground">{role.user_count ?? 0} usuarios</p>
         </div>
       </div>
       <div className="flex items-center gap-1 shrink-0">
         <Badge variant="outline" className="text-[9px] px-1.5" style={{ borderColor: role.color, color: role.color }}>
-          {role.is_system_role ? "Sistema" : "Custom"}
+          {badgeLabel ?? (role.is_system_role ? "Sistema" : "Custom")}
         </Badge>
         {(onDuplicate || onDelete) && (
           <DropdownMenu>
