@@ -1509,6 +1509,192 @@ export type Database = {
           },
         ]
       }
+      sig_form_001: {
+        Row: {
+          accion_contencion: string | null
+          ambiente_afectado: string | null
+          area_proceso: string | null
+          cliente_afectado: string | null
+          codigo: string | null
+          como_ocurrio: string | null
+          contencion_exitosa: boolean | null
+          created_at: string | null
+          cuando_ocurrio: string | null
+          descripcion: string
+          detectado_por: string | null
+          escalo_gerencia: boolean | null
+          escalo_sgsi: boolean | null
+          fecha_deteccion: string | null
+          fecha_registro: string | null
+          forma_deteccion: string | null
+          id: string
+          impacto_confidencialidad: string | null
+          impacto_disponibilidad: string | null
+          impacto_integridad: string | null
+          impacto_operativo: string | null
+          informacion_afectada: string | null
+          involucra_datos_personales: boolean | null
+          involucra_produccion: boolean | null
+          medio_reporte: string | null
+          notifico_cliente: boolean | null
+          origen_estimado: string | null
+          prioridad: string | null
+          que_ocurrio: string | null
+          reportado_por: string | null
+          request_id: string
+          requiere_reporte_externo: boolean | null
+          responsable_contencion: string | null
+          severidad: string | null
+          sistema_afectado: string | null
+          sistema_deteccion: string | null
+          tipo_incidente: string | null
+          titulo: string
+          updated_at: string | null
+          workspace_id: string
+        }
+        Insert: {
+          accion_contencion?: string | null
+          ambiente_afectado?: string | null
+          area_proceso?: string | null
+          cliente_afectado?: string | null
+          codigo?: string | null
+          como_ocurrio?: string | null
+          contencion_exitosa?: boolean | null
+          created_at?: string | null
+          cuando_ocurrio?: string | null
+          descripcion: string
+          detectado_por?: string | null
+          escalo_gerencia?: boolean | null
+          escalo_sgsi?: boolean | null
+          fecha_deteccion?: string | null
+          fecha_registro?: string | null
+          forma_deteccion?: string | null
+          id?: string
+          impacto_confidencialidad?: string | null
+          impacto_disponibilidad?: string | null
+          impacto_integridad?: string | null
+          impacto_operativo?: string | null
+          informacion_afectada?: string | null
+          involucra_datos_personales?: boolean | null
+          involucra_produccion?: boolean | null
+          medio_reporte?: string | null
+          notifico_cliente?: boolean | null
+          origen_estimado?: string | null
+          prioridad?: string | null
+          que_ocurrio?: string | null
+          reportado_por?: string | null
+          request_id: string
+          requiere_reporte_externo?: boolean | null
+          responsable_contencion?: string | null
+          severidad?: string | null
+          sistema_afectado?: string | null
+          sistema_deteccion?: string | null
+          tipo_incidente?: string | null
+          titulo: string
+          updated_at?: string | null
+          workspace_id: string
+        }
+        Update: {
+          accion_contencion?: string | null
+          ambiente_afectado?: string | null
+          area_proceso?: string | null
+          cliente_afectado?: string | null
+          codigo?: string | null
+          como_ocurrio?: string | null
+          contencion_exitosa?: boolean | null
+          created_at?: string | null
+          cuando_ocurrio?: string | null
+          descripcion?: string
+          detectado_por?: string | null
+          escalo_gerencia?: boolean | null
+          escalo_sgsi?: boolean | null
+          fecha_deteccion?: string | null
+          fecha_registro?: string | null
+          forma_deteccion?: string | null
+          id?: string
+          impacto_confidencialidad?: string | null
+          impacto_disponibilidad?: string | null
+          impacto_integridad?: string | null
+          impacto_operativo?: string | null
+          informacion_afectada?: string | null
+          involucra_datos_personales?: boolean | null
+          involucra_produccion?: boolean | null
+          medio_reporte?: string | null
+          notifico_cliente?: boolean | null
+          origen_estimado?: string | null
+          prioridad?: string | null
+          que_ocurrio?: string | null
+          reportado_por?: string | null
+          request_id?: string
+          requiere_reporte_externo?: boolean | null
+          responsable_contencion?: string | null
+          severidad?: string | null
+          sistema_afectado?: string | null
+          sistema_deteccion?: string | null
+          tipo_incidente?: string | null
+          titulo?: string
+          updated_at?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sig_form_001_detectado_por_fkey"
+            columns: ["detectado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sig_form_001_detectado_por_fkey"
+            columns: ["detectado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles_safe_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sig_form_001_reportado_por_fkey"
+            columns: ["reportado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sig_form_001_reportado_por_fkey"
+            columns: ["reportado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles_safe_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sig_form_001_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "sig_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sig_form_001_responsable_contencion_fkey"
+            columns: ["responsable_contencion"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sig_form_001_responsable_contencion_fkey"
+            columns: ["responsable_contencion"]
+            isOneToOne: false
+            referencedRelation: "profiles_safe_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sig_form_001_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sig_request_history: {
         Row: {
           action_by: string
