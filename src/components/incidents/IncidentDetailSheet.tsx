@@ -1,27 +1,31 @@
-import { useState, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import {
   useIncident, useUpdateIncident, useIncidentNotes, useCreateIncidentNote,
   useIncidentHistory, useCreateIncidentHistory, useIncidentAttachments, useSlaConfigs,
+  useIncidentGeneratedStories, useIncidentLinkedStories,
+  useClassifyIncident, useLinkStoryToIncident, useUnlinkStoryFromIncident,
+  useDuplicateIncident, useReopenIncident, useDeleteIncident,
   STATUSES, SEVERITIES, STATUS_TRANSITIONS,
   getStatusInfo, getSeverityInfo, getCategoryLabel,
 } from "@/hooks/useIncidents";
+import { usePermissions } from "@/hooks/usePermissions";
+import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
 import { useAuth } from "@/lib/auth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { X, Send, ArrowRight, Link2, Download, Calendar, FileText, Image as ImageIcon, Upload } from "lucide-react";
+import { X, Send, Link2, Download, Calendar, FileText, Image as ImageIcon, Upload, MoreVertical, Save, Trash2, Copy, RotateCcw } from "lucide-react";
 
 function timeAgo(date: string) {
   const diff = Date.now() - new Date(date).getTime();
@@ -52,6 +56,21 @@ export function IncidentDetailSheet({ incidentId, onClose, canManage, canClose }
   const { data: slaConfigs } = useSlaConfigs();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const classifyIncident = useClassifyIncident();
+  const linkStory = useLinkStoryToIncident();
+  const unlinkStory = useUnlinkStoryFromIncident();
+  const duplicateIncident = useDuplicateIncident();
+  const reopenIncident = useReopenIncident();
+  const deleteIncident = useDeleteIncident();
+
+  const { data: generatedStories } = useIncidentGeneratedStories(incidentId ?? undefined);
+  const { data: linkedStories } = useIncidentLinkedStories(incidentId ?? undefined);
+
+  const { hasPermission } = usePermissions();
+  const canDelete = hasPermission("incidentes", "eliminar");
+  const canDuplicate = hasPermission("incidentes", "duplicar");
+  const canReopen = hasPermission("incidentes", "reabrir");
+
   const [noteText, setNoteText] = useState("");
   const [noteTab, setNoteTab] = useState("conversation");
   const [suspendReason, setSuspendReason] = useState("");
@@ -59,6 +78,32 @@ export function IncidentDetailSheet({ incidentId, onClose, canManage, canClose }
   const [pendingStatus, setPendingStatus] = useState("");
   const [showLinkDialog, setShowLinkDialog] = useState(false);
   const [storySearch, setStorySearch] = useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const [evaluation, setEvaluation] = useState({
+    severity: "",
+    assigned_to: "",
+    classification: "sin_clasificar",
+    resolution_date: "",
+  });
+  const [evaluationDirty, setEvaluationDirty] = useState(false);
+
+  // Reset evaluation state when incident changes
+  useEffect(() => {
+    if (incident) {
+      // Determine initial classification from generated stories
+      const existingClassification = (generatedStories ?? []).find(
+        (gs: any) => gs.classification === "bug" || gs.classification === "requerimiento"
+      )?.classification;
+      setEvaluation({
+        severity: incident.severity || "",
+        assigned_to: incident.assigned_to || "",
+        classification: existingClassification || "sin_clasificar",
+        resolution_date: incident.resolution_date || "",
+      });
+      setEvaluationDirty(false);
+    }
+  }, [incident?.id, generatedStories]);
 
   const { data: members } = useQuery({
     queryKey: ["project-members-detail", incident?.project_id],
@@ -90,14 +135,6 @@ export function IncidentDetailSheet({ incidentId, onClose, canManage, canClose }
   const sevInfo = getSeverityInfo(incident.severity);
   const allowedTransitions = STATUS_TRANSITIONS[incident.status] ?? [];
 
-  const changeField = async (field: string, value: any) => {
-    const oldValue = (incident as any)[field];
-    await updateIncident.mutateAsync({ id: incident.id, [field]: value } as any);
-    if (profile) {
-      createHistory.mutate({ incident_id: incident.id, user_id: profile.id, field_name: field, old_value: String(oldValue ?? ""), new_value: String(value ?? "") });
-    }
-  };
-
   const handleStatusChange = async (newStatus: string) => {
     if (newStatus === "suspendido") {
       setPendingStatus(newStatus);
@@ -111,7 +148,7 @@ export function IncidentDetailSheet({ incidentId, onClose, canManage, canClose }
 
     const updates: any = { status: newStatus };
     if (newStatus === "cerrado") updates.closed_at = new Date().toISOString();
-    if (newStatus === "revision" && !incident.reviewed_by) {
+    if (newStatus === "en_revision" && !incident.reviewed_by) {
       updates.reviewed_by = user?.id;
       updates.reviewed_at = new Date().toISOString();
     }
@@ -147,33 +184,104 @@ export function IncidentDetailSheet({ incidentId, onClose, canManage, canClose }
     setSuspendReason("");
   };
 
-  const saveEvaluation = async (field: string, value: any) => {
-    const updates: any = { [field]: value };
-    if (field === "severity" && value === "no_aplica") {
-      updates.is_requirement = true;
-    }
-    if (field === "severity" && value !== "no_aplica") {
-      updates.is_requirement = false;
-    }
-    if (incident.status === "pendiente" && (field === "severity" || field === "assigned_to")) {
-      updates.status = "revision";
+  const saveEvaluation = async () => {
+    if (!incident) return;
+
+    const updates: any = {
+      severity: evaluation.severity || null,
+      assigned_to: evaluation.assigned_to || null,
+      resolution_date: evaluation.resolution_date || null,
+    };
+
+    if (incident.status === "sin_evaluar" && (evaluation.severity || evaluation.assigned_to)) {
+      updates.status = "en_revision";
       updates.reviewed_by = user?.id;
       updates.reviewed_at = new Date().toISOString();
     }
+
     await updateIncident.mutateAsync({ id: incident.id, ...updates });
-    if (profile) {
-      createHistory.mutate({ incident_id: incident.id, user_id: profile.id, field_name: field, old_value: String((incident as any)[field] ?? ""), new_value: String(value ?? "") });
-    }
-    if (field === "severity" && incident.created_by && incident.created_by !== user?.id) {
-      await supabase.from("notifications").insert({
-        user_id: incident.created_by,
-        title: "📋 Tu incidente ha sido evaluado",
-        message: `Severidad asignada: ${value} | ${incident.ticket_code}`,
-        type: "incident",
-        reference_id: incident.id,
-        reference_type: "incident",
+
+    const existingClassification = (generatedStories ?? []).find(
+      (gs: any) => gs.classification === "bug" || gs.classification === "requerimiento"
+    )?.classification;
+
+    if (
+      evaluation.classification !== existingClassification &&
+      evaluation.classification !== "sin_clasificar"
+    ) {
+      await classifyIncident.mutateAsync({
+        incidentId: incident.id,
+        classification: evaluation.classification as "bug" | "requerimiento",
+        projectId: incident.project_id,
+        incidentTitle: incident.title,
+        incidentDescription: incident.description || "",
+        severity: evaluation.severity,
+        userId: user?.id!,
       });
     }
+
+    if (evaluation.assigned_to && evaluation.assigned_to !== incident.assigned_to) {
+      const assignee = members?.find((m: any) => m.user_id === evaluation.assigned_to);
+      if (assignee?.profile?.id) {
+        await supabase.from("notifications").insert({
+          user_id: assignee.profile.id,
+          title: "📋 Se te asignó un incidente",
+          message: `${incident.ticket_code}: ${incident.title}`,
+          type: "incident",
+          reference_id: incident.id,
+          reference_type: "incident",
+        });
+      }
+    }
+
+    if (profile) {
+      createHistory.mutate({
+        incident_id: incident.id,
+        user_id: profile.id,
+        field_name: "evaluacion",
+        old_value: "",
+        new_value: "Evaluación guardada",
+      });
+    }
+
+    setEvaluationDirty(false);
+    toast({ title: "Evaluación guardada correctamente" });
+  };
+
+  const handleDuplicate = async () => {
+    if (!incident || !user) return;
+    const result = await duplicateIncident.mutateAsync({
+      incident,
+      userId: user.id,
+    });
+    toast({ title: `Incidente duplicado: ${result.ticket_code}` });
+    onClose();
+  };
+
+  const handleReopen = async () => {
+    if (!incident || !user || !profile) return;
+    await reopenIncident.mutateAsync({
+      incidentId: incident.id,
+      userId: user.id,
+      profileId: profile.id,
+    });
+    if (profile) {
+      createHistory.mutate({
+        incident_id: incident.id,
+        user_id: profile.id,
+        field_name: "status",
+        old_value: "cerrado",
+        new_value: "en_revision",
+      });
+    }
+    toast({ title: "Incidente reabierto" });
+  };
+
+  const handleDelete = async () => {
+    if (!incident) return;
+    await deleteIncident.mutateAsync(incident.id);
+    toast({ title: "Incidente eliminado" });
+    onClose();
   };
 
   const addNote = async () => {
@@ -193,24 +301,13 @@ export function IncidentDetailSheet({ incidentId, onClose, canManage, canClose }
     setNoteText("");
   };
 
-  const convertToBug = async () => {
-    const { data, error } = await supabase.from("user_stories").insert({
-      project_id: incident.project_id,
-      title: `[Bug] ${incident.title}`,
-      description: `**Descripción:** ${incident.description || ""}\n\n**Pasos:** ${incident.steps_to_reproduce || "N/A"}\n\n**Esperado:** ${incident.expected_result || "N/A"}\n\n**Actual:** ${incident.actual_result || "N/A"}`,
-      type: "bug",
-      priority: incident.severity === "critica" ? "critical" : incident.severity === "alta" ? "high" : incident.severity === "baja" ? "low" : "medium",
-      status: "backlog",
-      created_by: profile?.id,
-    }).select("id, story_number").single();
-    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
-    await updateIncident.mutateAsync({ id: incident.id, linked_user_story_id: data.id } as any);
-    toast({ title: `Bug HU-${data.story_number} creado en el backlog` });
-    qc.invalidateQueries({ queryKey: ["user-stories"] });
-  };
-
-  const linkStory = async (storyId: string) => {
-    await updateIncident.mutateAsync({ id: incident.id, linked_user_story_id: storyId } as any);
+  const handleLinkStory = async (storyId: string) => {
+    if (!user) return;
+    await linkStory.mutateAsync({
+      incidentId: incident.id,
+      userStoryId: storyId,
+      linkedBy: user.id,
+    });
     setShowLinkDialog(false);
     toast({ title: "HU vinculada" });
   };
@@ -255,6 +352,7 @@ export function IncidentDetailSheet({ incidentId, onClose, canManage, canClose }
 
   const isCreator = incident.created_by === user?.id;
   const showApproveClose = isCreator && incident.status === "listo_para_cerrar";
+  const showActionsMenu = canDuplicate || canReopen || canDelete;
 
   return (
     <>
@@ -265,11 +363,45 @@ export function IncidentDetailSheet({ incidentId, onClose, canManage, canClose }
               <div className="flex items-center gap-3">
                 <SheetTitle className="font-mono text-lg">{incident.ticket_code}</SheetTitle>
                 <Badge className={sevInfo.color}>
-                  {incident.is_requirement ? "Requerimiento" : sevInfo.label}
+                  {sevInfo.label}
                 </Badge>
                 <Badge className={statusInfo.color}>{statusInfo.icon} {statusInfo.label}</Badge>
               </div>
-              <Button variant="ghost" size="icon" onClick={onClose}><X className="h-4 w-4" /></Button>
+              <div className="flex items-center gap-1">
+                {showActionsMenu && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56 bg-popover">
+                      {canDuplicate && (
+                        <DropdownMenuItem onClick={handleDuplicate}>
+                          <Copy className="h-4 w-4 mr-2" /> Duplicar incidente
+                        </DropdownMenuItem>
+                      )}
+                      {canReopen && incident.status === "cerrado" && (
+                        <DropdownMenuItem onClick={handleReopen}>
+                          <RotateCcw className="h-4 w-4 mr-2" /> Reabrir incidente
+                        </DropdownMenuItem>
+                      )}
+                      {canDelete && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => setShowDeleteConfirm(true)}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" /> Eliminar incidente
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+                <Button variant="ghost" size="icon" onClick={onClose}><X className="h-4 w-4" /></Button>
+              </div>
             </div>
           </SheetHeader>
 
@@ -315,12 +447,10 @@ export function IncidentDetailSheet({ incidentId, onClose, canManage, canClose }
               )}
             </section>
 
-            {/* Attachments - REDESIGNED with larger drop zone */}
+            {/* Attachments */}
             <Separator />
             <section>
               <h3 className="text-sm font-semibold text-muted-foreground mb-3">ARCHIVOS ADJUNTOS</h3>
-              
-              {/* Existing files */}
               {(attachments ?? []).length > 0 && (
                 <div className="grid grid-cols-2 gap-2 mb-3">
                   {(attachments ?? []).map((a: any) => (
@@ -334,7 +464,6 @@ export function IncidentDetailSheet({ incidentId, onClose, canManage, canClose }
                 </div>
               )}
 
-              {/* Large upload zone */}
               {canManage && (
                 <div
                   className="border-2 border-dashed border-border rounded-lg min-h-[120px] flex flex-col items-center justify-center cursor-pointer transition-colors hover:border-accent hover:bg-accent/5 group"
@@ -362,57 +491,181 @@ export function IncidentDetailSheet({ incidentId, onClose, canManage, canClose }
             {canManage && (
               <>
                 <Separator />
-                <section>
-                  <h3 className="text-sm font-semibold text-muted-foreground mb-3">EVALUACIÓN</h3>
+                <section className="space-y-4">
+                  <h3 className="text-sm font-semibold text-muted-foreground">EVALUACIÓN</h3>
+
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
                       <label className="text-xs text-muted-foreground">Severidad</label>
-                      <Select value={incident.severity || "none"} onValueChange={v => saveEvaluation("severity", v === "none" ? null : v)}>
+                      <Select
+                        value={evaluation.severity || "none"}
+                        onValueChange={v => {
+                          setEvaluation(prev => ({ ...prev, severity: v === "none" ? "" : v }));
+                          setEvaluationDirty(true);
+                        }}
+                      >
                         <SelectTrigger className="h-9"><SelectValue placeholder="Sin evaluar" /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="none">Sin evaluar</SelectItem>
-                          {SEVERITIES.map(s => <SelectItem key={s.value} value={s.value}>{s.icon} {s.label}</SelectItem>)}
+                          {SEVERITIES.map(s => (
+                            <SelectItem key={s.value} value={s.value}>{s.icon} {s.label}</SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
+
                     <div className="space-y-1">
                       <label className="text-xs text-muted-foreground">Asignar a</label>
-                      <Select value={incident.assigned_to || "none"} onValueChange={v => saveEvaluation("assigned_to", v === "none" ? null : v)}>
+                      <Select
+                        value={evaluation.assigned_to || "none"}
+                        onValueChange={v => {
+                          setEvaluation(prev => ({ ...prev, assigned_to: v === "none" ? "" : v }));
+                          setEvaluationDirty(true);
+                        }}
+                      >
                         <SelectTrigger className="h-9"><SelectValue placeholder="Sin asignar" /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="none">Sin asignar</SelectItem>
                           {members?.map((m: any) => (
-                            <SelectItem key={m.user_id} value={m.user_id}>{m.profile?.full_name || m.profile?.email}</SelectItem>
+                            <SelectItem key={m.user_id} value={m.user_id}>
+                              {m.profile?.full_name || m.profile?.email}
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
                   </div>
 
-                  <div className="mt-3 space-y-2">
-                    <div className="flex items-center gap-3">
-                      <Switch checked={incident.is_requirement} onCheckedChange={v => {
-                        if (v) saveEvaluation("severity", "no_aplica");
-                        else saveEvaluation("is_requirement", false);
-                      }} />
-                      <Label className="text-sm">Clasificar como Requerimiento</Label>
-                    </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground">Clasificación</label>
+                    <Select
+                      value={evaluation.classification}
+                      onValueChange={v => {
+                        setEvaluation(prev => ({ ...prev, classification: v }));
+                        setEvaluationDirty(true);
+                      }}
+                    >
+                      <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="sin_clasificar">Sin clasificar</SelectItem>
+                        <SelectItem value="bug">🐛 Bug</SelectItem>
+                        <SelectItem value="requerimiento">📋 Requerimiento</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Al guardar se creará una HU en el backlog del proyecto
+                    </p>
                   </div>
 
-                  <div className="mt-3 space-y-1">
+                  <div className="space-y-1">
                     <label className="text-xs text-muted-foreground">Fecha estimada de resolución</label>
-                    <Input type="date" value={incident.resolution_date || ""} onChange={e => saveEvaluation("resolution_date", e.target.value || null)} />
-                    {getSlaDate() && !incident.resolution_date && (
+                    <Input
+                      type="date"
+                      value={evaluation.resolution_date || ""}
+                      onChange={e => {
+                        setEvaluation(prev => ({ ...prev, resolution_date: e.target.value }));
+                        setEvaluationDirty(true);
+                      }}
+                    />
+                    {getSlaDate() && !evaluation.resolution_date && (
                       <p className="text-xs text-blue-600">
                         <Calendar className="inline h-3 w-3 mr-1" />
-                        Sugerido según SLA ({incident.severity}): {getSlaDate()}
-                        <Button variant="link" size="sm" className="text-xs h-auto p-0 ml-1" onClick={() => saveEvaluation("resolution_date", getSlaDate())}>Aplicar</Button>
+                        Sugerido por SLA: {getSlaDate()}
+                        <Button
+                          variant="link"
+                          size="sm"
+                          className="text-xs h-auto p-0 ml-1"
+                          onClick={() => {
+                            setEvaluation(prev => ({ ...prev, resolution_date: getSlaDate()! }));
+                            setEvaluationDirty(true);
+                          }}
+                        >
+                          Aplicar
+                        </Button>
                       </p>
                     )}
                   </div>
+
+                  {evaluationDirty && (
+                    <Button onClick={saveEvaluation} className="w-full" disabled={updateIncident.isPending}>
+                      <Save className="h-4 w-4 mr-2" />
+                      Guardar evaluación
+                    </Button>
+                  )}
                 </section>
               </>
             )}
+
+            {/* Generated stories */}
+            <Separator />
+            <section>
+              <h3 className="text-sm font-semibold text-muted-foreground mb-3">HISTORIAS GENERADAS</h3>
+              {(!generatedStories || generatedStories.length === 0) ? (
+                <p className="text-xs text-muted-foreground">No se han generado HU para este incidente</p>
+              ) : (
+                <div className="space-y-2">
+                  {generatedStories.map((gs: any) => (
+                    gs.user_story ? (
+                      <div key={gs.id} className="flex items-center gap-2 p-2 border border-border rounded-lg">
+                        <Badge variant="outline" className="font-mono text-xs">
+                          HU-{gs.user_story.story_number}
+                        </Badge>
+                        <Badge variant="secondary" className="text-xs">
+                          {gs.classification === "bug" ? "🐛 Bug" : "📋 Req"}
+                        </Badge>
+                        <span className="text-sm truncate flex-1">{gs.user_story.title}</span>
+                      </div>
+                    ) : (
+                      <div key={gs.id} className="flex items-center gap-2 p-2 border border-border rounded-lg opacity-60">
+                        <span className="text-xs text-muted-foreground">
+                          HU eliminada ({gs.classification === "bug" ? "Bug" : "Requerimiento"})
+                        </span>
+                      </div>
+                    )
+                  ))}
+                </div>
+              )}
+            </section>
+
+            {/* Linked stories */}
+            <Separator />
+            <section>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-muted-foreground">HU VINCULADAS</h3>
+                {canManage && (
+                  <Button size="sm" variant="outline" onClick={() => setShowLinkDialog(true)}>
+                    <Link2 className="h-3 w-3 mr-1" /> Vincular HU
+                  </Button>
+                )}
+              </div>
+              {(!linkedStories || linkedStories.length === 0) ? (
+                <p className="text-xs text-muted-foreground">Sin HU vinculadas manualmente</p>
+              ) : (
+                <div className="space-y-2">
+                  {linkedStories.map((ls: any) => (
+                    <div key={ls.id} className="flex items-center gap-2 p-2 border border-border rounded-lg">
+                      <Badge variant="outline" className="font-mono text-xs">
+                        HU-{ls.user_story?.story_number}
+                      </Badge>
+                      <span className="text-sm truncate flex-1">{ls.user_story?.title}</span>
+                      {canManage && (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7"
+                          onClick={() => unlinkStory.mutate({
+                            incidentId: incident.id,
+                            userStoryId: ls.user_story_id,
+                          })}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
 
             {/* Status Management */}
             {canManage && incident.status !== "cerrado" && (
@@ -425,8 +678,14 @@ export function IncidentDetailSheet({ incidentId, onClose, canManage, canClose }
                       const si = getStatusInfo(s);
                       const disabled = s === "cerrado" && !canClose;
                       return (
-                        <Button key={s} size="sm" variant="outline" disabled={disabled} onClick={() => handleStatusChange(s)}
-                          className={disabled ? "opacity-50" : ""}>
+                        <Button
+                          key={s}
+                          size="sm"
+                          variant="outline"
+                          disabled={disabled}
+                          onClick={() => handleStatusChange(s)}
+                          className={disabled ? "opacity-50" : ""}
+                        >
                           {si.icon} {si.label}
                         </Button>
                       );
@@ -434,17 +693,9 @@ export function IncidentDetailSheet({ incidentId, onClose, canManage, canClose }
                   </div>
                   {incident.suspension_reason && incident.status === "suspendido" && (
                     <div className="mt-2 p-2 bg-muted rounded text-sm">
-                      <span className="font-medium">Motivo de suspensión:</span> {incident.suspension_reason}
+                      <span className="font-medium">Motivo:</span> {incident.suspension_reason}
                     </div>
                   )}
-                  <div className="flex gap-2 mt-3">
-                    <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={convertToBug}>
-                      <ArrowRight className="h-3 w-3 mr-1" /> Convertir a Bug
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => setShowLinkDialog(true)}>
-                      <Link2 className="h-3 w-3 mr-1" /> Vincular HU
-                    </Button>
-                  </div>
                 </section>
               </>
             )}
@@ -545,7 +796,7 @@ export function IncidentDetailSheet({ incidentId, onClose, canManage, canClose }
           <Input placeholder="Buscar HU..." value={storySearch} onChange={e => setStorySearch(e.target.value)} />
           <div className="max-h-[300px] overflow-y-auto space-y-1 mt-2">
             {stories?.map((s: any) => (
-              <button key={s.id} className="w-full text-left p-2 rounded hover:bg-muted text-sm flex items-center gap-2" onClick={() => linkStory(s.id)}>
+              <button key={s.id} className="w-full text-left p-2 rounded hover:bg-muted text-sm flex items-center gap-2" onClick={() => handleLinkStory(s.id)}>
                 <Badge variant="outline" className="text-xs">HU-{s.story_number}</Badge>
                 <span className="truncate">{s.title}</span>
               </button>
@@ -553,6 +804,17 @@ export function IncidentDetailSheet({ incidentId, onClose, canManage, canClose }
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Confirm delete dialog */}
+      <ConfirmDeleteDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        onConfirm={handleDelete}
+        title="Eliminar incidente"
+        description={`Esta acción eliminará permanentemente el incidente ${incident.ticket_code} y todos sus datos asociados (comentarios, archivos, historial).`}
+        requireTyping={incident.ticket_code || "ELIMINAR"}
+        confirmText="Eliminar incidente"
+      />
     </>
   );
 }
