@@ -520,8 +520,7 @@ export function useReopenIncident() {
         .from("incidents")
         .update({
           status: "en_revision",
-          reopened_at: new Date().toISOString(),
-          reopened_by: profileId,
+          updated_at: new Date().toISOString(),
           closed_at: null,
         })
         .eq("id", incidentId);
