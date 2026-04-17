@@ -281,6 +281,42 @@ export default function SigIncidentesSeguridad() {
 // ────────────────────────────────────────────────
 function ListView({ onOpen }: { onOpen: (id: string) => void }) {
   const { data: rows, isLoading } = useSigForm001List();
+  const { hasPermission } = usePermissions();
+  const duplicate = useDuplicateSigForm001();
+  const deleteOne = useDeleteSigForm001();
+
+  const [confirmDelete, setConfirmDelete] = useState<SigForm001Row | null>(null);
+
+  const canDuplicate = hasPermission("sig", "duplicar");
+  const canDelete = hasPermission("sig", "eliminar");
+
+  const handleDuplicate = async (row: SigForm001Row) => {
+    try {
+      const res = await duplicate.mutateAsync(row.id);
+      toast.success("Registro duplicado");
+      onOpen(res.id);
+    } catch (e: any) {
+      toast.error(e.message ?? "No se pudo duplicar");
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!confirmDelete?.request?.id) {
+      toast.error("Sin solicitud asociada");
+      setConfirmDelete(null);
+      return;
+    }
+    try {
+      await deleteOne.mutateAsync({
+        id: confirmDelete.id,
+        requestId: confirmDelete.request.id,
+      });
+      toast.success("Registro eliminado");
+      setConfirmDelete(null);
+    } catch (e: any) {
+      toast.error(e.message ?? "No se pudo eliminar");
+    }
+  };
 
   return (
     <Card>
@@ -295,7 +331,7 @@ function ListView({ onOpen }: { onOpen: (id: string) => void }) {
               <TableHead>Estado</TableHead>
               <TableHead>Reportado por</TableHead>
               <TableHead>Fecha</TableHead>
-              <TableHead className="text-right">Acción</TableHead>
+              <TableHead className="text-right w-[80px]">Acción</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -346,23 +382,73 @@ function ListView({ onOpen }: { onOpen: (id: string) => void }) {
                 <TableCell className="text-sm text-muted-foreground">
                   {fmtDate(r.fecha_registro)}
                 </TableCell>
-                <TableCell className="text-right">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onOpen(r.id);
-                    }}
-                  >
-                    Ver detalle
-                  </Button>
+                <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-44">
+                      <DropdownMenuItem onClick={() => onOpen(r.id)}>
+                        <Eye className="h-4 w-4 mr-2" />
+                        Ver detalle
+                      </DropdownMenuItem>
+                      {canDuplicate && (
+                        <DropdownMenuItem
+                          onClick={() => handleDuplicate(r)}
+                          disabled={duplicate.isPending}
+                        >
+                          <Copy className="h-4 w-4 mr-2" />
+                          Duplicar
+                        </DropdownMenuItem>
+                      )}
+                      {canDelete && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => setConfirmDelete(r)}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Eliminar
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </CardContent>
+
+      <AlertDialog
+        open={!!confirmDelete}
+        onOpenChange={(o) => !o && setConfirmDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminar registro</AlertDialogTitle>
+            <AlertDialogDescription>
+              ¿Seguro que deseas eliminar{" "}
+              <span className="font-medium">{confirmDelete?.codigo ?? confirmDelete?.titulo}</span>?
+              Esta acción no se puede deshacer y también eliminará el flujo asociado.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleConfirmDelete}
+              disabled={deleteOne.isPending}
+            >
+              {deleteOne.isPending ? "Eliminando…" : "Eliminar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
