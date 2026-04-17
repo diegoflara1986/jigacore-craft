@@ -1021,21 +1021,33 @@ function FlowSidebar({ row, onBack }: { row: SigForm001Row; onBack: () => void }
     to: Form001Status | null;
     label: string;
     stepType?: string;
-  }>({ open: false, to: null, label: "" });
+    requireComment: boolean;
+  }>({ open: false, to: null, label: "", requireComment: false });
   const [comment, setComment] = useState("");
 
   const status = row.request?.status ?? "borrador";
-  const isCreator = row.reportado_por === profile?.id;
-  const isAssignee = row.request?.current_assignee === profile?.id;
+  const isCreator = row.request?.created_by === profile?.id;
+  const isAssignedToStep =
+    row.request?.current_step?.step_users?.some(
+      (su: any) => su.user_id === profile?.id
+    ) ?? false;
 
-  const openAction = (to: Form001Status, label: string, stepType?: string) => {
-    setActionDialog({ open: true, to, label, stepType });
+  const openAction = (
+    to: Form001Status,
+    label: string,
+    stepType: string | undefined,
+    requireComment: boolean
+  ) => {
+    setActionDialog({ open: true, to, label, stepType, requireComment });
     setComment("");
   };
 
+  const closeDialog = () =>
+    setActionDialog({ open: false, to: null, label: "", requireComment: false });
+
   const confirmAction = async () => {
     if (!actionDialog.to) return;
-    if (actionDialog.to !== "solicitado" && !comment.trim()) {
+    if (actionDialog.requireComment && !comment.trim()) {
       toast.error("Comentario obligatorio");
       return;
     }
@@ -1048,7 +1060,7 @@ function FlowSidebar({ row, onBack }: { row: SigForm001Row; onBack: () => void }
         comment: comment.trim() || undefined,
       });
       toast.success("Estado actualizado");
-      setActionDialog({ open: false, to: null, label: "" });
+      closeDialog();
     } catch (e: any) {
       toast.error(e.message ?? "No se pudo actualizar");
     }
@@ -1081,35 +1093,43 @@ function FlowSidebar({ row, onBack }: { row: SigForm001Row; onBack: () => void }
 
           <div className="space-y-2">
             {status === "borrador" && isCreator && (
-              <Button className="w-full" onClick={() => openAction("solicitado", "Validar y enviar", "solicitar")}>
+              <Button
+                className="w-full"
+                onClick={() =>
+                  openAction("solicitado", "Validar y enviar", "solicitar", false)
+                }
+              >
                 <Send className="h-4 w-4 mr-2" />
                 Validar y enviar
               </Button>
             )}
-            {status === "solicitado" && isAssignee && (
+            {status === "solicitado" && isAssignedToStep && (
               <>
                 <Button
-                  className="w-full"
-                  onClick={() => openAction("en_revision", "Aprobar revisión", "revisar")}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white"
+                  onClick={() =>
+                    openAction("en_revision", "Aprobar revisión", "revisar", false)
+                  }
                 >
                   <Check className="h-4 w-4 mr-2" />
                   Aprobar revisión
                 </Button>
                 <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => openAction("borrador", "Devolver", "revisar")}
+                  className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+                  onClick={() =>
+                    openAction("borrador", "Devolver", "revisar", true)
+                  }
                 >
                   <Undo2 className="h-4 w-4 mr-2" />
                   Devolver
                 </Button>
               </>
             )}
-            {status === "en_revision" && isAssignee && (
+            {status === "en_revision" && isAssignedToStep && (
               <>
                 <Button
-                  className="w-full"
-                  onClick={() => openAction("aprobado", "Aprobar", "aprobar")}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white"
+                  onClick={() => openAction("aprobado", "Aprobar", "aprobar", false)}
                 >
                   <Check className="h-4 w-4 mr-2" />
                   Aprobar
@@ -1117,16 +1137,19 @@ function FlowSidebar({ row, onBack }: { row: SigForm001Row; onBack: () => void }
                 <Button
                   variant="destructive"
                   className="w-full"
-                  onClick={() => openAction("rechazado", "Rechazar", "aprobar")}
+                  onClick={() => openAction("rechazado", "Rechazar", "aprobar", true)}
                 >
                   <X className="h-4 w-4 mr-2" />
                   Rechazar
                 </Button>
               </>
             )}
-            {!isCreator && !isAssignee && (
+            {!(
+              (status === "borrador" && isCreator) ||
+              ((status === "solicitado" || status === "en_revision") && isAssignedToStep)
+            ) && (
               <p className="text-xs text-muted-foreground">
-                No tienes acciones disponibles en este estado.
+                No tienes acciones en este estado.
               </p>
             )}
           </div>
@@ -1208,30 +1231,25 @@ function FlowSidebar({ row, onBack }: { row: SigForm001Row; onBack: () => void }
 
       <Dialog
         open={actionDialog.open}
-        onOpenChange={(o) => !o && setActionDialog({ open: false, to: null, label: "" })}
+        onOpenChange={(o) => !o && closeDialog()}
       >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{actionDialog.label}</DialogTitle>
             <DialogDescription>
-              {actionDialog.to === "solicitado"
-                ? "Confirmar el envío de esta solicitud."
-                : "Agrega un comentario obligatorio para registrar esta acción."}
+              {actionDialog.requireComment
+                ? "Agrega un comentario obligatorio para registrar esta acción."
+                : "Confirmar esta acción. Puedes agregar un comentario opcional."}
             </DialogDescription>
           </DialogHeader>
           <Textarea
             rows={4}
-            placeholder={
-              actionDialog.to === "solicitado" ? "Comentario opcional…" : "Comentario *"
-            }
+            placeholder={actionDialog.requireComment ? "Comentario *" : "Comentario opcional…"}
             value={comment}
             onChange={(e) => setComment(e.target.value)}
           />
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setActionDialog({ open: false, to: null, label: "" })}
-            >
+            <Button variant="outline" onClick={closeDialog}>
               Cancelar
             </Button>
             <Button onClick={confirmAction} disabled={transition.isPending}>
