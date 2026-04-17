@@ -66,7 +66,6 @@ export default function Incidents() {
 
   const { data: stats } = useIncidentStats();
   const { data: slaConfigs } = useSlaConfigs();
-  console.log("SLA Configs:", slaConfigs);
   const { hasPermission } = usePermissions();
 
   const duplicateIncident = useDuplicateIncident();
