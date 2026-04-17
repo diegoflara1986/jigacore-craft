@@ -245,23 +245,22 @@ function RoleDetail({ role, isAdmin }: { role: CustomRole; isAdmin: boolean }) {
                 )}
                 <div className="flex items-center gap-2 mt-2">
                   <Badge variant="outline" style={{ borderColor: role.color, color: role.color }}>
-                    {role.is_system_role ? "Rol del Sistema" : "Rol Personalizado"}
+                    {isSuperAdmin ? "Super Admin" : "Rol Personalizado"}
                   </Badge>
                   <span className="text-xs text-muted-foreground">{role.user_count ?? 0} usuarios con este rol</span>
                 </div>
               </div>
             </div>
-            {role.is_system_role && (
-              <div className="mt-3 flex items-center gap-2 rounded-md bg-blue-500/10 p-2.5 text-xs text-blue-700 dark:text-blue-300">
-                <Info className="h-3.5 w-3.5 shrink-0" />
-                Los roles del sistema no se pueden modificar. Crea un rol personalizado para ajustar permisos.
+            {isSuperAdmin && (
+              <div className="mt-3 flex items-center gap-2 rounded-md bg-primary/10 p-2.5 text-xs text-primary">
+                <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
+                El Super Admin tiene acceso total a todos los módulos y no puede ser modificado.
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Permission modules */}
-        {PERMISSION_MODULES.map(mod => {
+        {!isSuperAdmin && PERMISSION_MODULES.map(mod => {
           const allActions = mod.actions.map(a => a.action);
           const fullyEnabled = isModuleFullyEnabled(mod.module, allActions);
           const partiallyEnabled = isModulePartiallyEnabled(mod.module, allActions);
