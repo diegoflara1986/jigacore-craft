@@ -57,8 +57,15 @@ export interface SigForm001Row {
     id: string;
     status: Form001Status;
     created_at: string;
+    created_by: string | null;
     current_step_id: string | null;
     current_assignee: string | null;
+    current_step?: {
+      id: string;
+      step_type: string;
+      step_order: number;
+      step_users?: { user_id: string }[];
+    } | null;
   } | null;
   reportado_por_profile?: {
     id: string;
