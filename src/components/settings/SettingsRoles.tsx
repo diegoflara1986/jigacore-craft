@@ -310,7 +310,7 @@ function RoleDetail({ role, isAdmin }: { role: CustomRole; isAdmin: boolean }) {
                   <Switch
                     checked={fullyEnabled}
                     disabled={!isEditable}
-                    onCheckedChange={checked => toggleModuleMaster(mod.module, allActions, checked)}
+                    onCheckedChange={checked => toggleModuleMaster(mod.module, allActions, checked, scopeMissing)}
                     className={partiallyEnabled ? "data-[state=unchecked]:bg-accent/50" : ""}
                   />
                 </div>
