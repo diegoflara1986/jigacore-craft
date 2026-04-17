@@ -288,8 +288,8 @@ function ListView({ onOpen }: { onOpen: (id: string) => void }) {
 
   const [confirmDelete, setConfirmDelete] = useState<SigForm001Row | null>(null);
 
-  const canDuplicate = hasPermission("sig", "duplicar");
-  const canDelete = hasPermission("sig", "eliminar");
+  const canDuplicate = hasPermission("sig_form_001", "duplicar");
+  const canDelete = hasPermission("sig_form_001", "eliminar");
 
   const handleDuplicate = async (row: SigForm001Row) => {
     try {

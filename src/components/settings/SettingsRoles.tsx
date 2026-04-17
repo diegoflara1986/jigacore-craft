@@ -268,11 +268,7 @@ function RoleDetail({ role, isAdmin }: { role: CustomRole; isAdmin: boolean }) {
           </CardContent>
         </Card>
 
-        {!isSuperAdmin && PERMISSION_MODULES.map(mod => {
-          const allActions = mod.actions.map(a => a.action);
-          const fullyEnabled = isModuleFullyEnabled(mod.module, allActions);
-          const partiallyEnabled = isModulePartiallyEnabled(mod.module, allActions);
-          const scope = (mod as any).scope as { field: string; options: string[]; required: boolean } | undefined;
+        {!isSuperAdmin && (() => {
           const scopeLabels: Record<string, string> = {
             solo_asignados: "Solo proyectos asignados",
             todos: "Todos los proyectos",
@@ -280,99 +276,149 @@ function RoleDetail({ role, isAdmin }: { role: CustomRole; isAdmin: boolean }) {
             solo_propias: "Solo las propias",
             todas: "Todas",
           };
-          const selectedScope = scope
-            ? scope.options.find(opt => permSet.has(`${mod.module}:scope_${opt}`)) ?? null
-            : null;
-          const scopeMissing = !!scope && !selectedScope;
 
-          const handleScopeChange = (opt: string) => {
-            if (!isEditable || !scope) return;
-            // Disable other scope options first, then enable selected
-            scope.options.forEach(o => {
-              if (o !== opt && permSet.has(`${mod.module}:scope_${o}`)) {
-                updatePerm.mutate({ roleId: role.id, module: mod.module, action: `scope_${o}`, isAllowed: false });
-              }
-            });
-            updatePerm.mutate(
-              { roleId: role.id, module: mod.module, action: `scope_${opt}`, isAllowed: true },
-              { onSuccess: () => toast({ title: "Alcance actualizado", duration: 1500 }) }
+          const renderModuleCard = (mod: typeof PERMISSION_MODULES[number]) => {
+            const allActions = mod.actions.map(a => a.action);
+            const fullyEnabled = isModuleFullyEnabled(mod.module, allActions);
+            const partiallyEnabled = isModulePartiallyEnabled(mod.module, allActions);
+            const scope = (mod as any).scope as { field: string; options: string[]; required: boolean } | undefined;
+            const selectedScope = scope
+              ? scope.options.find(opt => permSet.has(`${mod.module}:scope_${opt}`)) ?? null
+              : null;
+            const scopeMissing = !!scope && !selectedScope;
+
+            const handleScopeChange = (opt: string) => {
+              if (!isEditable || !scope) return;
+              scope.options.forEach(o => {
+                if (o !== opt && permSet.has(`${mod.module}:scope_${o}`)) {
+                  updatePerm.mutate({ roleId: role.id, module: mod.module, action: `scope_${o}`, isAllowed: false });
+                }
+              });
+              updatePerm.mutate(
+                { roleId: role.id, module: mod.module, action: `scope_${opt}`, isAllowed: true },
+                { onSuccess: () => toast({ title: "Alcance actualizado", duration: 1500 }) }
+              );
+            };
+
+            return (
+              <Card key={mod.module}>
+                <CardContent className="pt-4 pb-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">{mod.icon}</span>
+                      <h4 className="font-semibold text-sm text-foreground">{mod.label}</h4>
+                    </div>
+                    <Switch
+                      checked={fullyEnabled}
+                      disabled={!isEditable}
+                      onCheckedChange={checked => toggleModuleMaster(mod.module, allActions, checked, scopeMissing)}
+                      className={partiallyEnabled ? "data-[state=unchecked]:bg-accent/50" : ""}
+                    />
+                  </div>
+
+                  {scope && (
+                    <div className={`ml-7 mb-3 rounded-md border p-2.5 ${scopeMissing ? "border-destructive/40 bg-destructive/5" : "border-amber-400/40 bg-amber-50 dark:bg-amber-500/10"}`}>
+                      <div className="flex items-center gap-1.5 mb-2">
+                        <AlertTriangle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                        <span className="text-xs font-semibold text-amber-700 dark:text-amber-300">
+                          Alcance (obligatorio)
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {scope.options.map(opt => {
+                          const active = selectedScope === opt;
+                          return (
+                            <button
+                              key={opt}
+                              type="button"
+                              disabled={!isEditable}
+                              onClick={() => handleScopeChange(opt)}
+                              className={`text-xs px-2.5 py-1 rounded-md border transition-colors ${
+                                active
+                                  ? "bg-primary text-primary-foreground border-primary"
+                                  : "bg-background text-foreground border-border hover:bg-muted"
+                              } ${!isEditable ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
+                            >
+                              {scopeLabels[opt] ?? opt}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {scopeMissing && (
+                        <p className="mt-2 text-xs text-destructive">
+                          Debes seleccionar un alcance para activar este módulo
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="space-y-1.5 ml-7">
+                    {mod.actions.map(action => {
+                      const key = `${mod.module}:${action.action}`;
+                      const checked = permSet.has(key);
+                      return (
+                        <label key={key} className="flex items-center gap-2.5 cursor-pointer group">
+                          <Checkbox
+                            checked={checked}
+                            disabled={!isEditable}
+                            onCheckedChange={v => togglePermission(mod.module, action.action, v === true)}
+                          />
+                          <span className={`text-sm ${checked ? "text-foreground" : "text-muted-foreground"} group-hover:text-foreground transition-colors`}>
+                            {action.label}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
             );
           };
 
-          return (
-            <Card key={mod.module}>
-              <CardContent className="pt-4 pb-3">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">{mod.icon}</span>
-                    <h4 className="font-semibold text-sm text-foreground">{mod.label}</h4>
-                  </div>
-                  <Switch
-                    checked={fullyEnabled}
-                    disabled={!isEditable}
-                    onCheckedChange={checked => toggleModuleMaster(mod.module, allActions, checked, scopeMissing)}
-                    className={partiallyEnabled ? "data-[state=unchecked]:bg-accent/50" : ""}
-                  />
-                </div>
+          // Build render order: keep modules in declaration order, but collect grouped (SIG) modules
+          // into a single block at the position where the group first appears.
+          const elements: JSX.Element[] = [];
+          const groupBuckets = new Map<string, typeof PERMISSION_MODULES>();
+          const groupOrder: string[] = [];
 
-                {scope && (
-                  <div className={`ml-7 mb-3 rounded-md border p-2.5 ${scopeMissing ? "border-destructive/40 bg-destructive/5" : "border-amber-400/40 bg-amber-50 dark:bg-amber-500/10"}`}>
-                    <div className="flex items-center gap-1.5 mb-2">
-                      <AlertTriangle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-                      <span className="text-xs font-semibold text-amber-700 dark:text-amber-300">
-                        Alcance (obligatorio)
+          PERMISSION_MODULES.forEach(mod => {
+            const group = (mod as any).group as string | undefined;
+            if (group) {
+              if (!groupBuckets.has(group)) {
+                groupBuckets.set(group, [] as any);
+                groupOrder.push(group);
+              }
+              (groupBuckets.get(group) as any).push(mod);
+            }
+          });
+
+          const renderedGroups = new Set<string>();
+          PERMISSION_MODULES.forEach(mod => {
+            const group = (mod as any).group as string | undefined;
+            if (group) {
+              if (!renderedGroups.has(group)) {
+                renderedGroups.add(group);
+                const mods = groupBuckets.get(group) as any;
+                elements.push(
+                  <div key={`group-${group}`} className="space-y-3">
+                    <div className="flex items-center gap-2 rounded-md border border-amber-400/40 bg-amber-50 dark:bg-amber-500/10 px-3 py-2">
+                      <span className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300">
+                        {group}
                       </span>
                     </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {scope.options.map(opt => {
-                        const active = selectedScope === opt;
-                        return (
-                          <button
-                            key={opt}
-                            type="button"
-                            disabled={!isEditable}
-                            onClick={() => handleScopeChange(opt)}
-                            className={`text-xs px-2.5 py-1 rounded-md border transition-colors ${
-                              active
-                                ? "bg-primary text-primary-foreground border-primary"
-                                : "bg-background text-foreground border-border hover:bg-muted"
-                            } ${!isEditable ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
-                          >
-                            {scopeLabels[opt] ?? opt}
-                          </button>
-                        );
-                      })}
+                    <div className="space-y-3 pl-3 border-l-2 border-amber-400/30">
+                      {mods.map((m: any) => renderModuleCard(m))}
                     </div>
-                    {scopeMissing && (
-                      <p className="mt-2 text-xs text-destructive">
-                        Debes seleccionar un alcance para activar este módulo
-                      </p>
-                    )}
                   </div>
-                )}
+                );
+              }
+            } else {
+              elements.push(renderModuleCard(mod));
+            }
+          });
 
-                <div className="space-y-1.5 ml-7">
-                  {mod.actions.map(action => {
-                    const key = `${mod.module}:${action.action}`;
-                    const checked = permSet.has(key);
-                    return (
-                      <label key={key} className="flex items-center gap-2.5 cursor-pointer group">
-                        <Checkbox
-                          checked={checked}
-                          disabled={!isEditable}
-                          onCheckedChange={v => togglePermission(mod.module, action.action, v === true)}
-                        />
-                        <span className={`text-sm ${checked ? "text-foreground" : "text-muted-foreground"} group-hover:text-foreground transition-colors`}>
-                          {action.label}
-                        </span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+          return elements;
+        })()}
       </div>
     </ScrollArea>
   );
