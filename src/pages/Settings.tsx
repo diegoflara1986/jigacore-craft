@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { usePermissions } from "@/hooks/usePermissions";
 import { cn } from "@/lib/utils";
-import { User, Bell, Palette, Building2, Users, Shield, Clock, Puzzle, ClipboardList } from "lucide-react";
+import { User, Bell, Palette, Building2, Users, Shield, Clock, Puzzle, ClipboardList, ShieldCheck } from "lucide-react";
 import { SettingsProfile } from "@/components/settings/SettingsProfile";
 import { SettingsNotifications } from "@/components/settings/SettingsNotifications";
 import { SettingsAppearance } from "@/components/settings/SettingsAppearance";
@@ -12,8 +12,9 @@ import { SettingsRoles } from "@/components/settings/SettingsRoles";
 import { SettingsSLA } from "@/components/settings/SettingsSLA";
 import { SettingsIntegrations } from "@/components/settings/SettingsIntegrations";
 import { SettingsAudit } from "@/components/settings/SettingsAudit";
+import { SettingsFlujossSIG } from "@/components/settings/SettingsFlujossSIG";
 
-type Section = "profile" | "notifications" | "appearance" | "workspace" | "users" | "roles" | "sla" | "integrations" | "audit";
+type Section = "profile" | "notifications" | "appearance" | "workspace" | "users" | "roles" | "sla" | "integrations" | "audit" | "flujos_sig";
 
 const PERSONAL_ITEMS = [
   { id: "profile" as Section, label: "Mi Perfil", icon: User },
@@ -29,6 +30,7 @@ const WORKSPACE_ITEMS = [
 ];
 
 const SYSTEM_ITEMS = [
+  { id: "flujos_sig" as Section, label: "Flujos SIG", icon: ShieldCheck },
   { id: "integrations" as Section, label: "Integraciones", icon: Puzzle },
   { id: "audit" as Section, label: "Auditoría", icon: ClipboardList },
 ];
@@ -75,6 +77,7 @@ export default function Settings() {
         {section === "users" && <SettingsUsers />}
         {section === "roles" && <SettingsRoles />}
         {section === "sla" && <SettingsSLA />}
+        {section === "flujos_sig" && <SettingsFlujossSIG />}
         {section === "integrations" && <SettingsIntegrations />}
         {section === "audit" && <SettingsAudit />}
       </main>
