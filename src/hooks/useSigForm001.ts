@@ -87,7 +87,13 @@ export function useSigForm001List() {
         .select(
           `
           *,
-          request:sig_requests(id, status, created_at, current_step_id, current_assignee),
+          request:sig_requests(
+            id, status, created_at, created_by, current_step_id, current_assignee,
+            current_step:sig_flow_steps(
+              id, step_type, step_order,
+              step_users:sig_flow_step_users(user_id)
+            )
+          ),
           reportado_por_profile:profiles!sig_form_001_reportado_por_fkey(id, full_name, avatar_url)
         `
         )
@@ -109,7 +115,13 @@ export function useSigForm001Detail(id: string | null) {
         .select(
           `
           *,
-          request:sig_requests(id, status, created_at, current_step_id, current_assignee),
+          request:sig_requests(
+            id, status, created_at, created_by, current_step_id, current_assignee,
+            current_step:sig_flow_steps(
+              id, step_type, step_order,
+              step_users:sig_flow_step_users(user_id)
+            )
+          ),
           reportado_por_profile:profiles!sig_form_001_reportado_por_fkey(id, full_name, avatar_url)
         `
         )
