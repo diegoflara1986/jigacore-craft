@@ -62,14 +62,40 @@ export default function Incidents() {
   const [page, setPage] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Incident | null>(null);
 
   const { data: stats } = useIncidentStats();
   const { data: slaConfigs } = useSlaConfigs();
   const { hasPermission } = usePermissions();
 
+  const duplicateIncident = useDuplicateIncident();
+  const deleteIncident = useDeleteIncident();
+
   const canCreate = hasPermission("incidentes", "crear");
   const canManage = hasPermission("incidentes", "gestionar");
   const canClose = hasPermission("incidentes", "cerrar");
+  const canDuplicate = hasPermission("incidentes", "duplicar");
+  const canDelete = hasPermission("incidentes", "eliminar");
+
+  const handleDuplicate = async (inc: Incident) => {
+    if (!user) return;
+    try {
+      const result = await duplicateIncident.mutateAsync({ incident: inc, userId: user.id });
+      toast({ title: `Incidente duplicado: ${result.ticket_code}` });
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteIncident.mutateAsync(deleteTarget.id);
+      toast({ title: "Incidente eliminado" });
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    }
+  };
 
   const filters: any = {
     search: search || undefined,
