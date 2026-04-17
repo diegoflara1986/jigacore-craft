@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ShieldAlert, Plus, ArrowLeft, Send, Check, X, Undo2, MessageSquare } from "lucide-react";
+import { ShieldAlert, Plus, ArrowLeft, Send, Check, X, Undo2, MessageSquare, MoreHorizontal, Eye, Copy, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -40,6 +40,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 
 import { useAuth } from "@/lib/auth";
+import { usePermissions } from "@/hooks/usePermissions";
 import {
   useSigForm001List,
   useSigForm001Detail,
@@ -49,10 +50,29 @@ import {
   useSigRequestNotes,
   useTransitionSigRequest,
   useAddSigRequestNote,
+  useDuplicateSigForm001,
+  useDeleteSigForm001,
   type SigForm001Row,
   type Form001Status,
 } from "@/hooks/useSigForm001";
 import { useWorkspaceUsersForSig } from "@/hooks/useSigFlows";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // ── Catálogos ──
 const MEDIO_REPORTE = [
@@ -261,6 +281,42 @@ export default function SigIncidentesSeguridad() {
 // ────────────────────────────────────────────────
 function ListView({ onOpen }: { onOpen: (id: string) => void }) {
   const { data: rows, isLoading } = useSigForm001List();
+  const { hasPermission } = usePermissions();
+  const duplicate = useDuplicateSigForm001();
+  const deleteOne = useDeleteSigForm001();
+
+  const [confirmDelete, setConfirmDelete] = useState<SigForm001Row | null>(null);
+
+  const canDuplicate = hasPermission("sig", "duplicar");
+  const canDelete = hasPermission("sig", "eliminar");
+
+  const handleDuplicate = async (row: SigForm001Row) => {
+    try {
+      const res = await duplicate.mutateAsync(row.id);
+      toast.success("Registro duplicado");
+      onOpen(res.id);
+    } catch (e: any) {
+      toast.error(e.message ?? "No se pudo duplicar");
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!confirmDelete?.request?.id) {
+      toast.error("Sin solicitud asociada");
+      setConfirmDelete(null);
+      return;
+    }
+    try {
+      await deleteOne.mutateAsync({
+        id: confirmDelete.id,
+        requestId: confirmDelete.request.id,
+      });
+      toast.success("Registro eliminado");
+      setConfirmDelete(null);
+    } catch (e: any) {
+      toast.error(e.message ?? "No se pudo eliminar");
+    }
+  };
 
   return (
     <Card>
@@ -275,7 +331,7 @@ function ListView({ onOpen }: { onOpen: (id: string) => void }) {
               <TableHead>Estado</TableHead>
               <TableHead>Reportado por</TableHead>
               <TableHead>Fecha</TableHead>
-              <TableHead className="text-right">Acción</TableHead>
+              <TableHead className="text-right w-[80px]">Acción</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -326,23 +382,73 @@ function ListView({ onOpen }: { onOpen: (id: string) => void }) {
                 <TableCell className="text-sm text-muted-foreground">
                   {fmtDate(r.fecha_registro)}
                 </TableCell>
-                <TableCell className="text-right">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onOpen(r.id);
-                    }}
-                  >
-                    Ver detalle
-                  </Button>
+                <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-44">
+                      <DropdownMenuItem onClick={() => onOpen(r.id)}>
+                        <Eye className="h-4 w-4 mr-2" />
+                        Ver detalle
+                      </DropdownMenuItem>
+                      {canDuplicate && (
+                        <DropdownMenuItem
+                          onClick={() => handleDuplicate(r)}
+                          disabled={duplicate.isPending}
+                        >
+                          <Copy className="h-4 w-4 mr-2" />
+                          Duplicar
+                        </DropdownMenuItem>
+                      )}
+                      {canDelete && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => setConfirmDelete(r)}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Eliminar
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </CardContent>
+
+      <AlertDialog
+        open={!!confirmDelete}
+        onOpenChange={(o) => !o && setConfirmDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminar registro</AlertDialogTitle>
+            <AlertDialogDescription>
+              ¿Seguro que deseas eliminar{" "}
+              <span className="font-medium">{confirmDelete?.codigo ?? confirmDelete?.titulo}</span>?
+              Esta acción no se puede deshacer y también eliminará el flujo asociado.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleConfirmDelete}
+              disabled={deleteOne.isPending}
+            >
+              {deleteOne.isPending ? "Eliminando…" : "Eliminar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
@@ -915,21 +1021,33 @@ function FlowSidebar({ row, onBack }: { row: SigForm001Row; onBack: () => void }
     to: Form001Status | null;
     label: string;
     stepType?: string;
-  }>({ open: false, to: null, label: "" });
+    requireComment: boolean;
+  }>({ open: false, to: null, label: "", requireComment: false });
   const [comment, setComment] = useState("");
 
   const status = row.request?.status ?? "borrador";
-  const isCreator = row.reportado_por === profile?.id;
-  const isAssignee = row.request?.current_assignee === profile?.id;
+  const isCreator = row.request?.created_by === profile?.id;
+  const isAssignedToStep =
+    row.request?.current_step?.step_users?.some(
+      (su: any) => su.user_id === profile?.id
+    ) ?? false;
 
-  const openAction = (to: Form001Status, label: string, stepType?: string) => {
-    setActionDialog({ open: true, to, label, stepType });
+  const openAction = (
+    to: Form001Status,
+    label: string,
+    stepType: string | undefined,
+    requireComment: boolean
+  ) => {
+    setActionDialog({ open: true, to, label, stepType, requireComment });
     setComment("");
   };
 
+  const closeDialog = () =>
+    setActionDialog({ open: false, to: null, label: "", requireComment: false });
+
   const confirmAction = async () => {
     if (!actionDialog.to) return;
-    if (actionDialog.to !== "solicitado" && !comment.trim()) {
+    if (actionDialog.requireComment && !comment.trim()) {
       toast.error("Comentario obligatorio");
       return;
     }
@@ -942,7 +1060,7 @@ function FlowSidebar({ row, onBack }: { row: SigForm001Row; onBack: () => void }
         comment: comment.trim() || undefined,
       });
       toast.success("Estado actualizado");
-      setActionDialog({ open: false, to: null, label: "" });
+      closeDialog();
     } catch (e: any) {
       toast.error(e.message ?? "No se pudo actualizar");
     }
@@ -975,35 +1093,43 @@ function FlowSidebar({ row, onBack }: { row: SigForm001Row; onBack: () => void }
 
           <div className="space-y-2">
             {status === "borrador" && isCreator && (
-              <Button className="w-full" onClick={() => openAction("solicitado", "Validar y enviar", "solicitar")}>
+              <Button
+                className="w-full"
+                onClick={() =>
+                  openAction("solicitado", "Validar y enviar", "solicitar", false)
+                }
+              >
                 <Send className="h-4 w-4 mr-2" />
                 Validar y enviar
               </Button>
             )}
-            {status === "solicitado" && isAssignee && (
+            {status === "solicitado" && isAssignedToStep && (
               <>
                 <Button
-                  className="w-full"
-                  onClick={() => openAction("en_revision", "Aprobar revisión", "revisar")}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white"
+                  onClick={() =>
+                    openAction("en_revision", "Aprobar revisión", "revisar", false)
+                  }
                 >
                   <Check className="h-4 w-4 mr-2" />
                   Aprobar revisión
                 </Button>
                 <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => openAction("borrador", "Devolver", "revisar")}
+                  className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+                  onClick={() =>
+                    openAction("borrador", "Devolver", "revisar", true)
+                  }
                 >
                   <Undo2 className="h-4 w-4 mr-2" />
                   Devolver
                 </Button>
               </>
             )}
-            {status === "en_revision" && isAssignee && (
+            {status === "en_revision" && isAssignedToStep && (
               <>
                 <Button
-                  className="w-full"
-                  onClick={() => openAction("aprobado", "Aprobar", "aprobar")}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white"
+                  onClick={() => openAction("aprobado", "Aprobar", "aprobar", false)}
                 >
                   <Check className="h-4 w-4 mr-2" />
                   Aprobar
@@ -1011,16 +1137,19 @@ function FlowSidebar({ row, onBack }: { row: SigForm001Row; onBack: () => void }
                 <Button
                   variant="destructive"
                   className="w-full"
-                  onClick={() => openAction("rechazado", "Rechazar", "aprobar")}
+                  onClick={() => openAction("rechazado", "Rechazar", "aprobar", true)}
                 >
                   <X className="h-4 w-4 mr-2" />
                   Rechazar
                 </Button>
               </>
             )}
-            {!isCreator && !isAssignee && (
+            {!(
+              (status === "borrador" && isCreator) ||
+              ((status === "solicitado" || status === "en_revision") && isAssignedToStep)
+            ) && (
               <p className="text-xs text-muted-foreground">
-                No tienes acciones disponibles en este estado.
+                No tienes acciones en este estado.
               </p>
             )}
           </div>
@@ -1102,30 +1231,25 @@ function FlowSidebar({ row, onBack }: { row: SigForm001Row; onBack: () => void }
 
       <Dialog
         open={actionDialog.open}
-        onOpenChange={(o) => !o && setActionDialog({ open: false, to: null, label: "" })}
+        onOpenChange={(o) => !o && closeDialog()}
       >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{actionDialog.label}</DialogTitle>
             <DialogDescription>
-              {actionDialog.to === "solicitado"
-                ? "Confirmar el envío de esta solicitud."
-                : "Agrega un comentario obligatorio para registrar esta acción."}
+              {actionDialog.requireComment
+                ? "Agrega un comentario obligatorio para registrar esta acción."
+                : "Confirmar esta acción. Puedes agregar un comentario opcional."}
             </DialogDescription>
           </DialogHeader>
           <Textarea
             rows={4}
-            placeholder={
-              actionDialog.to === "solicitado" ? "Comentario opcional…" : "Comentario *"
-            }
+            placeholder={actionDialog.requireComment ? "Comentario *" : "Comentario opcional…"}
             value={comment}
             onChange={(e) => setComment(e.target.value)}
           />
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setActionDialog({ open: false, to: null, label: "" })}
-            >
+            <Button variant="outline" onClick={closeDialog}>
               Cancelar
             </Button>
             <Button onClick={confirmAction} disabled={transition.isPending}>
