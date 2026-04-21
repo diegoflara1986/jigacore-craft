@@ -302,24 +302,32 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
                 </div>
               )}
               <div className="flex items-center gap-2">
-                {!effectiveReadOnly && (
-                  <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={handleDeleteClick} title="Eliminar">
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                )}
-                {storyInActiveSprint && isAdmin && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={handleDeleteClick} title="Eliminar (Admin)">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Eliminar (requiere confirmación de admin)</TooltipContent>
-                  </Tooltip>
-                )}
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleDuplicate} title="Duplicar">
-                  <Copy className="h-4 w-4" />
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-7 w-7">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48 bg-popover">
+                    {canDuplicatePerm && (
+                      <DropdownMenuItem onClick={handleDuplicate}>
+                        <Copy className="h-4 w-4 mr-2" /> Duplicar
+                      </DropdownMenuItem>
+                    )}
+                    {(canDelete() || (storyInActiveSprint && isAdmin)) && canDuplicatePerm && (
+                      <DropdownMenuSeparator />
+                    )}
+                    {(canDelete() || (storyInActiveSprint && isAdmin)) && (
+                      <DropdownMenuItem
+                        className="text-destructive focus:text-destructive"
+                        onClick={handleDeleteClick}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        {storyInActiveSprint && isAdmin ? "Eliminar (Admin)" : "Eliminar"}
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <span className="text-sm text-muted-foreground ml-2">{TYPES.find(t => t.value === story.type)?.label}</span>
                 {storyInActiveSprint && <Lock className="h-3.5 w-3.5 text-blue-500" />}
               </div>
