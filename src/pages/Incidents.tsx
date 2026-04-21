@@ -26,6 +26,7 @@ import { AlertTriangle, Bug, CheckCircle2, Clock, Search, X, ChevronLeft, Chevro
 import { IncidentDetailSheet } from "@/components/incidents/IncidentDetailSheet";
 import { IncidentCreateModal } from "@/components/incidents/IncidentCreateModal";
 import { useAuth } from "@/lib/auth";
+import { useProjects } from "@/hooks/useProjects";
 
 function timeAgo(date: string) {
   const diff = Date.now() - new Date(date).getTime();
@@ -67,6 +68,13 @@ export default function Incidents() {
   const { data: stats } = useIncidentStats();
   const { data: slaConfigs } = useSlaConfigs();
   const { hasPermission } = usePermissions();
+  const { hasScope } = usePermissions();
+  const isAdmin = ["admin", "super_admin"].includes(profile?.role ?? "");
+  const onlyAssigned = !isAdmin && hasScope("incidentes", "solo_asignados");
+  const { data: assignedProjects } = useProjects(undefined, undefined, onlyAssigned);
+  const assignedProjectIds = onlyAssigned
+    ? (assignedProjects ?? []).map((p) => p.id)
+    : null;
 
   const duplicateIncident = useDuplicateIncident();
   const deleteIncident = useDeleteIncident();
@@ -109,7 +117,10 @@ export default function Incidents() {
     page,
   };
 
-  const { data: result, isLoading } = useIncidents(filters);
+  const { data: result, isLoading } = useIncidents({
+    ...filters,
+    ...(assignedProjectIds !== null && { projectIds: assignedProjectIds }),
+  });
   const incidents = result?.data ?? [];
   const totalCount = result?.count ?? 0;
 

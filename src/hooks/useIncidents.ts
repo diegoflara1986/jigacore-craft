@@ -97,6 +97,7 @@ export function useIncidents(filters?: {
   severity?: string;
   category?: string;
   projectId?: string;
+  projectIds?: string[];
   assignedTo?: string;
   createdBy?: string;
   page?: number;
@@ -118,6 +119,10 @@ export function useIncidents(filters?: {
       if (filters?.projectId) q = q.eq("project_id", filters.projectId);
       if (filters?.assignedTo) q = q.eq("assigned_to", filters.assignedTo);
       if (filters?.createdBy) q = q.eq("created_by", filters.createdBy);
+      if (filters?.projectIds !== undefined) {
+        if (filters.projectIds.length === 0) return { data: [] as Incident[], count: 0 };
+        q = q.in("project_id", filters.projectIds);
+      }
 
       const page = filters?.page ?? 0;
       q = q.range(page * 20, page * 20 + 19);
