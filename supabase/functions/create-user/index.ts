@@ -52,6 +52,49 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const { action } = body;
 
+    if (action === "delete") {
+      const { user_id } = body;
+      if (!user_id) {
+        return new Response(JSON.stringify({ error: "user_id es requerido" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const { data: targetProfile } = await adminClient
+        .from("profiles")
+        .select("workspace_id")
+        .eq("id", user_id)
+        .single();
+
+      if (!targetProfile || targetProfile.workspace_id !== callerProfile.workspace_id) {
+        return new Response(JSON.stringify({ error: "Usuario no pertenece a tu workspace" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      if (user_id === caller.id) {
+        return new Response(JSON.stringify({ error: "No puedes eliminar tu propia cuenta" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const { error: deleteError } = await adminClient.auth.admin.deleteUser(user_id);
+      if (deleteError) {
+        return new Response(JSON.stringify({ error: deleteError.message }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     if (action === "update") {
       const { user_id, role, role_id, full_name, password } = body;
 
