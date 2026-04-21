@@ -71,6 +71,9 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
   const createStory = useCreateUserStory();
   const { profile, user } = useAuth();
   const { hasPermission } = usePermissions();
+  const canEditPerm = hasPermission("backlog", "editar");
+  const canDeletePerm = hasPermission("backlog", "eliminar");
+  const canDuplicatePerm = hasPermission("backlog", "duplicar");
   const qc = useQueryClient();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
@@ -96,7 +99,7 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
   const storyInActiveSprint = isInActiveSprint || (story?.sprint_id ? sprints?.find(s => s.id === story.sprint_id)?.status === "active" : false);
   const isAdmin = hasPermission("backlog", "bloquear");
   const sprintLocked = storyInActiveSprint && !isAdmin;
-  const effectiveReadOnly = readOnly || (storyInActiveSprint && !isAdmin);
+  const effectiveReadOnly = readOnly || !canEditPerm || (storyInActiveSprint && !isAdmin);
 
   // Comments
   const { data: comments } = useQuery({
@@ -172,6 +175,7 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
 
   const canDelete = () => {
     if (!story) return false;
+    if (!canDeletePerm) return false;
     if (story.status === "done") return false;
     if (storyInActiveSprint && !isAdmin) return false;
     return true;
