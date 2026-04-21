@@ -27,11 +27,11 @@ export default function Projects() {
   const [view, setView] = useState<"grid" | "list">("grid");
   const [modalOpen, setModalOpen] = useState(false);
   const [editProject, setEditProject] = useState<Project | null>(null);
-  const { data: projects, isLoading } = useProjects(status, search);
   const { profile } = useAuth();
-  const { hasPermission } = usePermissions();
-
+  const { hasPermission, hasScope } = usePermissions();
   const isAdmin = ["admin", "super_admin"].includes(profile?.role ?? "");
+  const onlyAssigned = !isAdmin && hasScope("proyectos", "solo_asignados");
+  const { data: projects, isLoading } = useProjects(status, search, onlyAssigned);
   const canCreate = hasPermission("proyectos", "crear");
 
   const openEdit = (p: Project) => { setEditProject(p); setModalOpen(true); };

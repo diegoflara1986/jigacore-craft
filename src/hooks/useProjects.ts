@@ -36,10 +36,44 @@ export interface ProjectMember {
   };
 }
 
-export function useProjects(statusFilter?: string, search?: string) {
+export function useProjects(statusFilter?: string, search?: string, onlyAssigned?: boolean) {
+  const { profile } = useAuth();
+
   return useQuery({
-    queryKey: ["projects", statusFilter, search],
+    queryKey: ["projects", statusFilter, search, onlyAssigned],
     queryFn: async () => {
+      if (onlyAssigned && profile?.id) {
+        // Primero obtener los project_ids donde el usuario es miembro
+        const { data: memberships, error: memberError } = await supabase
+          .from("project_members")
+          .select("project_id")
+          .eq("user_id", profile.id);
+
+        if (memberError) throw memberError;
+
+        const projectIds = (memberships ?? []).map((m) => m.project_id);
+
+        if (projectIds.length === 0) return [] as Project[];
+
+        let query = supabase
+          .from("projects")
+          .select("*")
+          .in("id", projectIds)
+          .order("created_at", { ascending: false });
+
+        if (statusFilter && statusFilter !== "all") {
+          query = query.eq("status", statusFilter);
+        }
+        if (search) {
+          query = query.ilike("name", `%${search}%`);
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+        return (data ?? []) as Project[];
+      }
+
+      // Comportamiento normal: todos los proyectos del workspace
       let query = supabase.from("projects").select("*").order("created_at", { ascending: false });
       if (statusFilter && statusFilter !== "all") {
         query = query.eq("status", statusFilter);
