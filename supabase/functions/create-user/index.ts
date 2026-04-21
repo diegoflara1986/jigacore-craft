@@ -81,6 +81,20 @@ Deno.serve(async (req) => {
         });
       }
 
+      const checks = await Promise.all([
+        adminClient.from("user_stories").select("id").or(`assigned_to.eq.${user_id},created_by.eq.${user_id}`).limit(1),
+        adminClient.from("time_logs").select("id").eq("user_id", user_id).limit(1),
+        adminClient.from("comments").select("id").eq("user_id", user_id).limit(1),
+        adminClient.from("project_members").select("id").eq("user_id", user_id).limit(1),
+      ]);
+      const hasRecords = checks.some(({ data }) => data && data.length > 0);
+      if (hasRecords) {
+        return new Response(
+          JSON.stringify({ error: "Este usuario tiene registros asociados y no puede eliminarse. Solo puedes desactivarlo." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       const { error: deleteError } = await adminClient.auth.admin.deleteUser(user_id);
       if (deleteError) {
         return new Response(JSON.stringify({ error: deleteError.message }), {
