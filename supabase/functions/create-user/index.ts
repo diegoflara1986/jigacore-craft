@@ -90,8 +90,8 @@ Deno.serve(async (req) => {
       const hasRecords = checks.some(({ data }) => data && data.length > 0);
       if (hasRecords) {
         return new Response(
-          JSON.stringify({ error: "Este usuario tiene registros asociados y no puede eliminarse. Solo puedes desactivarlo." }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          JSON.stringify({ success: false, code: "has_records", error: "Este usuario tiene registros asociados y no puede eliminarse. Solo puedes desactivarlo." }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
