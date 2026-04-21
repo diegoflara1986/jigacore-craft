@@ -237,7 +237,7 @@ export function SettingsUsers() {
                           {u.is_active === false && (
                             <DropdownMenuItem
                               onClick={() => handleDelete(u.id)}
-                              className="text-destructive"
+                              className="text-destructive font-medium"
                             >
                               Eliminar usuario
                             </DropdownMenuItem>
