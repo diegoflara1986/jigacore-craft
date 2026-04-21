@@ -14,8 +14,9 @@ import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
-import { Trash2, Plus, X, Copy, Lock, Upload, FileText, Image as ImageIcon, Video, Download } from "lucide-react";
+import { Trash2, Plus, X, Copy, Lock, Upload, FileText, Image as ImageIcon, Video, Download, MoreVertical } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
@@ -70,6 +71,9 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
   const createStory = useCreateUserStory();
   const { profile, user } = useAuth();
   const { hasPermission } = usePermissions();
+  const canEditPerm = hasPermission("backlog", "editar");
+  const canDeletePerm = hasPermission("backlog", "eliminar");
+  const canDuplicatePerm = hasPermission("backlog", "duplicar");
   const qc = useQueryClient();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
@@ -95,7 +99,7 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
   const storyInActiveSprint = isInActiveSprint || (story?.sprint_id ? sprints?.find(s => s.id === story.sprint_id)?.status === "active" : false);
   const isAdmin = hasPermission("backlog", "bloquear");
   const sprintLocked = storyInActiveSprint && !isAdmin;
-  const effectiveReadOnly = readOnly || (storyInActiveSprint && !isAdmin);
+  const effectiveReadOnly = readOnly || !canEditPerm || (storyInActiveSprint && !isAdmin);
 
   // Comments
   const { data: comments } = useQuery({
@@ -171,6 +175,7 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
 
   const canDelete = () => {
     if (!story) return false;
+    if (!canDeletePerm) return false;
     if (story.status === "done") return false;
     if (storyInActiveSprint && !isAdmin) return false;
     return true;
@@ -297,24 +302,32 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
                 </div>
               )}
               <div className="flex items-center gap-2">
-                {!effectiveReadOnly && (
-                  <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={handleDeleteClick} title="Eliminar">
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                )}
-                {storyInActiveSprint && isAdmin && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={handleDeleteClick} title="Eliminar (Admin)">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Eliminar (requiere confirmación de admin)</TooltipContent>
-                  </Tooltip>
-                )}
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleDuplicate} title="Duplicar">
-                  <Copy className="h-4 w-4" />
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-7 w-7">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48 bg-popover">
+                    {canDuplicatePerm && (
+                      <DropdownMenuItem onClick={handleDuplicate}>
+                        <Copy className="h-4 w-4 mr-2" /> Duplicar
+                      </DropdownMenuItem>
+                    )}
+                    {(canDelete() || (storyInActiveSprint && isAdmin)) && canDuplicatePerm && (
+                      <DropdownMenuSeparator />
+                    )}
+                    {(canDelete() || (storyInActiveSprint && isAdmin)) && (
+                      <DropdownMenuItem
+                        className="text-destructive focus:text-destructive"
+                        onClick={handleDeleteClick}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        {storyInActiveSprint && isAdmin ? "Eliminar (Admin)" : "Eliminar"}
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <span className="text-sm text-muted-foreground ml-2">{TYPES.find(t => t.value === story.type)?.label}</span>
                 {storyInActiveSprint && <Lock className="h-3.5 w-3.5 text-blue-500" />}
               </div>
