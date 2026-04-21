@@ -15,6 +15,9 @@ import { ReportTeamTab } from "@/components/reports/ReportTeamTab";
 import { ReportFinancialTab } from "@/components/reports/ReportFinancialTab";
 import { ReportIncidentsTab } from "@/components/reports/ReportIncidentsTab";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/lib/auth";
+import { usePermissions } from "@/hooks/usePermissions";
+import { useProjects } from "@/hooks/useProjects";
 
 const PERIOD_OPTIONS = [
   { value: "week", label: "Última semana" },
@@ -45,7 +48,16 @@ export default function Reports() {
 
   const projectId = selectedProject !== "all" ? selectedProject : undefined;
 
-  const { data: projects = [] } = useAllProjects();
+  const { profile } = useAuth();
+  const { hasScope } = usePermissions();
+  const isAdmin = ["admin", "super_admin"].includes(profile?.role ?? "");
+  const onlyAssigned = !isAdmin && hasScope("reportes", "solo_asignados");
+  const { data: assignedProjects } = useProjects(undefined, undefined, onlyAssigned);
+  const assignedProjectIds = onlyAssigned
+    ? (assignedProjects ?? []).map((p) => p.id)
+    : undefined;
+
+  const { data: projects = [] } = useAllProjects(assignedProjectIds);
   const { data: stories = [] } = useAllUserStories(projectId);
   const { data: sprints = [] } = useAllSprints(projectId);
   const { data: timeLogs = [] } = useAllTimeLogs(projectId, dateFrom, dateTo);
