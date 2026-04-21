@@ -1,11 +1,19 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-export function useAllProjects() {
+export function useAllProjects(projectIds?: string[]) {
   return useQuery({
-    queryKey: ["all-projects-report"],
+    queryKey: ["all-projects-report", projectIds],
     queryFn: async () => {
-      const { data, error } = await supabase.from("projects").select("id, name, color, budget, currency, status, start_date, end_date").order("name");
+      let q = supabase
+        .from("projects")
+        .select("id, name, color, budget, currency, status, start_date, end_date")
+        .order("name");
+      if (projectIds !== undefined) {
+        if (projectIds.length === 0) return [];
+        q = q.in("id", projectIds);
+      }
+      const { data, error } = await q;
       if (error) throw error;
       return data ?? [];
     },
