@@ -10,6 +10,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { Plus, Trash2, Clock } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { usePermissions } from "@/hooks/usePermissions";
+import { PermissionDeniedDialog } from "@/components/PermissionDeniedDialog";
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RTooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 
 const ARCHIVED_TOOLTIP = "Proyecto archivado. Restaura el proyecto para editar";
@@ -18,7 +19,9 @@ interface Props { projectId: string; isArchived?: boolean; }
 
 export function ProjectTimeTab({ projectId, isArchived = false }: Props) {
   const { profile } = useAuth();
-  const { hasScope } = usePermissions();
+  const { hasScope, guardAction, hasPermission, denied, closeDenied } = usePermissions(projectId);
+  const canCreate = hasPermission("tiempo", "crear");
+  const canDelete = hasPermission("tiempo", "eliminar");
   const onlyOwn = hasScope("tiempo", "solo_propios");
   const { data: logs } = useTimeLogs(projectId, onlyOwn ? profile?.id : undefined);
   const { data: members } = useProjectMembers(projectId);
@@ -45,7 +48,7 @@ export function ProjectTimeTab({ projectId, isArchived = false }: Props) {
         <Tooltip>
           <TooltipTrigger asChild>
             <span>
-              <Button size="sm" disabled={isArchived} className={isArchived ? "opacity-50" : ""} onClick={() => setShowManual(true)}>
+              <Button size="sm" disabled={isArchived} className={isArchived ? "opacity-50" : ""} onClick={() => guardAction("tiempo", "crear", "registrar tiempo", () => setShowManual(true))}>
                 <Plus className="h-4 w-4 mr-1" />Registrar tiempo
               </Button>
             </span>
@@ -106,7 +109,7 @@ export function ProjectTimeTab({ projectId, isArchived = false }: Props) {
                   <TableCell className="text-sm text-muted-foreground max-w-40 truncate">{l.description || "—"}</TableCell>
                   <TableCell>
                     {l.user_id === profile?.id && !isArchived && (
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteLog.mutate(l.id)}>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => guardAction("tiempo", "eliminar", "eliminar registro de tiempo", () => deleteLog.mutate(l.id))}>
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
                     )}
@@ -122,6 +125,7 @@ export function ProjectTimeTab({ projectId, isArchived = false }: Props) {
       </Card>
 
       {!isArchived && <ManualTimeLogModal open={showManual} onOpenChange={setShowManual} projectId={projectId} />}
+      <PermissionDeniedDialog open={denied.open} onOpenChange={closeDenied} actionLabel={denied.actionLabel} requiredPermission={denied.requiredPermission} />
     </div>
   );
 }
