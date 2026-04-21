@@ -78,6 +78,19 @@ export function SettingsUsers() {
     }
   };
 
+  const handleDelete = async (userId: string) => {
+    if (!confirm("¿Eliminar este usuario permanentemente? Esta acción no se puede deshacer.")) return;
+    const { error } = await supabase.functions.invoke("create-user", {
+      body: { action: "delete", user_id: userId },
+    });
+    if (error) {
+      toast({ title: "Error al eliminar usuario", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Usuario eliminado" });
+      qc.invalidateQueries({ queryKey: ["workspace-users"] });
+    }
+  };
+
   const handleCreateUser = async () => {
     if (!createForm.email || !createForm.password || !createForm.role_id) {
       toast({ title: "Todos los campos son requeridos", variant: "destructive" });
@@ -220,6 +233,14 @@ export function SettingsUsers() {
                             <DropdownMenuItem onClick={() => toggleActive(u.id, false)} className="text-destructive">Desactivar usuario</DropdownMenuItem>
                           ) : (
                             <DropdownMenuItem onClick={() => toggleActive(u.id, true)}>Reactivar usuario</DropdownMenuItem>
+                          )}
+                          {u.is_active === false && (
+                            <DropdownMenuItem
+                              onClick={() => handleDelete(u.id)}
+                              className="text-destructive"
+                            >
+                              Eliminar usuario
+                            </DropdownMenuItem>
                           )}
                         </DropdownMenuContent>
                       </DropdownMenu>
