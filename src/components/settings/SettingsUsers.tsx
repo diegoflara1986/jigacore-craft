@@ -80,14 +80,26 @@ export function SettingsUsers() {
 
   const handleDelete = async (userId: string) => {
     if (!confirm("¿Eliminar este usuario permanentemente? Esta acción no se puede deshacer.")) return;
-    const { error } = await supabase.functions.invoke("create-user", {
-      body: { action: "delete", user_id: userId },
-    });
-    if (error) {
-      toast({ title: "Error al eliminar usuario", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Usuario eliminado" });
+
+    try {
+      const { data, error } = await supabase.functions.invoke("create-user", {
+        body: { action: "delete", user_id: userId },
+      });
+      if (error) {
+        toast({ title: "Error al eliminar usuario", description: error.message, variant: "destructive" });
+        return;
+      }
+      if (data?.success === false) {
+        toast({ title: "No se puede eliminar", description: data.error, variant: "destructive" });
+        return;
+      }
+      toast({ title: "Usuario eliminado correctamente" });
+      qc.setQueryData(["workspace-users"], (old: any[]) =>
+        (old ?? []).filter((u: any) => u.id !== userId)
+      );
       qc.invalidateQueries({ queryKey: ["workspace-users"] });
+    } catch (err: any) {
+      toast({ title: "Error inesperado", description: err.message, variant: "destructive" });
     }
   };
 
