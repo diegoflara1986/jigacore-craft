@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Plus, Trash2, Clock } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import { usePermissions } from "@/hooks/usePermissions";
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RTooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 
 const ARCHIVED_TOOLTIP = "Proyecto archivado. Restaura el proyecto para editar";
@@ -17,7 +18,9 @@ interface Props { projectId: string; isArchived?: boolean; }
 
 export function ProjectTimeTab({ projectId, isArchived = false }: Props) {
   const { profile } = useAuth();
-  const { data: logs } = useTimeLogs(projectId);
+  const { hasScope } = usePermissions();
+  const onlyOwn = hasScope("tiempo", "solo_propios");
+  const { data: logs } = useTimeLogs(projectId, onlyOwn ? profile?.id : undefined);
   const { data: members } = useProjectMembers(projectId);
   const deleteLog = useDeleteTimeLog();
   const [showManual, setShowManual] = useState(false);
