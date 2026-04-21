@@ -167,8 +167,10 @@ Deno.serve(async (req) => {
 
     const { error: profileError } = await adminClient
       .from("profiles")
-      .update(profileUpdates)
-      .eq("id", newUser.user.id);
+      .upsert({
+        id: newUser.user.id,
+        ...profileUpdates,
+      }, { onConflict: "id" });
 
     if (profileError) {
       return new Response(JSON.stringify({ error: profileError.message }), {
