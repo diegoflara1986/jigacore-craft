@@ -169,6 +169,7 @@ Deno.serve(async (req) => {
       .from("profiles")
       .upsert({
         id: newUser.user.id,
+        email: email,
         ...profileUpdates,
       }, { onConflict: "id" });
 
