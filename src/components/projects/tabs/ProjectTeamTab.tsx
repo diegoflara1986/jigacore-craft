@@ -36,13 +36,14 @@ export function ProjectTeamTab({ projectId, members, isArchived = false }: { pro
   const { data: workspaceUsers } = useQuery({
     queryKey: ["workspace-users"],
     queryFn: async () => {
-      const { data } = await supabase.from("profiles_safe_view").select("id, full_name, email, avatar_url");
+      const { data } = await supabase.from("profiles_safe_view").select("id, full_name, email, avatar_url, is_active");
       return data ?? [];
     },
   });
 
   const availableUsers = (workspaceUsers ?? []).filter(
-    (u) => !members.some((m) => m.user_id === u.id) && (
+    (u) => u.is_active !== false &&
+      !members.some((m) => m.user_id === u.id) && (
       u.full_name?.toLowerCase().includes(userSearch.toLowerCase()) ||
       u.email?.toLowerCase().includes(userSearch.toLowerCase())
     )
