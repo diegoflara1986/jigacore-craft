@@ -95,6 +95,18 @@ Deno.serve(async (req) => {
         );
       }
 
+      // Eliminar profile explícitamente antes de borrar auth user
+      const { error: profileDeleteError } = await adminClient
+        .from("profiles")
+        .delete()
+        .eq("id", user_id);
+      if (profileDeleteError) {
+        return new Response(JSON.stringify({ error: profileDeleteError.message }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       const { error: deleteError } = await adminClient.auth.admin.deleteUser(user_id);
       if (deleteError) {
         return new Response(JSON.stringify({ error: deleteError.message }), {
