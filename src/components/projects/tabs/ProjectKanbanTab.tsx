@@ -19,6 +19,7 @@ import { es } from "date-fns/locale";
 import { UserStoryDetailSheet } from "../UserStoryDetailSheet";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 const COLUMNS = [
   { id: "backlog", label: "📦 Backlog", limit: 0 },
@@ -54,7 +55,7 @@ export function ProjectKanbanTab({ projectId, isArchived = false }: Props) {
   const { data: members } = useProjectMembers(projectId);
   const updateStory = useUpdateUserStory();
   const createStory = useCreateUserStory();
-  const { guardAction, denied, closeDenied } = usePermissions(projectId);
+  const { guardAction, denied, closeDenied, hasPermission } = usePermissions(projectId);
 
   const activeSprint = sprints?.find((s) => s.status === "active");
   const [selectedSprintId, setSelectedSprintId] = useState<string | undefined>(undefined);
