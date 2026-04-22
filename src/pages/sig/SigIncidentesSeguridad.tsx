@@ -581,7 +581,8 @@ function FormSections({ row }: { row: SigForm001Row }) {
   const value = useMemo(() => ({ ...row, ...local }), [row, local]);
   const set = (k: keyof SigForm001Row, v: any) => setLocal((p) => ({ ...p, [k]: v }));
 
-  const isReadOnly = row.request?.status && row.request.status !== "borrador";
+  const canEditar = hasPermission("sig_form_001", "editar");
+  const isReadOnly = !canEditar || (row.request?.status && row.request.status !== "borrador");
 
   const handleSave = async () => {
     try {
