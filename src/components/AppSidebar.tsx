@@ -43,6 +43,12 @@ export function AppSidebar() {
   const currentPath = location.pathname;
   const { hasPermission } = usePermissions();
 
+  const canSeeProyectos = hasPermission("proyectos", "ver");
+  const canSeeMiTrabajo = hasPermission("mi_trabajo", "ver");
+  const canSeeIncidentes = hasPermission("incidentes", "ver");
+  const canSeeReportes = hasPermission("reportes", "ver");
+  const canSeeNotificaciones = hasPermission("notificaciones", "ver");
+
   // Visibilidad de sub-ítems SIG según permisos granulares
   const canSeeIncidentesSeguridad =
     hasPermission("sig_form_001", "ver") || hasPermission("sig_form_001", "registrar");
@@ -108,6 +114,7 @@ export function AppSidebar() {
               </SidebarMenuItem>
 
               {/* Grupo Proyectos - colapsable */}
+              {canSeeProyectos && (
               <Collapsible defaultOpen={isProyectosActive} className="group/collapsible">
                 <SidebarMenuItem>
                   <CollapsibleTrigger asChild>
@@ -125,29 +132,34 @@ export function AppSidebar() {
                 {!collapsed && (
                   <CollapsibleContent>
                     <SidebarMenu className="pl-4 border-l border-sidebar-border/50 ml-4 mt-1 space-y-1">
-                      {proyectosSubItems.map((item) => (
-                        <SidebarMenuItem key={item.title}>
-                          <SidebarMenuButton asChild>
-                            <NavLink
-                              to={item.url}
-                              className={cn(
-                                "flex items-center gap-2 px-3 py-1.5 rounded-md text-xs transition-colors",
-                                isActivePath(currentPath, item.url)
-                                  ? "text-sidebar-primary font-medium"
-                                  : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
-                              )}
-                            >
-                              <span>{item.title}</span>
-                            </NavLink>
-                          </SidebarMenuButton>
-                        </SidebarMenuItem>
-                      ))}
+                      {proyectosSubItems.map((item) => {
+                        if (item.url === "/my-work" && !canSeeMiTrabajo) return null;
+                        return (
+                          <SidebarMenuItem key={item.title}>
+                            <SidebarMenuButton asChild>
+                              <NavLink
+                                to={item.url}
+                                className={cn(
+                                  "flex items-center gap-2 px-3 py-1.5 rounded-md text-xs transition-colors",
+                                  isActivePath(currentPath, item.url)
+                                    ? "text-sidebar-primary font-medium"
+                                    : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+                                )}
+                              >
+                                <span>{item.title}</span>
+                              </NavLink>
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                        );
+                      })}
                     </SidebarMenu>
                   </CollapsibleContent>
                 )}
               </Collapsible>
+              )}
 
               {/* Incidentes */}
+              {canSeeIncidentes && (
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <NavLink
@@ -160,6 +172,7 @@ export function AppSidebar() {
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+              )}
 
               {/* Grupo SIG - colapsable (solo si tiene algún sub-ítem visible) */}
               {canSeeSig && (
@@ -208,6 +221,7 @@ export function AppSidebar() {
               )}
 
               {/* Reportes */}
+              {canSeeReportes && (
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <NavLink
@@ -220,8 +234,10 @@ export function AppSidebar() {
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+              )}
 
               {/* Notificaciones */}
+              {canSeeNotificaciones && (
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <NavLink
@@ -234,6 +250,7 @@ export function AppSidebar() {
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+              )}
 
               {/* Configuración */}
               <SidebarMenuItem>
