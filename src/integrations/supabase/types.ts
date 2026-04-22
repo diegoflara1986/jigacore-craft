@@ -2286,6 +2286,7 @@ export type Database = {
           description: string | null
           epic_id: string | null
           id: string
+          is_blocked: boolean | null
           priority: string
           project_id: string
           sprint_id: string | null
@@ -2304,6 +2305,7 @@ export type Database = {
           description?: string | null
           epic_id?: string | null
           id?: string
+          is_blocked?: boolean | null
           priority?: string
           project_id: string
           sprint_id?: string | null
@@ -2322,6 +2324,7 @@ export type Database = {
           description?: string | null
           epic_id?: string | null
           id?: string
+          is_blocked?: boolean | null
           priority?: string
           project_id?: string
           sprint_id?: string | null

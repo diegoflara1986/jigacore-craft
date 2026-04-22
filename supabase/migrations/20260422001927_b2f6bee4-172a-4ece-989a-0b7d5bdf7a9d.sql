@@ -1,0 +1,1 @@
+ALTER TABLE public.user_stories ADD COLUMN IF NOT EXISTS is_blocked BOOLEAN DEFAULT false;
