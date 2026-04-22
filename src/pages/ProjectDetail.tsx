@@ -17,6 +17,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export default function ProjectDetail() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -111,16 +112,41 @@ export default function ProjectDetail() {
 
   const progress = stats && stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
 
-  const steps: StepDef[] = [
-    { key: "team", label: "Equipo", completed: (members?.length ?? 0) > 0 },
-    { key: "backlog", label: "Backlog", completed: (storiesData?.total ?? 0) > 0 },
+  const { hasPermission, baseRole } = usePermissions();
+  const isAdmin = baseRole === "super_admin" || baseRole === "admin";
+
+  const canSeeEquipo     = isAdmin || hasPermission("equipo", "ver");
+  const canSeeBacklog    = isAdmin || hasPermission("backlog", "ver");
+  const canSeeEstimacion = isAdmin || hasPermission("estimacion", "ver");
+  const canSeeEpicas     = isAdmin || hasPermission("epicas", "ver");
+  const canSeeSprints    = isAdmin || hasPermission("sprints", "ver");
+  const canSeeTablero    = isAdmin || hasPermission("tablero", "ver");
+  const canSeeTiempo     = isAdmin || hasPermission("tiempo", "ver");
+  const canSeeCostos     = isAdmin || hasPermission("costos", "ver");
+
+  const allSteps: StepDef[] = [
+    { key: "team",       label: "Equipo",     completed: (members?.length ?? 0) > 0 },
+    { key: "backlog",    label: "Backlog",    completed: (storiesData?.total ?? 0) > 0 },
     { key: "estimation", label: "Estimación", completed: storiesData?.allEstimated ?? false },
-    { key: "epics", label: "Épicas", completed: (epicsCount ?? 0) > 0, optional: true },
-    { key: "sprints", label: "Sprints", completed: (sprintsCount ?? 0) > 0 },
-    { key: "board", label: "Tablero", completed: activeSprint ?? false },
-    { key: "time", label: "Tiempo", completed: false },
-    { key: "costs", label: "Costos", completed: false },
+    { key: "epics",      label: "Épicas",     completed: (epicsCount ?? 0) > 0, optional: true },
+    { key: "sprints",    label: "Sprints",    completed: (sprintsCount ?? 0) > 0 },
+    { key: "board",      label: "Tablero",    completed: activeSprint ?? false },
+    { key: "time",       label: "Tiempo",     completed: false },
+    { key: "costs",      label: "Costos",     completed: false },
   ];
+
+  const stepPermissions: Record<string, boolean> = {
+    team:       canSeeEquipo,
+    backlog:    canSeeBacklog,
+    estimation: canSeeEstimacion,
+    epics:      canSeeEpicas,
+    sprints:    canSeeSprints,
+    board:      canSeeTablero,
+    time:       canSeeTiempo,
+    costs:      canSeeCostos,
+  };
+
+  const steps = allSteps.filter(s => stepPermissions[s.key] !== false);
 
   const isStepTab = steps.some(s => s.key === activeTab);
 
