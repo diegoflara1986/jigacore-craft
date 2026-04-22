@@ -74,6 +74,8 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
   const canEditPerm = hasPermission("backlog", "editar");
   const canDeletePerm = hasPermission("backlog", "eliminar");
   const canDuplicatePerm = hasPermission("backlog", "duplicar");
+  const canBloquear = hasPermission("backlog", "bloquear");
+  const canDesbloquear = hasPermission("backlog", "desbloquear");
   const qc = useQueryClient();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
@@ -301,6 +303,11 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
                   <span>🔒 HU en sprint activo. Solo puedes cambiar estado, asignado y comentarios.</span>
                 </div>
               )}
+              {(story as any).is_blocked && (
+                <span className="text-xs text-yellow-600 dark:text-yellow-400 flex items-center gap-1">
+                  <Lock className="h-3 w-3" /> Bloqueada
+                </span>
+              )}
               <div className="flex items-center gap-2">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -312,6 +319,17 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
                     {canDuplicatePerm && (
                       <DropdownMenuItem onClick={handleDuplicate}>
                         <Copy className="h-4 w-4 mr-2" /> Duplicar
+                      </DropdownMenuItem>
+                    )}
+                    {(canBloquear || canDesbloquear) && <DropdownMenuSeparator />}
+                    {canBloquear && !(story as any).is_blocked && (
+                      <DropdownMenuItem onClick={() => saveField("is_blocked", true)}>
+                        <Lock className="h-4 w-4 mr-2 text-yellow-500" /> Bloquear historia
+                      </DropdownMenuItem>
+                    )}
+                    {canDesbloquear && (story as any).is_blocked && (
+                      <DropdownMenuItem onClick={() => saveField("is_blocked", false)}>
+                        <Unlock className="h-4 w-4 mr-2 text-green-500" /> Desbloquear historia
                       </DropdownMenuItem>
                     )}
                     {(canDelete() || (storyInActiveSprint && isAdmin)) && canDuplicatePerm && (
