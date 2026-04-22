@@ -2,6 +2,18 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
+const parseError = (e: any): string => {
+  if (e?.code === "PGRST116" || e?.message?.includes("JSON") || e?.message?.includes("rows"))
+    return "No tienes permiso para realizar esta acción.";
+  if (e?.code === "23505" || e?.message?.includes("duplicate") || e?.message?.includes("already exists"))
+    return "Ya existe un registro con esos datos.";
+  if (e?.code === "23503" || e?.message?.includes("foreign key"))
+    return "No se puede completar la acción porque hay registros relacionados.";
+  if (e?.code === "42501" || e?.message?.includes("permission denied"))
+    return "No tienes permiso para realizar esta acción.";
+  return e?.message ?? "Ocurrió un error inesperado.";
+};
+
 export interface TimeLog {
   id: string;
   user_id: string;
@@ -67,7 +79,7 @@ export function useCreateTimeLog() {
       qc.invalidateQueries({ queryKey: ["time-logs-story"] });
       toast({ title: "Tiempo registrado" });
     },
-    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: any) => toast({ title: "No se pudo registrar el tiempo", description: parseError(e), variant: "destructive" }),
   });
 }
 
@@ -83,6 +95,6 @@ export function useDeleteTimeLog() {
       qc.invalidateQueries({ queryKey: ["time-logs-story"] });
       toast({ title: "Registro eliminado" });
     },
-    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: any) => toast({ title: "No se pudo eliminar el registro de tiempo", description: parseError(e), variant: "destructive" }),
   });
 }
