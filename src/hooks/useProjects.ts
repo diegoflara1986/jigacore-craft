@@ -240,3 +240,23 @@ export function useRemoveProjectMember() {
     },
   });
 }
+
+export function useUpdateProjectMemberRole() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, project_role }: { id: string; project_role: string }) => {
+      const { error } = await supabase
+        .from("project_members")
+        .update({ project_role })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["project-members"] });
+      toast({ title: "Rol actualizado" });
+    },
+    onError: (e: any) => {
+      toast({ title: "Error al actualizar rol", description: e.message, variant: "destructive" });
+    },
+  });
+}

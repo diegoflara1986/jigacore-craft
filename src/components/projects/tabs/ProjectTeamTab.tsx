@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ProjectMember, useAddProjectMember, useRemoveProjectMember, useProject } from "@/hooks/useProjects";
+import { ProjectMember, useAddProjectMember, useRemoveProjectMember, useProject, useUpdateProjectMemberRole } from "@/hooks/useProjects";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useAuth } from "@/lib/auth";
 import { PermissionDeniedDialog } from "@/components/PermissionDeniedDialog";
@@ -27,7 +27,9 @@ export function ProjectTeamTab({ projectId, members, isArchived = false }: { pro
   const [userSearch, setUserSearch] = useState("");
   const addMember = useAddProjectMember();
   const removeMember = useRemoveProjectMember();
-  const { guardAction, denied, closeDenied } = usePermissions(projectId);
+  const updateMemberRole = useUpdateProjectMemberRole();
+  const { guardAction, hasPermission, denied, closeDenied } = usePermissions(projectId);
+  const canChangeRole = hasPermission("equipo", "cambiar_rol");
   const { user } = useAuth();
   const { data: project } = useProject(projectId);
   const qc = useQueryClient();
@@ -141,7 +143,29 @@ export function ProjectTeamTab({ projectId, members, isArchived = false }: { pro
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-xs px-2 py-1 bg-muted rounded-md text-muted-foreground capitalize">{m.project_role.replace("_", " ")}</span>
+                      {canChangeRole && !isArchived ? (
+                        <Select
+                          value={m.project_role}
+                          onValueChange={(newRole) =>
+                            guardAction("equipo", "cambiar_rol", "cambiar el rol del miembro", () =>
+                              updateMemberRole.mutate({ id: m.id, project_role: newRole })
+                            )
+                          }
+                        >
+                          <SelectTrigger className="h-7 text-xs w-32">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {(customRoles ?? []).filter(r => r.base_role !== "super_admin").map((r) => (
+                              <SelectItem key={r.id} value={r.base_role || r.name} className="text-xs">
+                                {r.icon} {r.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <span className="text-xs px-2 py-1 bg-muted rounded-md text-muted-foreground capitalize">{m.project_role.replace("_", " ")}</span>
+                      )}
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <span>
