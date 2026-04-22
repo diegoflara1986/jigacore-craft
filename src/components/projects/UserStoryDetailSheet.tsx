@@ -313,10 +313,17 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
                   <span>🔒 HU en sprint activo. Solo puedes cambiar estado, asignado y comentarios.</span>
                 </div>
               )}
-              {(story as any).is_blocked && (
-                <span className="text-xs text-yellow-600 dark:text-yellow-400 flex items-center gap-1">
-                  <Lock className="h-3 w-3" /> Bloqueada
-                </span>
+              {isBlocked && (
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-yellow-500/10 border border-yellow-500/30 text-yellow-700 dark:text-yellow-400 text-sm mb-2">
+                  <Lock className="h-4 w-4 shrink-0" />
+                  <span>🔒 Historia bloqueada. Solo un usuario con permiso de desbloquear puede editarla.</span>
+                </div>
+              )}
+              {isDone && (
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-gray-500/10 border border-gray-500/30 text-gray-600 dark:text-gray-400 text-sm mb-2">
+                  <Lock className="h-4 w-4 shrink-0" />
+                  <span>✅ Historia completada. No se puede modificar.</span>
+                </div>
               )}
               <div className="flex items-center gap-2">
                 <DropdownMenu>
