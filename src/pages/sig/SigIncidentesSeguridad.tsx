@@ -576,6 +576,7 @@ function DetailView({ id, onBack }: { id: string; onBack: () => void }) {
 function FormSections({ row }: { row: SigForm001Row }) {
   const { data: users } = useWorkspaceUsersForSig();
   const update = useUpdateSigForm001();
+  const { hasPermission } = usePermissions();
   const [local, setLocal] = useState<Partial<SigForm001Row>>({});
 
   const value = useMemo(() => ({ ...row, ...local }), [row, local]);
