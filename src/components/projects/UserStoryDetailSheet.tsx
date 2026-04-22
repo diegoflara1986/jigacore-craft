@@ -582,7 +582,7 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
                 {/* Asignado - always editable in sprint */}
                 <div className="space-y-1.5">
                   <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Asignado a</Label>
-                  <Select value={story.assigned_to || "none"} onValueChange={(v) => saveField("assigned_to", v === "none" ? null : v)} disabled={readOnly}>
+                  <Select value={story.assigned_to || "none"} onValueChange={(v) => saveField("assigned_to", v === "none" ? null : v)} disabled={hardLocked || readOnly}>
                     <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">Sin asignar</SelectItem>
