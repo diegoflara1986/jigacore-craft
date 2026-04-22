@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { useProjectMembers, useProjectStats } from "@/hooks/useProjects";
 import { ArchiveProjectDialog } from "./ArchiveProjectDialog";
 import { DuplicateProjectDialog } from "./DuplicateProjectDialog";
+import { usePermissions } from "@/hooks/usePermissions";
 
 const statusConfig: Record<string, { label: string; color: string }> = {
   active: { label: "Activo", color: "bg-success text-success-foreground" },
@@ -33,6 +34,11 @@ export function ProjectCard({ project, onEdit }: { project: Project; onEdit: (p:
 
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [duplicateOpen, setDuplicateOpen] = useState(false);
+
+  const { hasPermission } = usePermissions();
+  const canEdit      = hasPermission("proyectos", "editar");
+  const canArchive   = hasPermission("proyectos", "archivar");
+  const canDuplicate = hasPermission("proyectos", "duplicar");
 
   const initials = (name: string | null) => {
     if (!name) return "?";
@@ -67,13 +73,19 @@ export function ProjectCard({ project, onEdit }: { project: Project; onEdit: (p:
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
                 <DropdownMenuItem onClick={() => navigate(`/proyectos/${project.id}`)}><Eye className="h-4 w-4 mr-2" />Ver</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onEdit(project)}><Pencil className="h-4 w-4 mr-2" />Editar</DropdownMenuItem>
-                {isArchived ? (
-                  <DropdownMenuItem onClick={handleRestore}><RotateCcw className="h-4 w-4 mr-2" />Restaurar</DropdownMenuItem>
-                ) : (
-                  <DropdownMenuItem onClick={() => setArchiveOpen(true)}><Archive className="h-4 w-4 mr-2" />Archivar</DropdownMenuItem>
+                {canEdit && (
+                  <DropdownMenuItem onClick={() => onEdit(project)}><Pencil className="h-4 w-4 mr-2" />Editar</DropdownMenuItem>
                 )}
-                <DropdownMenuItem onClick={() => setDuplicateOpen(true)}><Copy className="h-4 w-4 mr-2" />Duplicar</DropdownMenuItem>
+                {canArchive && (
+                  isArchived ? (
+                    <DropdownMenuItem onClick={handleRestore}><RotateCcw className="h-4 w-4 mr-2" />Restaurar</DropdownMenuItem>
+                  ) : (
+                    <DropdownMenuItem onClick={() => setArchiveOpen(true)}><Archive className="h-4 w-4 mr-2" />Archivar</DropdownMenuItem>
+                  )
+                )}
+                {canDuplicate && (
+                  <DropdownMenuItem onClick={() => setDuplicateOpen(true)}><Copy className="h-4 w-4 mr-2" />Duplicar</DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
