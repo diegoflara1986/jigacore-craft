@@ -100,8 +100,17 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
 
   const storyInActiveSprint = isInActiveSprint || (story?.sprint_id ? sprints?.find(s => s.id === story.sprint_id)?.status === "active" : false);
   const isAdmin = hasPermission("backlog", "bloquear");
+  const isBlocked = (story as any)?.is_blocked === true;
+  const isDone = story?.status === "done";
+  // Lógica de bloqueo por prioridad:
+  // 1. is_blocked: bloquea todo, incluso admins. Solo quien tiene "desbloquear" puede quitarlo.
+  // 2. status done: bloquea todo sin excepción.
+  // 3. sprint activo: bloquea campos estructurales pero permite estado, asignado y comentarios.
+  const hardLocked = isBlocked || isDone;
   const sprintLocked = storyInActiveSprint && !isAdmin;
-  const effectiveReadOnly = readOnly || !canEditPerm || (storyInActiveSprint && !isAdmin);
+  const effectiveReadOnly = readOnly || !canEditPerm || hardLocked || sprintLocked;
+  // sprintEditableOnly: campos que sí se pueden editar en sprint activo (estado, asignado, comentarios)
+  const sprintEditableOnly = !hardLocked && storyInActiveSprint && !isAdmin;
 
   // Comments
   const { data: comments } = useQuery({
@@ -177,6 +186,7 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
 
   const canDelete = () => {
     if (!story) return false;
+    if (hardLocked) return false;
     if (!canDeletePerm) return false;
     if (story.status === "done") return false;
     if (storyInActiveSprint && !isAdmin) return false;
@@ -303,10 +313,17 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
                   <span>🔒 HU en sprint activo. Solo puedes cambiar estado, asignado y comentarios.</span>
                 </div>
               )}
-              {(story as any).is_blocked && (
-                <span className="text-xs text-yellow-600 dark:text-yellow-400 flex items-center gap-1">
-                  <Lock className="h-3 w-3" /> Bloqueada
-                </span>
+              {isBlocked && (
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-yellow-500/10 border border-yellow-500/30 text-yellow-700 dark:text-yellow-400 text-sm mb-2">
+                  <Lock className="h-4 w-4 shrink-0" />
+                  <span>🔒 Historia bloqueada. Solo un usuario con permiso de desbloquear puede editarla.</span>
+                </div>
+              )}
+              {isDone && (
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-gray-500/10 border border-gray-500/30 text-gray-600 dark:text-gray-400 text-sm mb-2">
+                  <Lock className="h-4 w-4 shrink-0" />
+                  <span>✅ Historia completada. No se puede modificar.</span>
+                </div>
               )}
               <div className="flex items-center gap-2">
                 <DropdownMenu>
@@ -322,12 +339,12 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
                       </DropdownMenuItem>
                     )}
                     {(canBloquear || canDesbloquear) && <DropdownMenuSeparator />}
-                    {canBloquear && !(story as any).is_blocked && (
+                    {isAdmin && !isBlocked && !isDone && (
                       <DropdownMenuItem onClick={() => saveField("is_blocked", true)}>
                         <Lock className="h-4 w-4 mr-2 text-yellow-500" /> Bloquear historia
                       </DropdownMenuItem>
                     )}
-                    {canDesbloquear && (story as any).is_blocked && (
+                    {canDesbloquear && isBlocked && (
                       <DropdownMenuItem onClick={() => saveField("is_blocked", false)}>
                         <Unlock className="h-4 w-4 mr-2 text-green-500" /> Desbloquear historia
                       </DropdownMenuItem>
@@ -500,7 +517,7 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
                     } else {
                       saveField("status", v);
                     }
-                  }} disabled={readOnly}>
+                  }} disabled={hardLocked || readOnly}>
                     <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                     <SelectContent>{STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
                   </Select>
@@ -565,7 +582,7 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
                 {/* Asignado - always editable in sprint */}
                 <div className="space-y-1.5">
                   <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Asignado a</Label>
-                  <Select value={story.assigned_to || "none"} onValueChange={(v) => saveField("assigned_to", v === "none" ? null : v)} disabled={readOnly}>
+                  <Select value={story.assigned_to || "none"} onValueChange={(v) => saveField("assigned_to", v === "none" ? null : v)} disabled={hardLocked || readOnly}>
                     <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">Sin asignar</SelectItem>
