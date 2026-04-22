@@ -274,7 +274,7 @@ export function ProjectKanbanTab({ projectId, isArchived = false }: Props) {
             </span>
           </div>
           {!isArchived && (
-            <Button size="icon" variant="ghost" className="h-5 w-5" onClick={() => guardAction("tablero", "move_cards", "agregar una historia al tablero", () => { setQuickAddCol(col.id); setQuickAddTitle(""); })}>
+            <Button size="icon" variant="ghost" className="h-5 w-5" onClick={() => guardAction("tablero", "mover_tarjetas", "agregar una historia al tablero", () => { setQuickAddCol(col.id); setQuickAddTitle(""); })}>
               <Plus className="h-3 w-3" />
             </Button>
           )}

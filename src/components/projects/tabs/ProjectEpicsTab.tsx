@@ -71,7 +71,7 @@ export function ProjectEpicsTab({ projectId, isArchived = false }: { projectId: 
         <Tooltip>
           <TooltipTrigger asChild>
             <span>
-              <Button size="sm" disabled={isArchived} className={isArchived ? "opacity-50" : ""} onClick={() => guardAction("epicas", "create", "crear una épica", openCreate)}>
+              <Button size="sm" disabled={isArchived} className={isArchived ? "opacity-50" : ""} onClick={() => guardAction("epicas", "crear", "crear una épica", openCreate)}>
                 <Plus className="h-4 w-4 mr-1" />Nueva Épica
               </Button>
             </span>
@@ -118,8 +118,8 @@ export function ProjectEpicsTab({ projectId, isArchived = false }: { projectId: 
                             <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0"><MoreHorizontal className="h-4 w-4" /></Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => guardAction("epicas", "edit", "editar una épica", () => openEdit(e))}><Pencil className="h-3.5 w-3.5 mr-2" />Editar</DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive" onClick={() => guardAction("epicas", "delete", "eliminar una épica", () => deleteEpic.mutate({ id: e.id, projectId }))}>
+                            <DropdownMenuItem onClick={() => guardAction("epicas", "editar", "editar una épica", () => openEdit(e))}><Pencil className="h-3.5 w-3.5 mr-2" />Editar</DropdownMenuItem>
+                            <DropdownMenuItem className="text-destructive" onClick={() => guardAction("epicas", "eliminar", "eliminar una épica", () => deleteEpic.mutate({ id: e.id, projectId }))}>
                               <Trash2 className="h-3.5 w-3.5 mr-2" />Eliminar
                             </DropdownMenuItem>
                           </DropdownMenuContent>

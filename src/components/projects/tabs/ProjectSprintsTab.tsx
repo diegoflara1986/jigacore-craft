@@ -236,13 +236,13 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
             <div className="flex gap-1.5">
               {sprint.status === "planning" && !isArchived && (
                 <>
-                  <Button size="sm" variant="ghost" onClick={() => guardAction("sprints", "edit", "editar un sprint", () => openEdit(sprint))}>
+                  <Button size="sm" variant="ghost" onClick={() => guardAction("sprints", "editar", "editar un sprint", () => openEdit(sprint))}>
                     <Pencil className="h-3.5 w-3.5 mr-1" />Editar
                   </Button>
-                  <Button size="sm" variant="ghost" className="text-destructive" onClick={() => guardAction("sprints", "delete", "eliminar un sprint", () => setDeleteConfirm(sprint))}>
+                  <Button size="sm" variant="ghost" className="text-destructive" onClick={() => guardAction("sprints", "eliminar", "eliminar un sprint", () => setDeleteConfirm(sprint))}>
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => guardAction("sprints", "manage", "iniciar un sprint", () => setStartConfirm(sprint))}>
+                  <Button size="sm" variant="outline" onClick={() => guardAction("sprints", "gestionar", "iniciar un sprint", () => setStartConfirm(sprint))}>
                     <Play className="h-3.5 w-3.5 mr-1" />Iniciar
                   </Button>
                 </>
@@ -255,7 +255,7 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
                     </Button>
                   )}
                   {!isArchived && (
-                    <Button size="sm" onClick={() => guardAction("sprints", "manage", "completar un sprint", () => setCompleteReview(sprint))}>
+                    <Button size="sm" onClick={() => guardAction("sprints", "gestionar", "completar un sprint", () => setCompleteReview(sprint))}>
                       <CheckCircle2 className="h-3.5 w-3.5 mr-1" />Completar
                     </Button>
                   )}
@@ -304,7 +304,7 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
         <h3 className="text-lg font-semibold text-foreground">Sprints</h3>
         <div className="flex gap-2">
           {!isArchived && (
-            <Button size="sm" onClick={() => guardAction("sprints", "create", "crear un sprint", openCreate)}><Plus className="h-4 w-4 mr-1" />Nuevo Sprint</Button>
+            <Button size="sm" onClick={() => guardAction("sprints", "crear", "crear un sprint", openCreate)}><Plus className="h-4 w-4 mr-1" />Nuevo Sprint</Button>
           )}
         </div>
       </div>
