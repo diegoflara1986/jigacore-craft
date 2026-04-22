@@ -146,6 +146,23 @@ export function ProjectCard({ project, onEdit }: { project: Project; onEdit: (p:
 
       <ArchiveProjectDialog open={archiveOpen} onOpenChange={setArchiveOpen} project={project} />
       <DuplicateProjectDialog open={duplicateOpen} onOpenChange={setDuplicateOpen} project={project} />
+
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent onClick={(e) => e.stopPropagation()}>
+          <DialogHeader>
+            <DialogTitle>¿Eliminar este proyecto?</DialogTitle>
+            <DialogDescription>
+              Esta acción eliminará permanentemente el proyecto y todos sus datos. No se puede deshacer.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteOpen(false)}>Cancelar</Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={deleteProject.isPending}>
+              Eliminar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
