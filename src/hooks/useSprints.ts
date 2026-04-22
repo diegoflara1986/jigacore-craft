@@ -94,7 +94,7 @@ export function useCreateSprint() {
       qc.invalidateQueries({ queryKey: ["sprints", d.project_id] });
       toast({ title: "Sprint creado" });
     },
-    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: any) => toast({ title: "No se pudo crear el sprint", description: parseError(e), variant: "destructive" }),
   });
 }
 
@@ -113,7 +113,7 @@ export function useUpdateSprint() {
       qc.invalidateQueries({ queryKey: ["user-stories"] });
       toast({ title: "Sprint actualizado" });
     },
-    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: any) => toast({ title: "No se pudo actualizar el sprint", description: parseError(e), variant: "destructive" }),
   });
 }
 
@@ -129,6 +129,6 @@ export function useDeleteSprint() {
       qc.invalidateQueries({ queryKey: ["sprints", pid] });
       toast({ title: "Sprint eliminado" });
     },
-    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: any) => toast({ title: "No se pudo eliminar el sprint", description: parseError(e), variant: "destructive" }),
   });
 }
