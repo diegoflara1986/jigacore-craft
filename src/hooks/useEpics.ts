@@ -2,6 +2,18 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
+const parseError = (e: any): string => {
+  if (e?.code === "PGRST116" || e?.message?.includes("JSON") || e?.message?.includes("rows"))
+    return "No tienes permiso para realizar esta acción.";
+  if (e?.code === "23505" || e?.message?.includes("duplicate") || e?.message?.includes("already exists"))
+    return "Ya existe un registro con esos datos.";
+  if (e?.code === "23503" || e?.message?.includes("foreign key"))
+    return "No se puede completar la acción porque hay registros relacionados.";
+  if (e?.code === "42501" || e?.message?.includes("permission denied"))
+    return "No tienes permiso para realizar esta acción.";
+  return e?.message ?? "Ocurrió un error inesperado.";
+};
+
 export interface Epic {
   id: string;
   project_id: string;
@@ -66,7 +78,7 @@ export function useCreateEpic() {
       qc.invalidateQueries({ queryKey: ["epics", d.project_id] });
       toast({ title: "Épica creada" });
     },
-    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: any) => toast({ title: "No se pudo crear la épica", description: parseError(e), variant: "destructive" }),
   });
 }
 
@@ -82,7 +94,7 @@ export function useUpdateEpic() {
       qc.invalidateQueries({ queryKey: ["epics", d.project_id] });
       toast({ title: "Épica actualizada" });
     },
-    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: any) => toast({ title: "No se pudo actualizar la épica", description: parseError(e), variant: "destructive" }),
   });
 }
 
@@ -98,6 +110,6 @@ export function useDeleteEpic() {
       qc.invalidateQueries({ queryKey: ["epics", pid] });
       toast({ title: "Épica eliminada" });
     },
-    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: any) => toast({ title: "No se pudo eliminar la épica", description: parseError(e), variant: "destructive" }),
   });
 }
