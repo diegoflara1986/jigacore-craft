@@ -517,7 +517,7 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
                     } else {
                       saveField("status", v);
                     }
-                  }} disabled={readOnly}>
+                  }} disabled={hardLocked || readOnly}>
                     <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                     <SelectContent>{STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
                   </Select>
