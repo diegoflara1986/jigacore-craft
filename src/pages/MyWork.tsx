@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useTimer } from "@/hooks/useTimer";
 import { cn } from "@/lib/utils";
+import { usePermissions } from "@/hooks/usePermissions";
 
 const DAY_NAMES = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 
@@ -44,6 +45,8 @@ function timeAgo(dateStr: string) {
 export default function MyWork() {
   usePageTitle("Mi Trabajo");
   const { profile, user } = useAuth();
+  const { hasPermission } = usePermissions();
+  const canDeleteTiempo = hasPermission("tiempo", "eliminar");
   const timer = useTimer();
   const [weekOffset, setWeekOffset] = useState(0);
   const [showManual, setShowManual] = useState(false);
@@ -397,10 +400,12 @@ export default function MyWork() {
                       <TableCell className="text-sm font-medium">{l.hours}h</TableCell>
                       <TableCell className="text-sm text-muted-foreground max-w-40 truncate">{l.description || "—"}</TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive"
-                          onClick={() => deleteTL.mutate(l.id)}>
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
+                        {canDeleteTiempo && (
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive"
+                            onClick={() => deleteTL.mutate(l.id)}>
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
