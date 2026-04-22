@@ -339,12 +339,12 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
                       </DropdownMenuItem>
                     )}
                     {(canBloquear || canDesbloquear) && <DropdownMenuSeparator />}
-                    {canBloquear && !(story as any).is_blocked && (
+                    {isAdmin && !isBlocked && !isDone && (
                       <DropdownMenuItem onClick={() => saveField("is_blocked", true)}>
                         <Lock className="h-4 w-4 mr-2 text-yellow-500" /> Bloquear historia
                       </DropdownMenuItem>
                     )}
-                    {canDesbloquear && (story as any).is_blocked && (
+                    {canDesbloquear && isBlocked && (
                       <DropdownMenuItem onClick={() => saveField("is_blocked", false)}>
                         <Unlock className="h-4 w-4 mr-2 text-green-500" /> Desbloquear historia
                       </DropdownMenuItem>
