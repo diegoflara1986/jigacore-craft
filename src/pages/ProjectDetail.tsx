@@ -27,6 +27,18 @@ export default function ProjectDetail() {
   const navigate = useNavigate();
   const { profile } = useAuth();
 
+  const { hasPermission, baseRole } = usePermissions();
+  const isAdmin = baseRole === "super_admin" || baseRole === "admin";
+
+  const canSeeEquipo     = isAdmin || hasPermission("equipo", "ver");
+  const canSeeBacklog    = isAdmin || hasPermission("backlog", "ver");
+  const canSeeEstimacion = isAdmin || hasPermission("estimacion", "ver");
+  const canSeeEpicas     = isAdmin || hasPermission("epicas", "ver");
+  const canSeeSprints    = isAdmin || hasPermission("sprints", "ver");
+  const canSeeTablero    = isAdmin || hasPermission("tablero", "ver");
+  const canSeeTiempo     = isAdmin || hasPermission("tiempo", "ver");
+  const canSeeCostos     = isAdmin || hasPermission("costos", "ver");
+
   useEffect(() => {
     const tab = searchParams.get("tab");
     if (tab === "estimation") setActiveTab("estimation");
@@ -111,18 +123,6 @@ export default function ProjectDetail() {
   }
 
   const progress = stats && stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
-
-  const { hasPermission, baseRole } = usePermissions();
-  const isAdmin = baseRole === "super_admin" || baseRole === "admin";
-
-  const canSeeEquipo     = isAdmin || hasPermission("equipo", "ver");
-  const canSeeBacklog    = isAdmin || hasPermission("backlog", "ver");
-  const canSeeEstimacion = isAdmin || hasPermission("estimacion", "ver");
-  const canSeeEpicas     = isAdmin || hasPermission("epicas", "ver");
-  const canSeeSprints    = isAdmin || hasPermission("sprints", "ver");
-  const canSeeTablero    = isAdmin || hasPermission("tablero", "ver");
-  const canSeeTiempo     = isAdmin || hasPermission("tiempo", "ver");
-  const canSeeCostos     = isAdmin || hasPermission("costos", "ver");
 
   const allSteps: StepDef[] = [
     { key: "team",       label: "Equipo",     completed: (members?.length ?? 0) > 0 },
