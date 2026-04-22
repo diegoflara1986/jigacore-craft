@@ -221,6 +221,7 @@ export function AppSidebar() {
               )}
 
               {/* Reportes */}
+              {canSeeReportes && (
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <NavLink
@@ -233,8 +234,10 @@ export function AppSidebar() {
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+              )}
 
               {/* Notificaciones */}
+              {canSeeNotificaciones && (
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <NavLink
@@ -247,6 +250,7 @@ export function AppSidebar() {
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+              )}
 
               {/* Configuración */}
               <SidebarMenuItem>
