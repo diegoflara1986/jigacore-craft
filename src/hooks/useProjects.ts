@@ -267,3 +267,25 @@ export function useUpdateProjectMemberRole() {
     },
   });
 }
+
+export function useDeleteProject() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("projects").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+      toast({ title: "Proyecto eliminado" });
+    },
+    onError: (e: any) => {
+      const isRls = e.message?.includes("JSON") || e.message?.includes("rows") || e.code === "PGRST116";
+      toast({
+        title: "No se pudo eliminar el proyecto",
+        description: isRls ? "No tienes permiso para realizar esta acción." : e.message,
+        variant: "destructive",
+      });
+    },
+  });
+}

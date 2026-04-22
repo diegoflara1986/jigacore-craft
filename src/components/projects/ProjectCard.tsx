@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { Project, useUpdateProject } from "@/hooks/useProjects";
+import { Project, useUpdateProject, useDeleteProject } from "@/hooks/useProjects";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { MoreHorizontal, Eye, Pencil, Archive, Copy, RotateCcw } from "lucide-react";
+import { MoreHorizontal, Eye, Pencil, Archive, Copy, RotateCcw, Trash2 } from "lucide-react";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -14,6 +14,9 @@ import { useProjectMembers, useProjectStats } from "@/hooks/useProjects";
 import { ArchiveProjectDialog } from "./ArchiveProjectDialog";
 import { DuplicateProjectDialog } from "./DuplicateProjectDialog";
 import { usePermissions } from "@/hooks/usePermissions";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
 
 const statusConfig: Record<string, { label: string; color: string }> = {
   active: { label: "Activo", color: "bg-success text-success-foreground" },
@@ -34,11 +37,19 @@ export function ProjectCard({ project, onEdit }: { project: Project; onEdit: (p:
 
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [duplicateOpen, setDuplicateOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   const { hasPermission } = usePermissions();
   const canEdit      = hasPermission("proyectos", "editar");
   const canArchive   = hasPermission("proyectos", "archivar");
   const canDuplicate = hasPermission("proyectos", "duplicar");
+  const canDelete    = hasPermission("proyectos", "eliminar");
+
+  const deleteProject = useDeleteProject();
+  const handleDelete = async () => {
+    await deleteProject.mutateAsync(project.id);
+    setDeleteOpen(false);
+  };
 
   const initials = (name: string | null) => {
     if (!name) return "?";
@@ -85,6 +96,17 @@ export function ProjectCard({ project, onEdit }: { project: Project; onEdit: (p:
                 )}
                 {canDuplicate && (
                   <DropdownMenuItem onClick={() => setDuplicateOpen(true)}><Copy className="h-4 w-4 mr-2" />Duplicar</DropdownMenuItem>
+                )}
+                {canDelete && !isArchived && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      className="text-destructive focus:text-destructive"
+                      onClick={(e) => { e.stopPropagation(); setDeleteOpen(true); }}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" /> Eliminar
+                    </DropdownMenuItem>
+                  </>
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
