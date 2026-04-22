@@ -187,6 +187,20 @@ function RoleDetail({ role, isAdmin }: { role: CustomRole; isAdmin: boolean }) {
 
   const togglePermission = (module: string, action: string, checked: boolean) => {
     if (!isEditable) return;
+    // Si se está activando una acción que no es "ver", verificar si "ver" está activo
+    if (checked && action !== "ver" && !action.startsWith("scope_")) {
+      const verKey = `${module}:ver`;
+      const verAlreadyActive = permSet.has(verKey);
+      if (!verAlreadyActive) {
+        // Activar "ver" automáticamente
+        updatePerm.mutate({
+          roleId: role.id,
+          module,
+          action: "ver",
+          isAllowed: true,
+        });
+      }
+    }
     updatePerm.mutate({ roleId: role.id, module, action, isAllowed: checked }, {
       onSuccess: () => toast({ title: "Permiso actualizado", duration: 1500 }),
     });
