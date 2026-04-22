@@ -100,8 +100,17 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
 
   const storyInActiveSprint = isInActiveSprint || (story?.sprint_id ? sprints?.find(s => s.id === story.sprint_id)?.status === "active" : false);
   const isAdmin = hasPermission("backlog", "bloquear");
+  const isBlocked = (story as any)?.is_blocked === true;
+  const isDone = story?.status === "done";
+  // Lógica de bloqueo por prioridad:
+  // 1. is_blocked: bloquea todo, incluso admins. Solo quien tiene "desbloquear" puede quitarlo.
+  // 2. status done: bloquea todo sin excepción.
+  // 3. sprint activo: bloquea campos estructurales pero permite estado, asignado y comentarios.
+  const hardLocked = isBlocked || isDone;
   const sprintLocked = storyInActiveSprint && !isAdmin;
-  const effectiveReadOnly = readOnly || !canEditPerm || (storyInActiveSprint && !isAdmin);
+  const effectiveReadOnly = readOnly || !canEditPerm || hardLocked || sprintLocked;
+  // sprintEditableOnly: campos que sí se pueden editar en sprint activo (estado, asignado, comentarios)
+  const sprintEditableOnly = !hardLocked && storyInActiveSprint && !isAdmin;
 
   // Comments
   const { data: comments } = useQuery({
