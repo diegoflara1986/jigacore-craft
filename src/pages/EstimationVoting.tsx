@@ -16,6 +16,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { ChevronLeft, Save } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { usePermissions } from "@/hooks/usePermissions";
 
 const FIBONACCI = [0, 1, 2, 3, 5, 8, 13, 21, 34];
 
@@ -28,6 +29,8 @@ export default function EstimationVoting() {
   const { user } = useAuth();
 
   const { data: round } = useEstimationRound(roundId);
+  const { hasPermission } = usePermissions();
+  const canVotar = hasPermission("estimacion", "votar");
   const { data: project } = useProject(projectId);
   const { data: roundStories } = useRoundStories(roundId);
   const { data: allVotes } = useRoundVotes(roundId);
@@ -194,9 +197,13 @@ export default function EstimationVoting() {
       {/* Save button */}
       {!isClosed && (
         <div className="sticky bottom-4 mt-6 flex justify-center">
-          <Button size="lg" onClick={handleSave} disabled={saveVotes.isPending || Object.keys(localVotes).length === 0}>
-            <Save className="h-4 w-4 mr-2" />Guardar mis votos
-          </Button>
+          {canVotar ? (
+            <Button size="lg" onClick={handleSave} disabled={!canVotar || saveVotes.isPending || Object.keys(localVotes).length === 0}>
+              <Save className="h-4 w-4 mr-2" />Guardar mis votos
+            </Button>
+          ) : (
+            <p className="text-sm text-muted-foreground italic">No tienes permiso para votar en esta sesión</p>
+          )}
         </div>
       )}
     </div>

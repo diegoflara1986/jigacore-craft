@@ -20,6 +20,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Progress } from "@/components/ui/progress";
 import { ChevronLeft, Check, Lock, Trophy, AlertTriangle, XCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export default function EstimationResults() {
   const { id: projectId, roundId } = useParams<{ id: string; roundId: string }>();
@@ -27,6 +28,8 @@ export default function EstimationResults() {
   const { user } = useAuth();
 
   const { data: round } = useEstimationRound(roundId);
+  const { hasPermission } = usePermissions();
+  const canCerrar = hasPermission("estimacion", "cerrar");
   const { data: project } = useProject(projectId);
   const { data: roundStories, refetch: refetchStories } = useRoundStories(roundId);
   const { data: allVotes } = useRoundVotes(roundId);
@@ -108,12 +111,12 @@ export default function EstimationResults() {
           </div>
         </div>
         <div className="flex gap-2">
-          {isCreator && !isClosed && (
+          {isCreator && !isClosed && canCerrar && (
             <>
               <Button variant="outline" size="sm" onClick={handleApplyAll}>
                 Aplicar todos (moda)
               </Button>
-              <Button variant="destructive" size="sm" onClick={() => setCloseConfirmOpen(true)}>
+              <Button variant="destructive" size="sm" onClick={() => setCloseConfirmOpen(true)} disabled={!canCerrar}>
                 <Lock className="h-3.5 w-3.5 mr-1" />Cerrar Ronda
               </Button>
             </>
