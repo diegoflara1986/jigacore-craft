@@ -78,7 +78,7 @@ export function useCreateEpic() {
       qc.invalidateQueries({ queryKey: ["epics", d.project_id] });
       toast({ title: "Épica creada" });
     },
-    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: any) => toast({ title: "No se pudo crear la épica", description: parseError(e), variant: "destructive" }),
   });
 }
 
@@ -94,7 +94,7 @@ export function useUpdateEpic() {
       qc.invalidateQueries({ queryKey: ["epics", d.project_id] });
       toast({ title: "Épica actualizada" });
     },
-    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: any) => toast({ title: "No se pudo actualizar la épica", description: parseError(e), variant: "destructive" }),
   });
 }
 
@@ -110,6 +110,6 @@ export function useDeleteEpic() {
       qc.invalidateQueries({ queryKey: ["epics", pid] });
       toast({ title: "Épica eliminada" });
     },
-    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e: any) => toast({ title: "No se pudo eliminar la épica", description: parseError(e), variant: "destructive" }),
   });
 }
