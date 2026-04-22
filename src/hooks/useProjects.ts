@@ -239,7 +239,7 @@ export function useAddProjectMember() {
       toast({ title: "Miembro agregado" });
     },
     onError: (e: any) => {
-      toast({ title: "Error", description: e.message, variant: "destructive" });
+      toast({ title: "No se pudo agregar el miembro", description: parseError(e), variant: "destructive" });
     },
   });
 }
@@ -256,6 +256,9 @@ export function useRemoveProjectMember() {
     onSuccess: (projectId) => {
       queryClient.invalidateQueries({ queryKey: ["project-members", projectId] });
       toast({ title: "Miembro removido" });
+    },
+    onError: (e: any) => {
+      toast({ title: "No se pudo eliminar el miembro", description: parseError(e), variant: "destructive" });
     },
   });
 }
