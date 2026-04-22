@@ -1,9 +1,21 @@
-import { Project } from "@/hooks/useProjects";
+import { useState } from "react";
+import { Project, useProjectMembers, useProjectStats, useDeleteProject } from "@/hooks/useProjects";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { useProjectMembers, useProjectStats } from "@/hooks/useProjects";
+import { MoreHorizontal, Eye, Pencil, Archive, Copy, RotateCcw, Trash2 } from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
+import { ArchiveProjectDialog } from "@/components/projects/ArchiveProjectDialog";
+import { DuplicateProjectDialog } from "@/components/projects/DuplicateProjectDialog";
+import { usePermissions } from "@/hooks/usePermissions";
+import { useUpdateProject } from "@/hooks/useProjects";
 
 const statusConfig: Record<string, { label: string; color: string }> = {
   active: { label: "Activo", color: "bg-success text-success-foreground" },
@@ -21,7 +33,30 @@ export function ProjectListRow({ project, onEdit }: { project: Project; onEdit: 
   const status = statusConfig[project.status] || statusConfig.active;
   const progress = stats && stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
 
+  const { hasPermission } = usePermissions();
+  const canEdit      = hasPermission("proyectos", "editar");
+  const canArchive   = hasPermission("proyectos", "archivar");
+  const canDuplicate = hasPermission("proyectos", "duplicar");
+  const canDelete    = hasPermission("proyectos", "eliminar");
+  const isArchived   = project.status === "archived";
+
+  const [archiveOpen, setArchiveOpen]     = useState(false);
+  const [duplicateOpen, setDuplicateOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen]       = useState(false);
+
+  const deleteProject = useDeleteProject();
+  const updateProject = useUpdateProject();
+
+  const handleDelete = async () => {
+    await deleteProject.mutateAsync(project.id);
+    setDeleteOpen(false);
+  };
+  const handleRestore = async () => {
+    await updateProject.mutateAsync({ id: project.id, status: "active" });
+  };
+
   return (
+    <>
     <tr className="border-b border-border hover:bg-muted/30 cursor-pointer transition-colors" onClick={() => navigate(`/proyectos/${project.id}`)}>
       <td className="py-3 px-4">
         <div className="flex items-center gap-3">
@@ -59,6 +94,73 @@ export function ProjectListRow({ project, onEdit }: { project: Project; onEdit: 
       <td className="py-3 px-4 text-xs text-muted-foreground">
         {project.end_date ? new Date(project.end_date).toLocaleDateString("es") : "—"}
       </td>
+      <td className="py-3 px-4 text-right" onClick={(e) => e.stopPropagation()}>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+            <DropdownMenuItem onClick={() => navigate(`/proyectos/${project.id}`)}>
+              <Eye className="h-4 w-4 mr-2" />Ver
+            </DropdownMenuItem>
+            {canEdit && (
+              <DropdownMenuItem onClick={() => onEdit(project)}>
+                <Pencil className="h-4 w-4 mr-2" />Editar
+              </DropdownMenuItem>
+            )}
+            {canArchive && (
+              isArchived ? (
+                <DropdownMenuItem onClick={handleRestore}>
+                  <RotateCcw className="h-4 w-4 mr-2" />Restaurar
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem onClick={() => setArchiveOpen(true)}>
+                  <Archive className="h-4 w-4 mr-2" />Archivar
+                </DropdownMenuItem>
+              )
+            )}
+            {canDuplicate && (
+              <DropdownMenuItem onClick={() => setDuplicateOpen(true)}>
+                <Copy className="h-4 w-4 mr-2" />Duplicar
+              </DropdownMenuItem>
+            )}
+            {canDelete && !isArchived && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-destructive focus:text-destructive"
+                  onClick={() => setDeleteOpen(true)}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />Eliminar
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </td>
     </tr>
+
+    <ArchiveProjectDialog open={archiveOpen} onOpenChange={setArchiveOpen} project={project} />
+    <DuplicateProjectDialog open={duplicateOpen} onOpenChange={setDuplicateOpen} project={project} />
+
+    <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+      <DialogContent onClick={(e) => e.stopPropagation()}>
+        <DialogHeader>
+          <DialogTitle>¿Eliminar este proyecto?</DialogTitle>
+          <DialogDescription>
+            Esta acción eliminará permanentemente el proyecto y todos sus datos. No se puede deshacer.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setDeleteOpen(false)}>Cancelar</Button>
+          <Button variant="destructive" onClick={handleDelete} disabled={deleteProject.isPending}>
+            Eliminar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
