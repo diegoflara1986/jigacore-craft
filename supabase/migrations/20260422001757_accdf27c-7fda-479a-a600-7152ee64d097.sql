@@ -1,0 +1,1 @@
+ALTER TABLE public.time_logs ADD COLUMN IF NOT EXISTS approved BOOLEAN DEFAULT false;

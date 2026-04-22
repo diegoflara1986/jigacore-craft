@@ -2203,6 +2203,7 @@ export type Database = {
       }
       time_logs: {
         Row: {
+          approved: boolean | null
           created_at: string
           description: string | null
           hours: number
@@ -2214,6 +2215,7 @@ export type Database = {
           user_story_id: string | null
         }
         Insert: {
+          approved?: boolean | null
           created_at?: string
           description?: string | null
           hours: number
@@ -2225,6 +2227,7 @@ export type Database = {
           user_story_id?: string | null
         }
         Update: {
+          approved?: boolean | null
           created_at?: string
           description?: string | null
           hours?: number
