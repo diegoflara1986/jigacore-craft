@@ -186,6 +186,7 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
 
   const canDelete = () => {
     if (!story) return false;
+    if (hardLocked) return false;
     if (!canDeletePerm) return false;
     if (story.status === "done") return false;
     if (storyInActiveSprint && !isAdmin) return false;
