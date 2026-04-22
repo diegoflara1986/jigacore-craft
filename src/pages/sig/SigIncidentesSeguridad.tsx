@@ -227,6 +227,9 @@ export default function SigIncidentesSeguridad() {
   const [view, setView] = useState<"list" | "detail">("list");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const { hasPermission } = usePermissions();
+  const canVer = hasPermission("sig_form_001", "ver") || hasPermission("sig_form_001", "registrar");
+  const canRegistrar = hasPermission("sig_form_001", "registrar");
 
   const openDetail = (id: string) => {
     setSelectedId(id);
@@ -236,6 +239,18 @@ export default function SigIncidentesSeguridad() {
     setSelectedId(null);
     setView("list");
   };
+
+  if (!canVer) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 space-y-4">
+        <ShieldAlert className="h-12 w-12 text-destructive" />
+        <h2 className="text-xl font-bold">Acceso restringido</h2>
+        <p className="text-sm text-muted-foreground text-center max-w-md">
+          No tienes permiso para ver los registros de incidentes de seguridad. Contacta al administrador.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -248,10 +263,12 @@ export default function SigIncidentesSeguridad() {
           <p className="text-muted-foreground text-sm">FOR-SGSI-001</p>
         </div>
         {view === "list" ? (
-          <Button onClick={() => setCreateOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Nuevo registro
-          </Button>
+          canRegistrar && (
+            <Button onClick={() => setCreateOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Nuevo registro
+            </Button>
+          )
         ) : (
           <Button variant="outline" onClick={backToList}>
             <ArrowLeft className="h-4 w-4 mr-2" />
