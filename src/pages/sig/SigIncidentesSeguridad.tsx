@@ -552,6 +552,7 @@ function CreateDialog({
 // ────────────────────────────────────────────────
 function DetailView({ id, onBack }: { id: string; onBack: () => void }) {
   const { data: row, isLoading } = useSigForm001Detail(id);
+  const { hasPermission } = usePermissions();
 
   if (isLoading || !row) {
     return (
