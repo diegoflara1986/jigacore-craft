@@ -200,7 +200,14 @@ export function useUpdateProject() {
       toast({ title: "Proyecto actualizado" });
     },
     onError: (e: any) => {
-      toast({ title: "Error al actualizar", description: e.message, variant: "destructive" });
+      const isRlsError = e.message?.includes("JSON") || e.message?.includes("rows") || e.code === "PGRST116";
+      toast({
+        title: "No se pudo actualizar el proyecto",
+        description: isRlsError
+          ? "No tienes permiso para realizar esta acción."
+          : e.message,
+        variant: "destructive",
+      });
     },
   });
 }
