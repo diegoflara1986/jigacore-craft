@@ -139,9 +139,15 @@ export function ProjectKanbanTab({ projectId, isArchived = false }: Props) {
 
   const handleDragStart = useCallback((e: React.DragEvent, id: string) => {
     if (isArchived) { e.preventDefault(); return; }
+    const story = sprintStories.find(s => s.id === id);
+    if (story && isBlocked(story)) {
+      e.preventDefault();
+      toast.error("Historia bloqueada", { description: "No puedes mover una historia bloqueada. Desbloquéala primero." });
+      return;
+    }
     e.dataTransfer.setData("text/plain", id);
     setDraggedId(id);
-  }, [isArchived]);
+  }, [isArchived, sprintStories]);
 
   const handleDragOver = useCallback((e: React.DragEvent, colId: string) => {
     e.preventDefault();
@@ -154,6 +160,11 @@ export function ProjectKanbanTab({ projectId, isArchived = false }: Props) {
 
   const handleDrop = useCallback(async (e: React.DragEvent, newStatus: string) => {
     if (isArchived) return;
+    const movingStory = sprintStories.find(s => s.id === e.dataTransfer.getData("text/plain"));
+    if (movingStory && isBlocked(movingStory)) {
+      toast.error("Historia bloqueada", { description: "No puedes mover una historia bloqueada." });
+      return;
+    }
     e.preventDefault();
     const storyId = e.dataTransfer.getData("text/plain");
     setDraggedId(null);
@@ -164,12 +175,16 @@ export function ProjectKanbanTab({ projectId, isArchived = false }: Props) {
     if (!story || story.status === newStatus) return;
 
     if (newStatus === "done") {
+      if (!hasPermission("backlog", "editar")) {
+        toast.error("Sin permiso", { description: "No tienes permiso para completar historias." });
+        return;
+      }
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 2500);
     }
 
     await updateStory.mutateAsync({ id: storyId, status: newStatus });
-  }, [sprintStories, updateStory]);
+  }, [sprintStories, updateStory, isArchived, hasPermission]);
 
   const handleQuickAdd = async (colId: string) => {
     if (!quickAddTitle.trim()) return;
@@ -185,10 +200,7 @@ export function ProjectKanbanTab({ projectId, isArchived = false }: Props) {
 
   const initials = (name: string | null) => name ? name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase() : "?";
 
-  const isBlocked = (story: UserStory) => {
-    const text = `${story.title} ${story.description || ""}`.toLowerCase();
-    return text.includes("bloqueado") || text.includes("blocked") || text.includes("[blocked]");
-  };
+  const isBlocked = (story: UserStory) => (story as any).is_blocked === true;
 
   const renderCard = (story: UserStory) => {
     const comments = commentCounts?.[story.id] ?? 0;
