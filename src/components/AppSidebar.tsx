@@ -43,6 +43,12 @@ export function AppSidebar() {
   const currentPath = location.pathname;
   const { hasPermission } = usePermissions();
 
+  const canSeeProyectos = hasPermission("proyectos", "ver");
+  const canSeeMiTrabajo = hasPermission("mi_trabajo", "ver");
+  const canSeeIncidentes = hasPermission("incidentes", "ver");
+  const canSeeReportes = hasPermission("reportes", "ver");
+  const canSeeNotificaciones = hasPermission("notificaciones", "ver");
+
   // Visibilidad de sub-ítems SIG según permisos granulares
   const canSeeIncidentesSeguridad =
     hasPermission("sig_form_001", "ver") || hasPermission("sig_form_001", "registrar");
