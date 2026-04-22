@@ -108,8 +108,16 @@ export function SettingsUsers() {
       toast({ title: "Todos los campos son requeridos", variant: "destructive" });
       return;
     }
-    if (createForm.password.length < 6) {
-      toast({ title: "La contraseña debe tener al menos 6 caracteres", variant: "destructive" });
+    const pwErrors = [];
+    if (createForm.password.length < 8) pwErrors.push("mínimo 8 caracteres");
+    if (!/[A-Z]/.test(createForm.password)) pwErrors.push("al menos una mayúscula");
+    if (!/[0-9]/.test(createForm.password)) pwErrors.push("al menos un número");
+    if (pwErrors.length > 0) {
+      toast({
+        title: "Contraseña inválida",
+        description: `La contraseña debe tener: ${pwErrors.join(", ")}.`,
+        variant: "destructive"
+      });
       return;
     }
     setCreating(true);
