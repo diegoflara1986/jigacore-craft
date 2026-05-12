@@ -211,7 +211,6 @@ export const PERMISSION_MODULES = [
     ]
   }
 ];
-];
 
 export function useCustomRoles() {
   return useQuery({
