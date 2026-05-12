@@ -1,7 +1,7 @@
 import {
-  LayoutDashboard, FolderKanban, ClipboardList, Bug,
+  LayoutDashboard, FolderKanban, Bug,
   BarChart3, Settings, Hexagon, ChevronLeft, Bell,
-  ChevronRight, ShieldAlert, FileText, GraduationCap
+  ChevronRight,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
