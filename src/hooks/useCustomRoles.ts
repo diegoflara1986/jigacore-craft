@@ -209,15 +209,8 @@ export const PERMISSION_MODULES = [
       { action: "ver", label: "Ver integraciones" },
       { action: "editar", label: "Editar integraciones" },
     ]
-  },
-  { module: "config_flujos_sig", label: "Flujos SIG", icon: "🔄",
-    actions: [
-      { action: "ver", label: "Ver flujos" },
-      { action: "crear", label: "Crear flujo" },
-      { action: "editar", label: "Editar flujo" },
-      { action: "eliminar", label: "Eliminar flujo" },
-    ]
-  },
+  }
+];
 ];
 
 export function useCustomRoles() {
