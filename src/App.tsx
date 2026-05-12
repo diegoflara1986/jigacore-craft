@@ -24,11 +24,6 @@ import Settings from "./pages/Settings";
 import Reports from "./pages/Reports";
 import Notifications from "./pages/Notifications";
 
-// Páginas SIG
-import SigIncidentesSeguridad from "./pages/sig/SigIncidentesSeguridad";
-import SigSolicitudCambios from "./pages/sig/SigSolicitudCambios";
-import SigCapacitacionMejoras from "./pages/sig/SigCapacitacionMejoras";
-
 const App = () => (
   <TooltipProvider>
     <Toaster />
@@ -54,11 +49,6 @@ const App = () => (
           <Route path="/reports" element={<AppLayout><Reports /></AppLayout>} />
           <Route path="/settings" element={<AppLayout><Settings /></AppLayout>} />
           <Route path="/notificaciones" element={<AppLayout><Notifications /></AppLayout>} />
-          
-          {/* Rutas SIG */}
-          <Route path="/sig/incidentes-seguridad" element={<AppLayout><SigIncidentesSeguridad /></AppLayout>} />
-          <Route path="/sig/solicitud-cambios" element={<AppLayout><SigSolicitudCambios /></AppLayout>} />
-          <Route path="/sig/capacitacion-mejoras" element={<AppLayout><SigCapacitacionMejoras /></AppLayout>} />
           
           <Route path="*" element={<NotFound />} />
         </Routes>
