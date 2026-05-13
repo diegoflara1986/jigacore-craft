@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { useUserStory, useUpdateUserStory, useDeleteUserStory, useCreateUserStory } from "@/hooks/useUserStories";
+import { useUserStory, useUpdateUserStory, useDeleteUserStory, useCreateUserStory, useUserStoryHistory } from "@/hooks/useUserStories";
 import { EpicWithProgress } from "@/hooks/useEpics";
 import { ProjectMember } from "@/hooks/useProjects";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -66,6 +66,7 @@ interface Props {
 
 export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, epics, members, readOnly = false, isInActiveSprint = false }: Props) {
   const { data: story, isLoading } = useUserStory(storyId ?? undefined);
+  const { data: history } = useUserStoryHistory(storyId ?? undefined);
   const updateStory = useUpdateUserStory();
   const deleteStory = useDeleteUserStory();
   const createStory = useCreateUserStory();
@@ -159,7 +160,11 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
 
   const saveField = async (field: string, value: any) => {
     if (!story) return;
-    await updateStory.mutateAsync({ id: story.id, [field]: value });
+    const auditFields = ["status", "assigned_to", "priority", "story_points", "sprint_id"];
+    const previousValues = auditFields.includes(field)
+      ? { [field]: (story as any)[field] ?? null }
+      : undefined;
+    await updateStory.mutateAsync({ id: story.id, [field]: value, previousValues } as any);
   };
 
   const saveTitle = () => { if (title.trim() && title !== story?.title) saveField("title", title); };
