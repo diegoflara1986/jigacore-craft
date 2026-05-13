@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,34 +9,57 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/lib/auth";
 import { useCreateTimeLog } from "@/hooks/useTimeLogs";
 import { useProjects } from "@/hooks/useProjects";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   projectId?: string;
-  storyId?: string;
+  fixedStoryId?: string;
 }
 
-export function ManualTimeLogModal({ open, onOpenChange, projectId: fixedProjectId, storyId }: Props) {
+export function ManualTimeLogModal({ open, onOpenChange, projectId: fixedProjectId, fixedStoryId }: Props) {
   const { profile } = useAuth();
   const createLog = useCreateTimeLog();
   const { data: projects } = useProjects();
   const [projectId, setProjectId] = useState(fixedProjectId || "");
+  const [storyId, setStoryId] = useState(fixedStoryId || "");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [hours, setHours] = useState("");
   const [description, setDescription] = useState("");
 
+  const { data: stories } = useQuery({
+    queryKey: ["user-stories", projectId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("user_stories")
+        .select("id, title, story_number, status")
+        .eq("project_id", projectId)
+        .is("deleted_at", null)
+        .order("story_number", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!projectId && !fixedStoryId,
+  });
+
+  const handleProjectChange = (value: string) => {
+    setProjectId(value);
+    setStoryId("");
+  };
+
   const handleSave = async () => {
     if (!profile || !projectId || !hours) return;
+    const selectedStoryId = storyId || fixedStoryId;
     await createLog.mutateAsync({
       user_id: profile.id,
       project_id: fixedProjectId || projectId,
       hours: parseFloat(hours),
       log_date: date,
       description: description || undefined,
-      user_story_id: storyId || undefined,
+      user_story_id: selectedStoryId || undefined,
     });
-    setHours(""); setDescription("");
+    setHours(""); setDescription(""); setStoryId("");
     onOpenChange(false);
   };
 
@@ -50,9 +74,27 @@ export function ManualTimeLogModal({ open, onOpenChange, projectId: fixedProject
           {!fixedProjectId && (
             <div className="space-y-1.5">
               <Label className="text-xs">Proyecto</Label>
-              <Select value={projectId} onValueChange={setProjectId}>
+              <Select value={projectId} onValueChange={handleProjectChange}>
                 <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Seleccionar proyecto" /></SelectTrigger>
                 <SelectContent>{projects?.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+          )}
+          {!fixedStoryId && (
+            <div className="space-y-1.5">
+              <Label className="text-xs">Historia de Usuario</Label>
+              <Select value={storyId} onValueChange={setStoryId} disabled={!projectId}>
+                <SelectTrigger className="h-9 text-sm">
+                  <SelectValue placeholder={projectId ? "Seleccionar HU" : "Selecciona un proyecto primero"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Sin HU (tiempo general)</SelectItem>
+                  {stories?.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      HU-{s.story_number}: {s.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
           )}
