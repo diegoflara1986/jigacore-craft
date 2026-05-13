@@ -138,25 +138,6 @@ export const PERMISSION_MODULES = [
       { action: "duplicar", label: "Duplicar incidente" },
     ]
   },
-  { module: "notificaciones", label: "Notificaciones", icon: "🔔",
-    scope: { field: "notificaciones_scope",
-             options: ["solo_propias", "todas"],
-             required: true },
-    actions: [
-      { action: "ver", label: "Ver notificaciones" },
-    ]
-  },
-  { module: "config_perfil", label: "Mi Perfil", icon: "👤",
-    actions: [
-      { action: "ver", label: "Ver mi perfil" },
-      { action: "editar", label: "Editar mi perfil" },
-    ]
-  },
-  { module: "config_apariencia", label: "Apariencia", icon: "🎨",
-    actions: [
-      { action: "editar", label: "Editar apariencia" },
-    ]
-  },
   { module: "config_general", label: "Configuración General",
     icon: "⚙️",
     actions: [

@@ -47,7 +47,7 @@ export function AppSidebar() {
   const canSeeMiTrabajo = hasPermission("mi_trabajo", "ver");
   const canSeeIncidentes = hasPermission("incidentes", "ver");
   const canSeeReportes = hasPermission("reportes", "ver");
-  const canSeeNotificaciones = hasPermission("notificaciones", "ver");
+  const canSeeNotificaciones = true;
 
   // Determinar si los grupos están abiertos
   const isProyectosActive = isActivePath(currentPath, "/proyectos") || isActivePath(currentPath, "/my-work");
