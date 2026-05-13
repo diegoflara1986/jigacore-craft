@@ -79,7 +79,7 @@ export function ProjectCostsTab({ projectId, isArchived = false }: Props) {
   const costByEpic = useMemo(() => {
     const m: Record<string, { name: string; hours: number; cost: number }> = {};
     approvedLogs.forEach(l => {
-      const storyEpic = l.user_stories ? "con_epica" : "sin_epica";
+      const storyEpic = l.user_stories?.epic_id ? "con_epica" : "sin_epica";
       // Simplified - group by whether story has epic
       const epicId = storyEpic;
       const rate = rateMap[l.user_id] ?? 0;
