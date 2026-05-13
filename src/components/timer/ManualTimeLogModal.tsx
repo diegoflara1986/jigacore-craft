@@ -50,7 +50,7 @@ export function ManualTimeLogModal({ open, onOpenChange, projectId: fixedProject
 
   const handleSave = async () => {
     if (!profile || !projectId || !hours) return;
-    const selectedStoryId = storyId || fixedStoryId;
+    const selectedStoryId = (storyId && storyId !== "none") ? storyId : fixedStoryId;
     await createLog.mutateAsync({
       user_id: profile.id,
       project_id: fixedProjectId || projectId,
@@ -88,7 +88,7 @@ export function ManualTimeLogModal({ open, onOpenChange, projectId: fixedProject
                   <SelectValue placeholder={projectId ? "Seleccionar HU" : "Selecciona un proyecto primero"} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Sin HU (tiempo general)</SelectItem>
+                  <SelectItem value="none">Sin HU (tiempo general)</SelectItem>
                   {stories?.map((s) => (
                     <SelectItem key={s.id} value={s.id}>
                       HU-{s.story_number}: {s.title}
