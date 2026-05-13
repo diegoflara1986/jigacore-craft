@@ -93,7 +93,7 @@ export function ProjectTeamTab({ projectId, members, isArchived = false }: { pro
       supabase.from("time_logs").select("id", { count: "exact", head: true })
         .eq("project_id", projectId)
         .eq("user_id", member.user_id),
-      supabase.from("story_comments").select("id", { count: "exact", head: true })
+      supabase.from("comments").select("id", { count: "exact", head: true })
         .eq("user_id", member.user_id)
         .in("user_story_id",
           (await supabase.from("user_stories").select("id").eq("project_id", projectId).is("deleted_at", null)).data?.map(s => s.id) ?? []
