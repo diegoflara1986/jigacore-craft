@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSprintsWithStats, useCreateSprint, useUpdateSprint, SprintWithStats } from "@/hooks/useSprints";
 import { useUserStories, useUpdateUserStory, useCreateUserStory } from "@/hooks/useUserStories";
 import { useEpics } from "@/hooks/useEpics";
@@ -149,6 +149,10 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
     });
     const assignedIds = backlogStories?.filter((s) => s.sprint_id === sprint.id).map((s) => s.id) ?? [];
     setSelectedBacklogIds(assignedIds);
+    const selectedPointsFromBacklog = unassignedStories.filter((s) => assignedIds.includes(s.id)).reduce((a, b) => a + (b.story_points ?? 0), 0);
+    if (assignedIds.length === 0 || selectedPointsFromBacklog < sprint.capacity) {
+      forcePointsRef.current = sprint.capacity;
+    }
     setEditSprint(sprint);
   };
 
@@ -206,7 +210,18 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
     setSelectedBacklogIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
   };
 
-  const selectedPoints = unassignedStories.filter((s) => selectedBacklogIds.includes(s.id)).reduce((a, b) => a + (b.story_points ?? 0), 0);
+  const [selectedPoints, setSelectedPoints] = useState(0);
+  const forcePointsRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (forcePointsRef.current !== null) {
+      setSelectedPoints(forcePointsRef.current);
+      forcePointsRef.current = null;
+      return;
+    }
+    const points = unassignedStories.filter((s) => selectedBacklogIds.includes(s.id)).reduce((a, b) => a + (b.story_points ?? 0), 0);
+    setSelectedPoints(points);
+  }, [selectedBacklogIds, unassignedStories]);
 
   const renderSprintCard = (sprint: SprintWithStats, isActive: boolean) => {
     const progress = sprint.totalStories > 0 ? Math.round((sprint.completedStories / sprint.totalStories) * 100) : 0;
