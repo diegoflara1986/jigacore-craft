@@ -19,12 +19,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Separator } from "@/components/ui/separator";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Plus, Play, CheckCircle2, LayoutDashboard, Pencil, Users, AlertTriangle, Trash2 } from "lucide-react";
+import { CalendarIcon, Plus, Play, CheckCircle2, LayoutDashboard, Pencil, Users, AlertTriangle, Trash2, ChevronDown } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { useDeleteSprint } from "@/hooks/useSprints";
 
 
@@ -94,6 +95,12 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
   const [deleteConfirm, setDeleteConfirm] = useState<SprintWithStats | null>(null);
   
   const [newStory, setNewStory] = useState({ title: "", description: "", type: "story", priority: "medium", status: "backlog", story_points: "", epic_id: "", assigned_to: "", sprint_id: "" });
+  const [expandedSprints, setExpandedSprints] = useState<Set<string>>(new Set());
+  const toggleSprint = (id: string) => setExpandedSprints(prev => {
+    const next = new Set(prev);
+    next.has(id) ? next.delete(id) : next.add(id);
+    return next;
+  });
 
   const handleCreateHU = async () => {
     if (!newStory.title.trim()) return;
