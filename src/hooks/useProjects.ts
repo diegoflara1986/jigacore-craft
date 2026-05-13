@@ -137,13 +137,15 @@ export function useProjectStats(projectId: string | undefined) {
       const { data } = await supabase
         .from("user_stories")
         .select("status")
-        .eq("project_id", projectId);
+        .eq("project_id", projectId)
+        .is("deleted_at", null);
       const stories = data ?? [];
+      const inProgressStatuses = ["in_progress", "in_review", "in_qa"];
       return {
         total: stories.length,
         completed: stories.filter((s) => s.status === "done").length,
-        inProgress: stories.filter((s) => s.status === "in_progress").length,
-        pending: stories.filter((s) => s.status === "backlog" || s.status === "todo").length,
+        inProgress: stories.filter((s) => inProgressStatuses.includes(s.status)).length,
+        pending: stories.filter((s) => s.status !== "done" && !inProgressStatuses.includes(s.status)).length,
       };
     },
     enabled: !!projectId,
