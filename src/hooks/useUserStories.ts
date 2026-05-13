@@ -118,6 +118,8 @@ export function useUpdateUserStory() {
         priority?: string | null;
         story_points?: number | null;
         sprint_id?: string | null;
+        type?: string | null;
+        epic_id?: string | null;
       };
     }) => {
       const { epics, assigned_profile, sprints, _projectId, previousValues, ...updateData } = updates as any;
@@ -127,7 +129,7 @@ export function useUpdateUserStory() {
       // Audit history (non-blocking)
       try {
         if (previousValues) {
-          const auditFields = ["status", "assigned_to", "priority", "story_points", "sprint_id"] as const;
+          const auditFields = ["status", "assigned_to", "priority", "story_points", "sprint_id", "type", "epic_id"] as const;
           const { data: authData } = await supabase.auth.getUser();
           const userId = authData?.user?.id;
           if (userId) {
