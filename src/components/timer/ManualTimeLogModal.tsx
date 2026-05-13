@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/lib/auth";
-import { useCreateTimeLog } from "@/hooks/useTimeLogs";
+import { useCreateTimeLog, useUpdateTimeLog } from "@/hooks/useTimeLogs";
 import { useProjects } from "@/hooks/useProjects";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -16,17 +16,30 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   projectId?: string;
   fixedStoryId?: string;
+  editLog?: { id: string; hours: number; log_date: string; description?: string | null; user_story_id?: string | null };
+  onUpdated?: () => void;
 }
 
-export function ManualTimeLogModal({ open, onOpenChange, projectId: fixedProjectId, fixedStoryId }: Props) {
+export function ManualTimeLogModal({ open, onOpenChange, projectId: fixedProjectId, fixedStoryId, editLog, onUpdated }: Props) {
   const { profile } = useAuth();
   const createLog = useCreateTimeLog();
+  const updateLog = useUpdateTimeLog();
+  const isEditing = !!editLog;
   const { data: projects } = useProjects();
   const [projectId, setProjectId] = useState(fixedProjectId || "");
   const [storyId, setStoryId] = useState(fixedStoryId || "");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [hours, setHours] = useState("");
   const [description, setDescription] = useState("");
+
+  useEffect(() => {
+    if (editLog) {
+      setHours(String(editLog.hours));
+      setDate(editLog.log_date);
+      setDescription(editLog.description || "");
+      setStoryId(editLog.user_story_id || "none");
+    }
+  }, [editLog]);
 
   const { data: stories } = useQuery({
     queryKey: ["user-stories", projectId],
@@ -59,6 +72,18 @@ export function ManualTimeLogModal({ open, onOpenChange, projectId: fixedProject
   const handleSave = async () => {
     if (!profile || !projectId || !hours) return;
     const selectedStoryId = (storyId && storyId !== "none") ? storyId : fixedStoryId;
+    if (isEditing && editLog) {
+      await updateLog.mutateAsync({
+        id: editLog.id,
+        hours: parseFloat(hours),
+        log_date: date,
+        description: description || null,
+        user_story_id: selectedStoryId || null,
+      });
+      onUpdated?.();
+      onOpenChange(false);
+      return;
+    }
     await createLog.mutateAsync({
       user_id: profile.id,
       project_id: fixedProjectId || projectId,
@@ -75,7 +100,7 @@ export function ManualTimeLogModal({ open, onOpenChange, projectId: fixedProject
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Registrar tiempo manual</DialogTitle>
+          <DialogTitle>{isEditing ? "Editar registro de tiempo" : "Registrar tiempo manual"}</DialogTitle>
           <DialogDescription>Ingresa los detalles del tiempo trabajado.</DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
