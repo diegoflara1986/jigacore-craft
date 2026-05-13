@@ -31,6 +31,14 @@ export function ManualTimeLogModal({ open, onOpenChange, projectId: fixedProject
   const { data: stories } = useQuery({
     queryKey: ["user-stories", projectId],
     queryFn: async () => {
+      if (!profile?.id) return [];
+      const { data: membership } = await supabase
+        .from("project_members")
+        .select("id")
+        .eq("project_id", projectId)
+        .eq("user_id", profile.id)
+        .maybeSingle();
+      if (!membership) return [];
       const { data, error } = await supabase
         .from("user_stories")
         .select("id, title, story_number, status")
