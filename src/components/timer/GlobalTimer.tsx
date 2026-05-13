@@ -35,7 +35,14 @@ export function GlobalTimer() {
   const { data: stories } = useQuery({
     queryKey: ["timer-stories", projectId],
     queryFn: async () => {
-      if (!projectId) return [];
+      if (!projectId || !profile?.id) return [];
+      const { data: membership } = await supabase
+        .from("project_members")
+        .select("id")
+        .eq("project_id", projectId)
+        .eq("user_id", profile.id)
+        .maybeSingle();
+      if (!membership) return [];
       const { data } = await supabase.from("user_stories").select("id, title, story_number").eq("project_id", projectId).is("deleted_at", null).order("story_number");
       return data ?? [];
     },
