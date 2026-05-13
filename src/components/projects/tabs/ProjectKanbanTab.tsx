@@ -139,6 +139,11 @@ export function ProjectKanbanTab({ projectId, isArchived = false }: Props) {
 
   const handleDragStart = useCallback((e: React.DragEvent, id: string) => {
     if (isArchived) { e.preventDefault(); return; }
+    if (!hasPermission("backlog", "editar")) {
+      e.preventDefault();
+      toast.error("Sin permiso", { description: "No tienes permiso para mover historias." });
+      return;
+    }
     const story = sprintStories.find(s => s.id === id);
     if (story && isBlocked(story)) {
       e.preventDefault();
@@ -147,7 +152,7 @@ export function ProjectKanbanTab({ projectId, isArchived = false }: Props) {
     }
     e.dataTransfer.setData("text/plain", id);
     setDraggedId(id);
-  }, [isArchived, sprintStories]);
+  }, [isArchived, sprintStories, hasPermission]);
 
   const handleDragOver = useCallback((e: React.DragEvent, colId: string) => {
     e.preventDefault();
@@ -287,7 +292,7 @@ export function ProjectKanbanTab({ projectId, isArchived = false }: Props) {
             </span>
           </div>
           {!isArchived && (
-            <Button size="icon" variant="ghost" className="h-5 w-5" onClick={() => guardAction("tablero", "mover_tarjetas", "agregar una historia al tablero", () => { setQuickAddCol(col.id); setQuickAddTitle(""); })}>
+            <Button size="icon" variant="ghost" className="h-5 w-5" onClick={() => guardAction("backlog", "crear", "agregar una historia al tablero", () => { setQuickAddCol(col.id); setQuickAddTitle(""); })}>
               <Plus className="h-3 w-3" />
             </Button>
           )}

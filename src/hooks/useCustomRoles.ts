@@ -97,7 +97,6 @@ export const PERMISSION_MODULES = [
   { module: "tablero", label: "Tablero Kanban", icon: "📌",
     actions: [
       { action: "ver", label: "Ver tablero" },
-      { action: "mover_tarjetas", label: "Mover tarjetas entre columnas" },
     ]
   },
   { module: "tiempo", label: "Tiempo", icon: "⏱️",
