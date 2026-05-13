@@ -190,23 +190,13 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
     await supabase.from("sprints").delete().eq("id", deleteConfirm.id);
   };
 
-  const handleMoveIncomplete = async (action: "next" | "backlog") => {
-    if (!completeReview) return;
-    const incompleteStories = backlogStories?.filter((s) => s.sprint_id === completeReview.id && s.status !== "done") ?? [];
-    const nextSprint = sprints?.find((s) => s.status === "planning");
-
-    for (const story of incompleteStories) {
-      if (action === "next" && nextSprint) {
-        await updateStory.mutateAsync({ id: story.id, sprint_id: nextSprint.id });
-      } else {
-        await updateStory.mutateAsync({ id: story.id, sprint_id: null });
-      }
-    }
-    setIncompleteHandled(true);
-  };
-
   const handleFinalizeSprint = async () => {
     if (!completeReview) return;
+    // Devolver automáticamente las HU incompletas al backlog
+    const incompleteStories = backlogStories?.filter((s) => s.sprint_id === completeReview.id && s.status !== "done") ?? [];
+    for (const story of incompleteStories) {
+      await updateStory.mutateAsync({ id: story.id, sprint_id: null });
+    }
     await updateSprint.mutateAsync({ id: completeReview.id, status: "completed" });
     setCompleteReview(null);
     setIncompleteHandled(false);
@@ -569,28 +559,22 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
               </div>
             )}
 
-            {reviewIncomplete.length > 0 && !incompleteHandled && (
+            {reviewIncomplete.length > 0 && (
               <div className="space-y-2">
                 <Label className="text-xs text-muted-foreground">⏳ Incompletas ({reviewIncomplete.length})</Label>
                 <ul className="text-sm space-y-0.5">
                   {reviewIncomplete.map((s) => <li key={s.id} className="text-foreground">• {s.title} ({s.story_points ?? 0} SP)</li>)}
                 </ul>
-                <p className="text-sm text-muted-foreground">¿Qué hacer con las historias incompletas?</p>
-                <div className="flex gap-2">
-                  <Button size="sm" variant="outline" onClick={() => handleMoveIncomplete("next")} disabled={updateStory.isPending}>Mover al siguiente sprint</Button>
-                  <Button size="sm" variant="outline" onClick={() => handleMoveIncomplete("backlog")} disabled={updateStory.isPending}>Devolver al backlog</Button>
-                </div>
+                <p className="text-sm text-muted-foreground rounded-md border border-border bg-muted/30 p-2">
+                  ℹ️ Las historias incompletas se devolverán al Backlog para su gestión en otro sprint.
+                </p>
               </div>
-            )}
-
-            {incompleteHandled && (
-              <p className="text-sm text-green-600">✅ Historias incompletas reasignadas correctamente.</p>
             )}
 
             <Separator />
             <DialogFooter>
               <Button variant="outline" onClick={() => { setCompleteReview(null); setIncompleteHandled(false); }}>Cancelar</Button>
-              <Button onClick={handleFinalizeSprint} disabled={(reviewIncomplete.length > 0 && !incompleteHandled) || updateSprint.isPending}>
+              <Button onClick={handleFinalizeSprint} disabled={updateSprint.isPending || updateStory.isPending}>
                 Finalizar Sprint
               </Button>
             </DialogFooter>
