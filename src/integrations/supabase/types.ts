@@ -1871,6 +1871,58 @@ export type Database = {
           },
         ]
       }
+      user_story_history: {
+        Row: {
+          created_at: string
+          field_name: string
+          id: string
+          new_value: string | null
+          old_value: string | null
+          user_id: string | null
+          user_story_id: string
+        }
+        Insert: {
+          created_at?: string
+          field_name: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          user_id?: string | null
+          user_story_id: string
+        }
+        Update: {
+          created_at?: string
+          field_name?: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          user_id?: string | null
+          user_story_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_story_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_story_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles_safe_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_story_history_user_story_id_fkey"
+            columns: ["user_story_id"]
+            isOneToOne: false
+            referencedRelation: "user_stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workspaces: {
         Row: {
           created_at: string
