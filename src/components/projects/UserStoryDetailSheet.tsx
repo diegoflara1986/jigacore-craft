@@ -341,7 +341,7 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
                       </DropdownMenuItem>
                     )}
                     {(canBloquear || canDesbloquear) && <DropdownMenuSeparator />}
-                    {isAdmin && !isBlocked && !isDone && (
+                    {canBloquear && !isBlocked && !isDone && (
                       <DropdownMenuItem onClick={() => saveField("is_blocked", true)}>
                         <Lock className="h-4 w-4 mr-2 text-yellow-500" /> Bloquear historia
                       </DropdownMenuItem>
