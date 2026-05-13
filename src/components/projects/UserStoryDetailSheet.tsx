@@ -437,7 +437,7 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
                       </div>
                     ))}
                   </div>
-                  {!readOnly && (
+                  {!readOnly && !hardLocked && (
                     <div className="flex gap-2">
                       <Input value={commentText} onChange={(e) => setCommentText(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && addComment()}
@@ -464,7 +464,7 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
                           <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleDownloadAttachment(att)}>
                             <Download className="h-3 w-3" />
                           </Button>
-                          {(att.uploaded_by === profile?.id || isAdmin) && !readOnly && (
+                          {(att.uploaded_by === profile?.id || isAdmin) && !readOnly && !hardLocked && (
                             <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => handleDeleteAttachment(att)}>
                               <X className="h-3 w-3" />
                             </Button>
