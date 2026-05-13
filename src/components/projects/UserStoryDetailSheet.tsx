@@ -302,6 +302,40 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
 
   const initials = (name: string | null) => name ? name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() : "?";
 
+  const FIELD_LABELS: Record<string, string> = {
+    status: "Estado",
+    assigned_to: "Asignado a",
+    priority: "Prioridad",
+    story_points: "Story points",
+    sprint_id: "Sprint",
+  };
+
+  const formatHistoryValue = (field: string, value: string | null) => {
+    if (value == null || value === "") return "—";
+    if (field === "status") return STATUSES.find(s => s.value === value)?.label ?? value;
+    if (field === "priority") return PRIORITIES.find(p => p.value === value)?.label ?? value;
+    if (field === "assigned_to") {
+      const m = members.find(m => m.user_id === value);
+      return m?.profiles?.full_name || m?.profiles?.email || value;
+    }
+    if (field === "sprint_id") return sprints?.find(s => s.id === value)?.name ?? value;
+    return value;
+  };
+
+  const formatRelativeTime = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const diffMs = Date.now() - date.getTime();
+    const diffMin = Math.floor(diffMs / 60000);
+    if (diffMin < 1) return "hace unos segundos";
+    if (diffMin < 60) return `hace ${diffMin} min`;
+    const diffH = Math.floor(diffMin / 60);
+    if (diffH < 24) return `hace ${diffH} h`;
+    const diffD = Math.floor(diffH / 24);
+    if (diffD === 1) return "ayer";
+    if (diffD < 7) return `hace ${diffD} días`;
+    return date.toLocaleDateString("es");
+  };
+
   if (!open) return null;
 
   return (
