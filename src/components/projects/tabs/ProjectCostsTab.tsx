@@ -100,7 +100,7 @@ export function ProjectCostsTab({ projectId, isArchived = false }: Props) {
       );
       const hours = sprintLogs.reduce((a, l) => a + l.hours, 0);
       const cost = sprintLogs.reduce((a, l) => a + l.hours * (rateMap[l.user_id] ?? 0), 0);
-      return { name: s.name, points: s.totalPoints, hours, cost, pctBudget: budget > 0 ? Math.round((cost / budget) * 100) : 0 };
+      return { name: s.name, points: s.totalPoints, hours, cost, pctBudget: budget > 0 ? parseFloat(((cost / budget) * 100).toFixed(2)) : 0 };
     });
   }, [sprints, approvedLogs, rateMap, budget]);
 
@@ -320,7 +320,7 @@ export function ProjectCostsTab({ projectId, isArchived = false }: Props) {
                       <TableCell className="text-sm">{s.points}</TableCell>
                       <TableCell className="text-sm">{s.hours.toFixed(1)}h</TableCell>
                       <TableCell className="text-sm">${s.cost.toLocaleString()}</TableCell>
-                      <TableCell className="text-sm">{s.pctBudget}%</TableCell>
+                      <TableCell className="text-sm">{s.pctBudget < 1 && s.pctBudget > 0 ? `${s.pctBudget}%` : `${Math.round(s.pctBudget)}%`}</TableCell>
                     </TableRow>
                   ))}
                   {costBySprint.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-6">Sin sprints</TableCell></TableRow>}
