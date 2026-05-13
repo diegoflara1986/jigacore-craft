@@ -1774,6 +1774,14 @@ export type Database = {
           is_blocked: boolean | null
           priority: string
           project_id: string
+          sec_auth_required: string | null
+          sec_environment_impact: string | null
+          sec_input_validation: string | null
+          sec_peer_review: string | null
+          sec_secrets: string | null
+          sec_security_test: string | null
+          sec_sensitivity: string | null
+          sec_test_data: string | null
           sprint_id: string | null
           status: string
           story_number: number | null
@@ -1793,6 +1801,14 @@ export type Database = {
           is_blocked?: boolean | null
           priority?: string
           project_id: string
+          sec_auth_required?: string | null
+          sec_environment_impact?: string | null
+          sec_input_validation?: string | null
+          sec_peer_review?: string | null
+          sec_secrets?: string | null
+          sec_security_test?: string | null
+          sec_sensitivity?: string | null
+          sec_test_data?: string | null
           sprint_id?: string | null
           status?: string
           story_number?: number | null
@@ -1812,6 +1828,14 @@ export type Database = {
           is_blocked?: boolean | null
           priority?: string
           project_id?: string
+          sec_auth_required?: string | null
+          sec_environment_impact?: string | null
+          sec_input_validation?: string | null
+          sec_peer_review?: string | null
+          sec_secrets?: string | null
+          sec_security_test?: string | null
+          sec_sensitivity?: string | null
+          sec_test_data?: string | null
           sprint_id?: string | null
           status?: string
           story_number?: number | null
