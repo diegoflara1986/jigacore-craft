@@ -141,6 +141,10 @@ export function useDeleteUserStory() {
       qc.invalidateQueries({ queryKey: ["epics", pid] });
       toast({ title: "Historia eliminada" });
     },
+    onError: (e: any) => toast({ title: "No se pudo eliminar la historia", description: parseError(e), variant: "destructive" }),
+  });
+}
+
 export function useUserStoryHistory(storyId: string | undefined) {
   return useQuery({
     queryKey: ["user-story-history", storyId],
