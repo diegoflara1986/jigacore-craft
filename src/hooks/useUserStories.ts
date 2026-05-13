@@ -144,3 +144,33 @@ export function useDeleteUserStory() {
     onError: (e: any) => toast({ title: "No se pudo eliminar la historia", description: parseError(e), variant: "destructive" }),
   });
 }
+
+export function useUserStoryHistory(storyId: string | undefined) {
+  return useQuery({
+    queryKey: ["user-story-history", storyId],
+    queryFn: async () => {
+      if (!storyId) return [];
+      const { data, error } = await supabase
+        .from("user_story_history")
+        .select("*, profiles:profiles(id, full_name, avatar_url)")
+        .eq("user_story_id", storyId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!storyId,
+  });
+}
+
+export function useCreateUserStoryHistory() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (entry: { user_story_id: string; user_id: string; field_name: string; old_value: string | null; new_value: string | null }) => {
+      const { error } = await supabase.from("user_story_history").insert(entry);
+      if (error) throw error;
+    },
+    onSuccess: (_d, v) => {
+      qc.invalidateQueries({ queryKey: ["user-story-history", v.user_story_id] });
+    },
+  });
+}
