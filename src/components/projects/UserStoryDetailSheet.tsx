@@ -517,7 +517,7 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
                     } else {
                       saveField("status", v);
                     }
-                  }} disabled={hardLocked || readOnly}>
+                  }} disabled={hardLocked || readOnly || !canEditPerm}>
                     <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                     <SelectContent>{STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
                   </Select>
@@ -582,7 +582,7 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
                 {/* Asignado - always editable in sprint */}
                 <div className="space-y-1.5">
                   <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Asignado a</Label>
-                  <Select value={story.assigned_to || "none"} onValueChange={(v) => saveField("assigned_to", v === "none" ? null : v)} disabled={hardLocked || readOnly}>
+                  <Select value={story.assigned_to || "none"} onValueChange={(v) => saveField("assigned_to", v === "none" ? null : v)} disabled={hardLocked || readOnly || !canEditPerm}>
                     <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">Sin asignar</SelectItem>
