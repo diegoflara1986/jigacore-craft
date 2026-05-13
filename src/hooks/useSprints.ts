@@ -59,7 +59,7 @@ export function useSprintsWithStats(projectId: string | undefined) {
       if (!projectId) return [];
       const { data, error } = await supabase
         .from("user_stories")
-        .select("id, sprint_id, status, story_points")
+        .select("id, sprint_id, status, story_points, story_number, title, assigned_to, priority, type")
         .eq("project_id", projectId)
         .not("sprint_id", "is", null);
       if (error) throw error;
@@ -77,6 +77,7 @@ export function useSprintsWithStats(projectId: string | undefined) {
       completedStories: completed.length,
       totalPoints: sprintStories.reduce((a, b) => a + (b.story_points ?? 0), 0),
       completedPoints: completed.reduce((a, b) => a + (b.story_points ?? 0), 0),
+      stories: s.status === "completed" || s.status === "done" ? sprintStories.filter(st => st.status === "done") : sprintStories,
     };
   });
 
