@@ -55,18 +55,50 @@ export default function MyWork() {
   const deleteTL = useDeleteTimeLog();
   const [showCompleted, setShowCompleted] = useState(false);
 
-  // Fetch user's assigned stories/tasks
+  // Fetch user's assigned stories + stories where the user logged time
   const { data: myStories } = useQuery({
-    queryKey: ["my-stories", user?.id],
+    queryKey: ["my-stories-extended", user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Step 1: stories assigned to the user
+      const { data: assigned, error: e1 } = await supabase
         .from("user_stories")
         .select("*, projects(id, name, color), sprints(id, name)")
         .eq("assigned_to", user!.id)
         .is("deleted_at", null)
         .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data ?? [];
+      if (e1) throw e1;
+
+      // Step 2: distinct user_story_ids from time_logs of this user
+      const { data: tlRows, error: e2 } = await supabase
+        .from("time_logs")
+        .select("user_story_id")
+        .eq("user_id", user!.id)
+        .not("user_story_id", "is", null);
+      if (e2) throw e2;
+      const loggedIds = Array.from(new Set((tlRows ?? []).map((r: any) => r.user_story_id).filter(Boolean)));
+
+      // Step 3: stories matching those ids
+      let logged: any[] = [];
+      if (loggedIds.length > 0) {
+        const { data: loggedStories, error: e3 } = await supabase
+          .from("user_stories")
+          .select("*, projects(id, name, color), sprints(id, name)")
+          .in("id", loggedIds)
+          .is("deleted_at", null);
+        if (e3) throw e3;
+        logged = loggedStories ?? [];
+      }
+
+      // Step 4: combine, dedup by id, mark participant-only items
+      const assignedList = (assigned ?? []) as any[];
+      const assignedIds = new Set(assignedList.map((s) => s.id));
+      const merged: any[] = assignedList.map((s) => ({ ...s, _isParticipant: false }));
+      for (const s of logged) {
+        if (!assignedIds.has(s.id)) {
+          merged.push({ ...s, _isParticipant: true });
+        }
+      }
+      return merged;
     },
     enabled: !!user?.id,
   });
@@ -118,6 +150,7 @@ export default function MyWork() {
         project: s.projects, sprint: s.sprints,
         priority: s.priority, storyPoints: s.story_points,
         dueDate: null, status: s.status, projectId: s.project_id,
+        isParticipant: !!s._isParticipant,
       });
     });
     myTasks?.forEach(t => {
@@ -126,6 +159,7 @@ export default function MyWork() {
         title: t.title, project: t.projects, sprint: null,
         priority: t.priority, storyPoints: null,
         dueDate: t.due_date, status: t.status, projectId: t.project_id,
+        isParticipant: false,
       });
     });
     return items;
@@ -222,6 +256,9 @@ export default function MyWork() {
                   <Badge variant="outline" className="text-[10px] shrink-0" style={{ borderColor: item.project.color, color: item.project.color }}>
                     {item.project.name}
                   </Badge>
+                )}
+                {item.isParticipant && (
+                  <Badge variant="secondary" className="text-[10px] shrink-0 text-muted-foreground">Participé</Badge>
                 )}
                 {item.sprint && <Badge variant="secondary" className="text-[10px] shrink-0">{item.sprint.name}</Badge>}
                 <Badge className={cn("text-[10px] shrink-0", priorityColor(item.priority))}>{item.priority}</Badge>
