@@ -30,7 +30,7 @@ export function ProjectCostsTab({ projectId, isArchived = false }: Props) {
     queryFn: async () => {
       const { data } = await supabase
         .from("time_logs")
-        .select("*, profiles:user_id(id, full_name, email, avatar_url), user_stories(id, title, story_number, sprint_id), tasks(id, title)")
+        .select("*, profiles:user_id(id, full_name, email, avatar_url), user_stories(id, title, story_number, sprint_id, epic_id), tasks(id, title)")
         .eq("project_id", projectId)
         .order("log_date", { ascending: false });
       return data ?? [];
