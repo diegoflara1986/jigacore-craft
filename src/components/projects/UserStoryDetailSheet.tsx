@@ -158,13 +158,48 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
     }
   }, [story]);
 
-  const saveField = async (field: string, value: any) => {
+const saveField = async (field: string, value: any) => {
     if (!story) return;
     const auditFields = ["status", "assigned_to", "priority", "story_points", "sprint_id"];
     const previousValues = auditFields.includes(field)
       ? { [field]: (story as any)[field] ?? null }
       : undefined;
     await updateStory.mutateAsync({ id: story.id, [field]: value, previousValues } as any);
+
+    try {
+      if (field === "assigned_to" && value && value !== story.assigned_to) {
+        if (value !== user?.id) {
+          await supabase.from("notifications").insert({
+            user_id: value,
+            type: "story_assigned",
+            title: "📋 Se te asignó una historia de usuario",
+            message: `HU-${story.story_number}: ${story.title}`,
+            reference_id: story.id,
+            reference_type: "user_story",
+          });
+        }
+      } else if (field === "status" && story.assigned_to && story.assigned_to !== user?.id) {
+        await supabase.from("notifications").insert({
+          user_id: story.assigned_to,
+          type: "story_status_changed",
+          title: "🔄 Estado actualizado en tu historia",
+          message: `HU-${story.story_number}: ${story.title} → ${value}`,
+          reference_id: story.id,
+          reference_type: "user_story",
+        });
+      } else if (field === "is_blocked" && value === true && story.assigned_to && story.assigned_to !== user?.id) {
+        await supabase.from("notifications").insert({
+          user_id: story.assigned_to,
+          type: "story_blocked",
+          title: "🔒 Tu historia fue bloqueada",
+          message: `HU-${story.story_number}: ${story.title}`,
+          reference_id: story.id,
+          reference_type: "user_story",
+        });
+      }
+    } catch (_e) {
+      // Silently ignore notification errors
+    }
   };
 
   const saveTitle = () => { if (title.trim() && title !== story?.title) saveField("title", title); };
