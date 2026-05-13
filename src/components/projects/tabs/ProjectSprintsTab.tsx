@@ -206,7 +206,18 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
     setSelectedBacklogIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
   };
 
-  const selectedPoints = unassignedStories.filter((s) => selectedBacklogIds.includes(s.id)).reduce((a, b) => a + (b.story_points ?? 0), 0);
+  const [selectedPoints, setSelectedPoints] = useState(0);
+  const forcePointsRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (forcePointsRef.current !== null) {
+      setSelectedPoints(forcePointsRef.current);
+      forcePointsRef.current = null;
+      return;
+    }
+    const points = unassignedStories.filter((s) => selectedBacklogIds.includes(s.id)).reduce((a, b) => a + (b.story_points ?? 0), 0);
+    setSelectedPoints(points);
+  }, [selectedBacklogIds, unassignedStories]);
 
   const renderSprintCard = (sprint: SprintWithStats, isActive: boolean) => {
     const progress = sprint.totalStories > 0 ? Math.round((sprint.completedStories / sprint.totalStories) * 100) : 0;
