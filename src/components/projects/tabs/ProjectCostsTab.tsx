@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
-import { useTimeLogs } from "@/hooks/useTimeLogs";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { useCostConfigs, useUpsertCostConfig } from "@/hooks/useCostConfigs";
 import { useProjectMembers, useProject } from "@/hooks/useProjects";
 import { useEpics } from "@/hooks/useEpics";
