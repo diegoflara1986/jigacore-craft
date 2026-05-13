@@ -4,6 +4,7 @@ import { useUserStories, useUpdateUserStory, useCreateUserStory } from "@/hooks/
 import { useEpics } from "@/hooks/useEpics";
 import { useProjectMembers } from "@/hooks/useProjects";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useAuth } from "@/lib/auth";
 import { PermissionDeniedDialog } from "@/components/PermissionDeniedDialog";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -52,6 +53,7 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
   const updateStory = useUpdateUserStory();
   const createStory = useCreateUserStory();
   const { guardAction, denied, closeDenied, hasPermission, baseRole } = usePermissions(projectId);
+  const { user } = useAuth();
   const canSeeBoard = baseRole === "super_admin" || baseRole === "admin" || hasPermission("tablero", "ver");
 
   const { data: sprintsList } = useQuery({
@@ -144,6 +146,22 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
     for (const sid of selectedBacklogIds) {
       await updateStory.mutateAsync({ id: sid, sprint_id: created.id });
     }
+    try {
+      const { data: membersData } = await supabase.from("project_members").select("user_id").eq("project_id", projectId);
+      const memberIds = membersData?.map(m => m.user_id).filter(id => id !== user?.id) ?? [];
+      if (memberIds.length > 0) {
+        await supabase.from("notifications").insert(memberIds.map(uid => ({
+          user_id: uid,
+          type: "sprint_started",
+          title: "🚀 Nuevo sprint creado",
+          message: `Se creó el sprint '${created.name}' en el proyecto`,
+          reference_id: created.id,
+          reference_type: "sprint",
+        })));
+      }
+    } catch (_e) {
+      // Silently ignore notification errors
+    }
     setCreateOpen(false);
   };
 
@@ -209,6 +227,23 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
       await updateStory.mutateAsync({ id: story.id, sprint_id: null });
     }
     await updateSprint.mutateAsync({ id: completeReview.id, status: "completed" });
+    try {
+      const sprint = completeReview;
+      const { data: membersData } = await supabase.from("project_members").select("user_id").eq("project_id", projectId);
+      const memberIds = membersData?.map(m => m.user_id).filter(id => id !== user?.id) ?? [];
+      if (memberIds.length > 0) {
+        await supabase.from("notifications").insert(memberIds.map(uid => ({
+          user_id: uid,
+          type: "sprint_completed",
+          title: "✅ Sprint completado",
+          message: `El sprint '${sprint.name}' ha sido completado`,
+          reference_id: sprint.id,
+          reference_type: "sprint",
+        })));
+      }
+    } catch (_e) {
+      // Silently ignore notification errors
+    }
     setCompleteReview(null);
     setIncompleteHandled(false);
   };
