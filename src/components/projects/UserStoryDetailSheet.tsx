@@ -16,7 +16,7 @@ import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
-import { Trash2, Plus, X, Copy, Lock, Unlock, Upload, FileText, Image as ImageIcon, Video, Download, MoreVertical } from "lucide-react";
+import { Trash2, Plus, X, Copy, Lock, Unlock, Upload, FileText, Image as ImageIcon, Video, Download, MoreVertical, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
@@ -453,6 +453,202 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
                       <Button size="sm" variant="outline" onClick={addCriterion} className="h-8"><Plus className="h-3 w-3" /></Button>
                     </div>
                   )}
+                </div>
+                <Separator />
+
+                {/* Consideraciones de Seguridad */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+                    <h3 className="text-sm font-medium">Consideraciones de Seguridad</h3>
+                    <span className="text-xs text-muted-foreground ml-auto">PRO-DES-001-INT</span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* sec_sensitivity */}
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Nivel de sensibilidad de la información</Label>
+                      <p className="text-xs text-muted-foreground">¿Qué tan sensible es la información que procesa esta funcionalidad?</p>
+                      <p className="text-[10px] text-muted-foreground">PRO-DES-001-INT §7.1 — POL-SGSI-005-INT</p>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div>
+                            <Select value={story.sec_sensitivity || "Sin datos sensibles"} onValueChange={(v) => saveField("sec_sensitivity", v)} disabled={effectiveReadOnly || sprintLocked}>
+                              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Sin datos sensibles">Sin datos sensibles</SelectItem>
+                                <SelectItem value="Datos internos">Datos internos</SelectItem>
+                                <SelectItem value="Datos confidenciales">Datos confidenciales</SelectItem>
+                                <SelectItem value="Datos personales">Datos personales</SelectItem>
+                                <SelectItem value="Datos personales sensibles">Datos personales sensibles</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </TooltipTrigger>
+                        {sprintLocked && <TooltipContent>No editable durante sprint activo</TooltipContent>}
+                      </Tooltip>
+                    </div>
+
+                    {/* sec_auth_required */}
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Requiere autenticación o control de acceso</Label>
+                      <p className="text-xs text-muted-foreground">¿Esta funcionalidad requiere validar identidad o restringir acceso por rol?</p>
+                      <p className="text-[10px] text-muted-foreground">PRO-DES-001-INT §7.2 — ISO 27001 A.8.26</p>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div>
+                            <Select value={story.sec_auth_required || "Sin definir"} onValueChange={(v) => saveField("sec_auth_required", v)} disabled={effectiveReadOnly || sprintLocked}>
+                              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Sin definir">Sin definir</SelectItem>
+                                <SelectItem value="Sí">Sí</SelectItem>
+                                <SelectItem value="No">No</SelectItem>
+                                <SelectItem value="Ya cubierto en otra HU">Ya cubierto en otra HU</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </TooltipTrigger>
+                        {sprintLocked && <TooltipContent>No editable durante sprint activo</TooltipContent>}
+                      </Tooltip>
+                    </div>
+
+                    {/* sec_input_validation */}
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Requiere validación de entradas</Label>
+                      <p className="text-xs text-muted-foreground">¿La funcionalidad recibe datos del usuario o de sistemas externos que deben validarse?</p>
+                      <p className="text-[10px] text-muted-foreground">PRO-DES-001-INT §7.5 — ISO 27001 A.8.28</p>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div>
+                            <Select value={story.sec_input_validation || "Sin definir"} onValueChange={(v) => saveField("sec_input_validation", v)} disabled={effectiveReadOnly || sprintLocked}>
+                              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Sin definir">Sin definir</SelectItem>
+                                <SelectItem value="Sí">Sí</SelectItem>
+                                <SelectItem value="No">No</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </TooltipTrigger>
+                        {sprintLocked && <TooltipContent>No editable durante sprint activo</TooltipContent>}
+                      </Tooltip>
+                    </div>
+
+                    {/* sec_secrets */}
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Maneja secretos, credenciales o tokens</Label>
+                      <p className="text-xs text-muted-foreground">¿El desarrollo involucra llaves API, tokens, contraseñas u otras credenciales?</p>
+                      <p className="text-[10px] text-muted-foreground">PRO-DES-001-INT §7.6 — ISO 27001 A.8.28</p>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div>
+                            <Select value={story.sec_secrets || "Sin definir"} onValueChange={(v) => saveField("sec_secrets", v)} disabled={effectiveReadOnly || sprintLocked}>
+                              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Sin definir">Sin definir</SelectItem>
+                                <SelectItem value="Sí — gestionados por vault/variables de entorno">Sí — gestionados por vault/variables de entorno</SelectItem>
+                                <SelectItem value="No">No</SelectItem>
+                                <SelectItem value="Pendiente definir">Pendiente definir</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </TooltipTrigger>
+                        {sprintLocked && <TooltipContent>No editable durante sprint activo</TooltipContent>}
+                      </Tooltip>
+                    </div>
+
+                    {/* sec_test_data */}
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Tipo de datos en pruebas</Label>
+                      <p className="text-xs text-muted-foreground">¿Qué tipo de datos se usarán en los criterios de aceptación y casos de prueba?</p>
+                      <p className="text-[10px] text-muted-foreground">PRO-DES-001-INT §7.7 — ISO 27001 A.8.33</p>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div>
+                            <Select value={story.sec_test_data || "Sintéticos"} onValueChange={(v) => saveField("sec_test_data", v)} disabled={effectiveReadOnly || sprintLocked}>
+                              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Sintéticos">Sintéticos</SelectItem>
+                                <SelectItem value="Anonimizados">Anonimizados</SelectItem>
+                                <SelectItem value="Sanitizados">Sanitizados</SelectItem>
+                                <SelectItem value="Requiere autorización especial">Requiere autorización especial</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </TooltipTrigger>
+                        {sprintLocked && <TooltipContent>No editable durante sprint activo</TooltipContent>}
+                      </Tooltip>
+                    </div>
+
+                    {/* sec_security_test */}
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Requiere prueba de seguridad específica</Label>
+                      <p className="text-xs text-muted-foreground">¿Esta HU debe incluir un caso de prueba orientado a seguridad?</p>
+                      <p className="text-[10px] text-muted-foreground">PRO-DES-001-INT §7.10 — ISO 27001 A.8.29</p>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div>
+                            <Select value={story.sec_security_test || "Sin definir"} onValueChange={(v) => saveField("sec_security_test", v)} disabled={effectiveReadOnly || sprintLocked}>
+                              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Sin definir">Sin definir</SelectItem>
+                                <SelectItem value="Sí — inyección/autenticación/autorización">Sí — inyección/autenticación/autorización</SelectItem>
+                                <SelectItem value="Sí — exposición de datos">Sí — exposición de datos</SelectItem>
+                                <SelectItem value="Sí — manejo de errores">Sí — manejo de errores</SelectItem>
+                                <SelectItem value="No aplica">No aplica</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </TooltipTrigger>
+                        {sprintLocked && <TooltipContent>No editable durante sprint activo</TooltipContent>}
+                      </Tooltip>
+                    </div>
+
+                    {/* sec_environment_impact */}
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Impacto en ambientes</Label>
+                      <p className="text-xs text-muted-foreground">¿Afecta configuración de ambientes, pipelines o infraestructura?</p>
+                      <p className="text-[10px] text-muted-foreground">PRO-DES-001-INT §7.4 — ISO 27001 A.8.31</p>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div>
+                            <Select value={story.sec_environment_impact || "Sin definir"} onValueChange={(v) => saveField("sec_environment_impact", v)} disabled={effectiveReadOnly || sprintLocked}>
+                              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Sin definir">Sin definir</SelectItem>
+                                <SelectItem value="Solo Dev">Solo Dev</SelectItem>
+                                <SelectItem value="Dev y QA">Dev y QA</SelectItem>
+                                <SelectItem value="Todos los ambientes">Todos los ambientes</SelectItem>
+                                <SelectItem value="No aplica">No aplica</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </TooltipTrigger>
+                        {sprintLocked && <TooltipContent>No editable durante sprint activo</TooltipContent>}
+                      </Tooltip>
+                    </div>
+
+                    {/* sec_peer_review */}
+                    <div className="space-y-1.5">
+                      <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Revisión técnica requerida (Peer Review)</Label>
+                      <p className="text-xs text-muted-foreground">¿Por su criticidad o impacto en seguridad esta HU requiere peer review obligatorio?</p>
+                      <p className="text-[10px] text-muted-foreground">PRO-DES-001-INT §7.9 — ISO 27001 A.8.28</p>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div>
+                            <Select value={story.sec_peer_review || "No requerido"} onValueChange={(v) => saveField("sec_peer_review", v)} disabled={effectiveReadOnly || sprintLocked}>
+                              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Sí — obligatorio">Sí — obligatorio</SelectItem>
+                                <SelectItem value="Recomendado">Recomendado</SelectItem>
+                                <SelectItem value="No requerido">No requerido</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </TooltipTrigger>
+                        {sprintLocked && <TooltipContent>No editable durante sprint activo</TooltipContent>}
+                      </Tooltip>
+                    </div>
+                  </div>
                 </div>
 
                 <Separator />
