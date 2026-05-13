@@ -40,6 +40,23 @@ export function ProjectTimeTab({ projectId, isArchived = false }: Props) {
     const sb = supabase as any;
     await sb.from("time_logs").update({ approved: !currentApproved }).eq("id", logId);
     queryClient.invalidateQueries({ queryKey: ["time-logs"] });
+    if (!currentApproved) {
+      try {
+        const logData: any = logs?.find(l => l.id === logId);
+        if (logData && logData.user_id !== profile?.id) {
+          await supabase.from("notifications").insert({
+            user_id: logData.user_id,
+            type: "time_approved",
+            title: "✅ Tu registro de tiempo fue aprobado",
+            message: `${logData.hours}h del ${logData.log_date}${logData.user_stories ? ` en HU-${logData.user_stories.story_number}` : ""} fueron aprobadas`,
+            reference_id: logId,
+            reference_type: "time_log",
+          });
+        }
+      } catch (_e) {
+        // Silently ignore notification errors
+      }
+    }
     toast({ title: currentApproved ? "Aprobación retirada" : "Registro aprobado" });
   };
 
