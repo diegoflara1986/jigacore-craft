@@ -45,20 +45,22 @@ export function ProjectCostsTab({ projectId, isArchived = false }: Props) {
     return m;
   }, [configs]);
 
+  const approvedLogs = useMemo(() => (logs ?? []).filter(l => (l as any).approved === true), [logs]);
+
   // Cost calculations
   const costByMember = useMemo(() => {
     const m: Record<string, { name: string; hours: number; rate: number; cost: number }> = {};
-    logs?.forEach(l => {
+    approvedLogs.forEach(l => {
       const rate = rateMap[l.user_id] ?? 0;
       if (!m[l.user_id]) m[l.user_id] = { name: l.profiles?.full_name || l.profiles?.email || "?", hours: 0, rate, cost: 0 };
       m[l.user_id].hours += l.hours;
       m[l.user_id].cost += l.hours * rate;
     });
     return Object.values(m).sort((a, b) => b.cost - a.cost);
-  }, [logs, rateMap]);
+  }, [approvedLogs, rateMap]);
 
   const totalCost = costByMember.reduce((a, m) => a + m.cost, 0);
-  const totalHours = logs?.reduce((a, l) => a + l.hours, 0) ?? 0;
+  const totalHours = approvedLogs.reduce((a, l) => a + l.hours, 0);
   const budgetUsed = budget > 0 ? Math.round((totalCost / budget) * 100) : 0;
   const variance = budget - totalCost;
 
@@ -81,15 +83,15 @@ export function ProjectCostsTab({ projectId, isArchived = false }: Props) {
   const costBySprint = useMemo(() => {
     if (!sprints) return [];
     return sprints.map(s => {
-      const sprintLogs = logs?.filter(l => {
+      const sprintLogs = approvedLogs.filter(l => {
         // Match by story's sprint assignment
         return l.user_stories && l.user_stories.story_number != null;
-      }) ?? [];
+      });
       const hours = sprintLogs.reduce((a, l) => a + l.hours, 0);
       const cost = sprintLogs.reduce((a, l) => a + l.hours * (rateMap[l.user_id] ?? 0), 0);
       return { name: s.name, points: s.totalPoints, hours, cost, pctBudget: budget > 0 ? Math.round((cost / budget) * 100) : 0 };
     });
-  }, [sprints, logs, rateMap, budget]);
+  }, [sprints, approvedLogs, rateMap, budget]);
 
   const saveRates = () => {
     guardAction("costos", "editar_tarifas", "editar tarifas del proyecto", async () => {
@@ -171,6 +173,10 @@ export function ProjectCostsTab({ projectId, isArchived = false }: Props) {
               </CardContent>
             </Card>
           </div>
+
+          <p className="text-xs text-muted-foreground text-center">
+            {approvedLogs.reduce((a, l) => a + l.hours, 0).toFixed(1)} de {(logs ?? []).reduce((a, l) => a + l.hours, 0)} horas aprobadas
+          </p>
 
           {/* Charts */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
