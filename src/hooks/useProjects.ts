@@ -140,12 +140,11 @@ export function useProjectStats(projectId: string | undefined) {
         .eq("project_id", projectId)
         .is("deleted_at", null);
       const stories = data ?? [];
-      const inProgressStatuses = ["in_progress", "in_review", "in_qa"];
       return {
         total: stories.length,
         completed: stories.filter((s) => s.status === "done").length,
-        inProgress: stories.filter((s) => inProgressStatuses.includes(s.status)).length,
-        pending: stories.filter((s) => s.status !== "done" && !inProgressStatuses.includes(s.status)).length,
+        pending: stories.filter((s) => s.status === "backlog").length,
+        inProgress: stories.filter((s) => s.status !== "done" && s.status !== "backlog").length,
       };
     },
     enabled: !!projectId,
