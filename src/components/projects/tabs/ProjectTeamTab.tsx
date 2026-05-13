@@ -80,6 +80,37 @@ export function ProjectTeamTab({ projectId, members, isArchived = false }: { pro
       return;
     }
 
+    // Verificar si el miembro tiene registros en el proyecto
+    const checks = await Promise.all([
+      supabase.from("user_stories").select("id", { count: "exact", head: true })
+        .eq("project_id", projectId)
+        .eq("assigned_to", member.user_id)
+        .is("deleted_at", null),
+      supabase.from("user_stories").select("id", { count: "exact", head: true })
+        .eq("project_id", projectId)
+        .eq("created_by", member.user_id)
+        .is("deleted_at", null),
+      supabase.from("time_logs").select("id", { count: "exact", head: true })
+        .eq("project_id", projectId)
+        .eq("user_id", member.user_id),
+      supabase.from("story_comments").select("id", { count: "exact", head: true })
+        .eq("user_id", member.user_id)
+        .in("user_story_id",
+          (await supabase.from("user_stories").select("id").eq("project_id", projectId).is("deleted_at", null)).data?.map(s => s.id) ?? []
+        ),
+    ]);
+
+    const hasRecords = checks.some(r => (r.count ?? 0) > 0);
+
+    if (hasRecords) {
+      toast({
+        title: "No se puede eliminar este miembro",
+        description: "El miembro tiene historias asignadas, registros de tiempo o actividad en este proyecto. Reasigna o transfiere sus registros antes de eliminarlo.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     await removeMember.mutateAsync({ id: member.id, project_id: projectId });
 
     // Send notification to removed user
