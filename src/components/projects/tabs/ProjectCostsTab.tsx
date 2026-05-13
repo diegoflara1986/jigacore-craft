@@ -45,20 +45,22 @@ export function ProjectCostsTab({ projectId, isArchived = false }: Props) {
     return m;
   }, [configs]);
 
+  const approvedLogs = useMemo(() => (logs ?? []).filter(l => (l as any).approved === true), [logs]);
+
   // Cost calculations
   const costByMember = useMemo(() => {
     const m: Record<string, { name: string; hours: number; rate: number; cost: number }> = {};
-    logs?.forEach(l => {
+    approvedLogs.forEach(l => {
       const rate = rateMap[l.user_id] ?? 0;
       if (!m[l.user_id]) m[l.user_id] = { name: l.profiles?.full_name || l.profiles?.email || "?", hours: 0, rate, cost: 0 };
       m[l.user_id].hours += l.hours;
       m[l.user_id].cost += l.hours * rate;
     });
     return Object.values(m).sort((a, b) => b.cost - a.cost);
-  }, [logs, rateMap]);
+  }, [approvedLogs, rateMap]);
 
   const totalCost = costByMember.reduce((a, m) => a + m.cost, 0);
-  const totalHours = logs?.reduce((a, l) => a + l.hours, 0) ?? 0;
+  const totalHours = approvedLogs.reduce((a, l) => a + l.hours, 0);
   const budgetUsed = budget > 0 ? Math.round((totalCost / budget) * 100) : 0;
   const variance = budget - totalCost;
 
