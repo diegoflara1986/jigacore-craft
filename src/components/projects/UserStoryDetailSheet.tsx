@@ -70,7 +70,7 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
   const deleteStory = useDeleteUserStory();
   const createStory = useCreateUserStory();
   const { profile, user } = useAuth();
-  const { hasPermission } = usePermissions();
+  const { hasPermission, baseRole } = usePermissions();
   const canEditPerm = hasPermission("backlog", "editar");
   const canDeletePerm = hasPermission("backlog", "eliminar");
   const canDuplicatePerm = hasPermission("backlog", "duplicar");
@@ -99,7 +99,9 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
   });
 
   const storyInActiveSprint = isInActiveSprint || (story?.sprint_id ? sprints?.find(s => s.id === story.sprint_id)?.status === "active" : false);
-  const isAdmin = hasPermission("backlog", "bloquear");
+  // Only super_admin can bypass the active sprint lock. Tener permisos totales en backlog
+  // NO permite editar campos estructurales mientras la HU está en un sprint activo.
+  const isAdmin = baseRole === "super_admin";
   const isBlocked = (story as any)?.is_blocked === true;
   const isDone = story?.status === "done";
   // Lógica de bloqueo por prioridad:
