@@ -31,6 +31,7 @@ export interface SprintWithStats extends Sprint {
   completedStories: number;
   totalPoints: number;
   completedPoints: number;
+  stories: Array<{ id: string; story_number: number | null; title: string; status: string; story_points: number | null; assigned_to: string | null; priority: string | null; type: string | null; sprint_id: string | null }>;
 }
 
 export function useSprints(projectId: string | undefined) {
