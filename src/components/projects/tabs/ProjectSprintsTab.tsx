@@ -50,7 +50,8 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
   const updateSprint = useUpdateSprint();
   const updateStory = useUpdateUserStory();
   const createStory = useCreateUserStory();
-  const { guardAction, denied, closeDenied } = usePermissions(projectId);
+  const { guardAction, denied, closeDenied, hasPermission, baseRole } = usePermissions(projectId);
+  const canSeeBoard = baseRole === "super_admin" || baseRole === "admin" || hasPermission("tablero", "ver");
 
   const { data: sprintsList } = useQuery({
     queryKey: ["sprints-list", projectId],
@@ -249,7 +250,7 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
               )}
               {sprint.status === "active" && (
                 <>
-                  {onNavigateToBoard && (
+                  {onNavigateToBoard && canSeeBoard && (
                     <Button size="sm" variant="outline" onClick={onNavigateToBoard}>
                       <LayoutDashboard className="h-3.5 w-3.5 mr-1" />Ver Tablero
                     </Button>
