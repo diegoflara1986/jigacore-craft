@@ -149,6 +149,10 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
     });
     const assignedIds = backlogStories?.filter((s) => s.sprint_id === sprint.id).map((s) => s.id) ?? [];
     setSelectedBacklogIds(assignedIds);
+    const selectedPointsFromBacklog = unassignedStories.filter((s) => assignedIds.includes(s.id)).reduce((a, b) => a + (b.story_points ?? 0), 0);
+    if (assignedIds.length === 0 || selectedPointsFromBacklog < sprint.capacity) {
+      forcePointsRef.current = sprint.capacity;
+    }
     setEditSprint(sprint);
   };
 
