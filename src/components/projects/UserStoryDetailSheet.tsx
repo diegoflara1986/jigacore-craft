@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { useUserStory, useUpdateUserStory, useDeleteUserStory, useCreateUserStory } from "@/hooks/useUserStories";
+import { useUserStory, useUpdateUserStory, useDeleteUserStory, useCreateUserStory, useUserStoryHistory } from "@/hooks/useUserStories";
 import { EpicWithProgress } from "@/hooks/useEpics";
 import { ProjectMember } from "@/hooks/useProjects";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -66,6 +66,7 @@ interface Props {
 
 export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, epics, members, readOnly = false, isInActiveSprint = false }: Props) {
   const { data: story, isLoading } = useUserStory(storyId ?? undefined);
+  const { data: history } = useUserStoryHistory(storyId ?? undefined);
   const updateStory = useUpdateUserStory();
   const deleteStory = useDeleteUserStory();
   const createStory = useCreateUserStory();
@@ -159,7 +160,11 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
 
   const saveField = async (field: string, value: any) => {
     if (!story) return;
-    await updateStory.mutateAsync({ id: story.id, [field]: value });
+    const auditFields = ["status", "assigned_to", "priority", "story_points", "sprint_id"];
+    const previousValues = auditFields.includes(field)
+      ? { [field]: (story as any)[field] ?? null }
+      : undefined;
+    await updateStory.mutateAsync({ id: story.id, [field]: value, previousValues } as any);
   };
 
   const saveTitle = () => { if (title.trim() && title !== story?.title) saveField("title", title); };
@@ -296,6 +301,40 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
   };
 
   const initials = (name: string | null) => name ? name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() : "?";
+
+  const FIELD_LABELS: Record<string, string> = {
+    status: "Estado",
+    assigned_to: "Asignado a",
+    priority: "Prioridad",
+    story_points: "Story points",
+    sprint_id: "Sprint",
+  };
+
+  const formatHistoryValue = (field: string, value: string | null) => {
+    if (value == null || value === "") return "—";
+    if (field === "status") return STATUSES.find(s => s.value === value)?.label ?? value;
+    if (field === "priority") return PRIORITIES.find(p => p.value === value)?.label ?? value;
+    if (field === "assigned_to") {
+      const m = members.find(m => m.user_id === value);
+      return m?.profiles?.full_name || m?.profiles?.email || value;
+    }
+    if (field === "sprint_id") return sprints?.find(s => s.id === value)?.name ?? value;
+    return value;
+  };
+
+  const formatRelativeTime = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const diffMs = Date.now() - date.getTime();
+    const diffMin = Math.floor(diffMs / 60000);
+    if (diffMin < 1) return "hace unos segundos";
+    if (diffMin < 60) return `hace ${diffMin} min`;
+    const diffH = Math.floor(diffMin / 60);
+    if (diffH < 24) return `hace ${diffH} h`;
+    const diffD = Math.floor(diffH / 24);
+    if (diffD === 1) return "ayer";
+    if (diffD < 7) return `hace ${diffD} días`;
+    return date.toLocaleDateString("es");
+  };
 
   if (!open) return null;
 
@@ -443,6 +482,42 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
                         onKeyDown={(e) => e.key === "Enter" && addComment()}
                         placeholder="Escribe un comentario..." className="h-8 text-sm" />
                       <Button size="sm" onClick={addComment} className="h-8" disabled={!commentText.trim()}>Enviar</Button>
+                    </div>
+                  )}
+                </div>
+
+                <Separator />
+
+                {/* History */}
+                <div className="space-y-3">
+                  <Label className="text-xs text-muted-foreground">Historial de cambios ({history?.length ?? 0})</Label>
+                  {(history?.length ?? 0) === 0 ? (
+                    <p className="text-xs text-muted-foreground italic">Sin cambios registrados aún</p>
+                  ) : (
+                    <div className="space-y-3 max-h-60 overflow-y-auto">
+                      {history!.map((h: any) => {
+                        const label = FIELD_LABELS[h.field_name] ?? h.field_name;
+                        const oldV = formatHistoryValue(h.field_name, h.old_value);
+                        const newV = formatHistoryValue(h.field_name, h.new_value);
+                        return (
+                          <div key={h.id} className="flex gap-2">
+                            <Avatar className="h-6 w-6 shrink-0 mt-0.5">
+                              <AvatarFallback className="text-[9px] bg-muted">{initials(h.profiles?.full_name)}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-medium text-foreground">{h.profiles?.full_name || "Usuario"}</span>
+                                <span className="text-[10px] text-muted-foreground">{formatRelativeTime(h.created_at)}</span>
+                              </div>
+                              <p className="text-sm text-foreground">
+                                Cambió <span className="font-medium">{label}</span> de{" "}
+                                <span className="text-muted-foreground">{oldV}</span> a{" "}
+                                <span className="text-foreground font-medium">{newV}</span>
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
