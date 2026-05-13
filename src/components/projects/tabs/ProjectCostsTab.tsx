@@ -25,7 +25,17 @@ export function ProjectCostsTab({ projectId, isArchived = false }: Props) {
   const { data: project } = useProject(projectId);
   const { data: members } = useProjectMembers(projectId);
   const { data: configs } = useCostConfigs(projectId);
-  const { data: logs } = useTimeLogs(projectId);
+  const { data: logs } = useQuery({
+    queryKey: ["time-logs-project-all", projectId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("time_logs")
+        .select("*, profiles:user_id(id, full_name, email, avatar_url), user_stories(id, title, story_number, sprint_id), tasks(id, title)")
+        .eq("project_id", projectId)
+        .order("log_date", { ascending: false });
+      return data ?? [];
+    },
+  });
   const { data: epics } = useEpics(projectId);
   const { data: sprints } = useSprintsWithStats(projectId);
   const upsertConfig = useUpsertCostConfig();
