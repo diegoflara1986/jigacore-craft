@@ -34,6 +34,14 @@ export interface UserStory {
   epics?: { id: string; title: string; color: string | null } | null;
   assigned_profile?: { id: string; full_name: string | null; email: string; avatar_url: string | null } | null;
   sprints?: { id: string; name: string } | null;
+  sec_sensitivity?: string | null;
+  sec_auth_required?: string | null;
+  sec_input_validation?: string | null;
+  sec_secrets?: string | null;
+  sec_test_data?: string | null;
+  sec_security_test?: string | null;
+  sec_environment_impact?: string | null;
+  sec_peer_review?: string | null;
 }
 
 export function useUserStories(projectId: string | undefined, filters?: {
