@@ -94,10 +94,9 @@ export function ProjectCostsTab({ projectId, isArchived = false }: Props) {
   const costBySprint = useMemo(() => {
     if (!sprints) return [];
     return sprints.map(s => {
-      const sprintLogs = approvedLogs.filter(l => {
-        // Match by story's sprint assignment
-        return l.user_stories && l.user_stories.story_number != null;
-      });
+      const sprintLogs = approvedLogs.filter(l =>
+        l.user_stories?.sprint_id === s.id
+      );
       const hours = sprintLogs.reduce((a, l) => a + l.hours, 0);
       const cost = sprintLogs.reduce((a, l) => a + l.hours * (rateMap[l.user_id] ?? 0), 0);
       return { name: s.name, points: s.totalPoints, hours, cost, pctBudget: budget > 0 ? Math.round((cost / budget) * 100) : 0 };
