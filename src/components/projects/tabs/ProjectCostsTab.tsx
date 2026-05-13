@@ -174,6 +174,10 @@ export function ProjectCostsTab({ projectId, isArchived = false }: Props) {
             </Card>
           </div>
 
+          <p className="text-xs text-muted-foreground text-center">
+            {approvedLogs.reduce((a, l) => a + l.hours, 0).toFixed(1)} de {(logs ?? []).reduce((a, l) => a + l.hours, 0)} horas aprobadas
+          </p>
+
           {/* Charts */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Card>
