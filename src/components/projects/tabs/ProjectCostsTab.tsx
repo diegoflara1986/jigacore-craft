@@ -82,7 +82,7 @@ export function ProjectCostsTab({ projectId, isArchived = false }: Props) {
       const epicId = l.user_stories?.epic_id ?? "sin_epica";
       const epicName = epicId === "sin_epica"
         ? "Sin épica"
-        : (epics?.find(e => e.id === epicId)?.name ?? "Sin épica");
+        : (epics?.find(e => e.id === epicId)?.title ?? "Sin épica");
       const rate = rateMap[l.user_id] ?? 0;
       if (!m[epicId]) m[epicId] = { name: epicName, hours: 0, cost: 0 };
       m[epicId].hours += l.hours;
