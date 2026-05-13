@@ -79,16 +79,17 @@ export function ProjectCostsTab({ projectId, isArchived = false }: Props) {
   const costByEpic = useMemo(() => {
     const m: Record<string, { name: string; hours: number; cost: number }> = {};
     approvedLogs.forEach(l => {
-      const storyEpic = l.user_stories?.epic_id ? "con_epica" : "sin_epica";
-      // Simplified - group by whether story has epic
-      const epicId = storyEpic;
+      const epicId = l.user_stories?.epic_id ?? "sin_epica";
+      const epicName = epicId === "sin_epica"
+        ? "Sin épica"
+        : (epics?.find(e => e.id === epicId)?.name ?? "Sin épica");
       const rate = rateMap[l.user_id] ?? 0;
-      if (!m[epicId]) m[epicId] = { name: epicId === "sin_epica" ? "Sin épica" : "Con épica", hours: 0, cost: 0 };
+      if (!m[epicId]) m[epicId] = { name: epicName, hours: 0, cost: 0 };
       m[epicId].hours += l.hours;
       m[epicId].cost += l.hours * rate;
     });
-    return Object.values(m);
-  }, [approvedLogs, rateMap]);
+    return Object.values(m).sort((a, b) => b.cost - a.cost);
+  }, [approvedLogs, rateMap, epics]);
 
   // Cost by sprint
   const costBySprint = useMemo(() => {
