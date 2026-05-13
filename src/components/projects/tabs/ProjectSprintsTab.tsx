@@ -19,12 +19,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Separator } from "@/components/ui/separator";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Plus, Play, CheckCircle2, LayoutDashboard, Pencil, Users, AlertTriangle, Trash2 } from "lucide-react";
+import { CalendarIcon, Plus, Play, CheckCircle2, LayoutDashboard, Pencil, Users, AlertTriangle, Trash2, ChevronDown } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { useDeleteSprint } from "@/hooks/useSprints";
 
 
@@ -94,6 +95,12 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
   const [deleteConfirm, setDeleteConfirm] = useState<SprintWithStats | null>(null);
   
   const [newStory, setNewStory] = useState({ title: "", description: "", type: "story", priority: "medium", status: "backlog", story_points: "", epic_id: "", assigned_to: "", sprint_id: "" });
+  const [expandedSprints, setExpandedSprints] = useState<Set<string>>(new Set());
+  const toggleSprint = (id: string) => setExpandedSprints(prev => {
+    const next = new Set(prev);
+    next.has(id) ? next.delete(id) : next.add(id);
+    return next;
+  });
 
   const handleCreateHU = async () => {
     if (!newStory.title.trim()) return;
@@ -291,6 +298,39 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
               </span>
             )}
           </div>
+          <Collapsible open={expandedSprints.has(sprint.id)} onOpenChange={() => toggleSprint(sprint.id)}>
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" size="sm" className="w-full justify-between mt-2 h-8 text-xs text-muted-foreground">
+                <span>{sprint.stories?.length ?? 0} historias en este sprint</span>
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="space-y-1 pt-2">
+                {sprint.stories?.length === 0 && (
+                  <p className="text-xs text-muted-foreground text-center py-2">Sin historias</p>
+                )}
+                {sprint.stories?.map(story => (
+                  <div key={story.id} className="flex items-center justify-between text-sm px-2 py-1 rounded hover:bg-muted/50">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-xs font-medium text-muted-foreground shrink-0">HU-{story.story_number}</span>
+                      <span className="truncate">{story.title}</span>
+                      <Badge variant="outline" className="text-[10px] h-5 px-1">
+                        {story.status === "done" ? "Completado" :
+                         story.status === "in_progress" ? "En progreso" :
+                         story.status === "in_qa" ? "En QA" :
+                         story.status === "in_review" ? "En revisión" :
+                         story.status === "backlog" ? "Backlog" : story.status}
+                      </Badge>
+                    </div>
+                    {story.story_points && (
+                      <span className="text-xs text-muted-foreground shrink-0 ml-2">{story.story_points} SP</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
         </CardContent>
       </Card>
     );
