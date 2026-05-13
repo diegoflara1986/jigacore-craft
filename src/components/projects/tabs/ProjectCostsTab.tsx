@@ -13,7 +13,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertTriangle, DollarSign, TrendingUp, Save } from "lucide-react";
-import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts";
 import { usePermissions } from "@/hooks/usePermissions";
 import { PermissionDeniedDialog } from "@/components/PermissionDeniedDialog";
 
@@ -79,16 +79,17 @@ export function ProjectCostsTab({ projectId, isArchived = false }: Props) {
   const costByEpic = useMemo(() => {
     const m: Record<string, { name: string; hours: number; cost: number }> = {};
     approvedLogs.forEach(l => {
-      const storyEpic = l.user_stories?.epic_id ? "con_epica" : "sin_epica";
-      // Simplified - group by whether story has epic
-      const epicId = storyEpic;
+      const epicId = l.user_stories?.epic_id ?? "sin_epica";
+      const epicName = epicId === "sin_epica"
+        ? "Sin épica"
+        : (epics?.find(e => e.id === epicId)?.title ?? "Sin épica");
       const rate = rateMap[l.user_id] ?? 0;
-      if (!m[epicId]) m[epicId] = { name: epicId === "sin_epica" ? "Sin épica" : "Con épica", hours: 0, cost: 0 };
+      if (!m[epicId]) m[epicId] = { name: epicName, hours: 0, cost: 0 };
       m[epicId].hours += l.hours;
       m[epicId].cost += l.hours * rate;
     });
-    return Object.values(m);
-  }, [approvedLogs, rateMap]);
+    return Object.values(m).sort((a, b) => b.cost - a.cost);
+  }, [approvedLogs, rateMap, epics]);
 
   // Cost by sprint
   const costBySprint = useMemo(() => {
@@ -208,18 +209,21 @@ export function ProjectCostsTab({ projectId, isArchived = false }: Props) {
             </Card>
 
             <Card>
-              <CardHeader><CardTitle className="text-sm">Distribución por épica</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-sm">Costo por épica</CardTitle></CardHeader>
               <CardContent>
                 {costByEpic.length > 0 ? (
                   <ResponsiveContainer width="100%" height={200}>
-                    <PieChart>
-                      <Pie data={costByEpic} dataKey="cost" nameKey="name" cx="50%" cy="50%" outerRadius={70} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
-                        {costByEpic.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
-                      </Pie>
-                      <Tooltip formatter={(v: number) => `$${v.toLocaleString()}`} />
-                    </PieChart>
+                    <BarChart data={costByEpic}>
+                      <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `$${v.toLocaleString()}`} />
+                      <Tooltip formatter={(v: number) => [`$${v.toLocaleString("es-CO")}`, "Costo"]} />
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <Bar dataKey="cost" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} name="Costo" />
+                    </BarChart>
                   </ResponsiveContainer>
-                ) : <p className="text-sm text-muted-foreground text-center py-8">Sin datos</p>}
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-8">Sin datos</p>
+                )}
               </CardContent>
             </Card>
           </div>
