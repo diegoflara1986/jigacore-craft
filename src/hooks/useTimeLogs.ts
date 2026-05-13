@@ -83,6 +83,24 @@ export function useCreateTimeLog() {
   });
 }
 
+export function useUpdateTimeLog() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (log: { id: string; hours?: number; log_date?: string; description?: string | null; user_story_id?: string | null }) => {
+      const { id, ...updates } = log;
+      const { data, error } = await supabase.from("time_logs").update(updates).eq("id", id).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["time-logs"] });
+      qc.invalidateQueries({ queryKey: ["time-logs-story"] });
+      toast({ title: "Registro actualizado" });
+    },
+    onError: (e: any) => toast({ title: "No se pudo actualizar el registro", description: parseError(e), variant: "destructive" }),
+  });
+}
+
 export function useDeleteTimeLog() {
   const qc = useQueryClient();
   return useMutation({
