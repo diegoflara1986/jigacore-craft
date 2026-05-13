@@ -488,6 +488,42 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
 
                 <Separator />
 
+                {/* History */}
+                <div className="space-y-3">
+                  <Label className="text-xs text-muted-foreground">Historial de cambios ({history?.length ?? 0})</Label>
+                  {(history?.length ?? 0) === 0 ? (
+                    <p className="text-xs text-muted-foreground italic">Sin cambios registrados aún</p>
+                  ) : (
+                    <div className="space-y-3 max-h-60 overflow-y-auto">
+                      {history!.map((h: any) => {
+                        const label = FIELD_LABELS[h.field_name] ?? h.field_name;
+                        const oldV = formatHistoryValue(h.field_name, h.old_value);
+                        const newV = formatHistoryValue(h.field_name, h.new_value);
+                        return (
+                          <div key={h.id} className="flex gap-2">
+                            <Avatar className="h-6 w-6 shrink-0 mt-0.5">
+                              <AvatarFallback className="text-[9px] bg-muted">{initials(h.profiles?.full_name)}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-medium text-foreground">{h.profiles?.full_name || "Usuario"}</span>
+                                <span className="text-[10px] text-muted-foreground">{formatRelativeTime(h.created_at)}</span>
+                              </div>
+                              <p className="text-sm text-foreground">
+                                Cambió <span className="font-medium">{label}</span> de{" "}
+                                <span className="text-muted-foreground">{oldV}</span> a{" "}
+                                <span className="text-foreground font-medium">{newV}</span>
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                <Separator />
+
                 {/* Attachments */}
                 <div className="space-y-3">
                   <Label className="text-xs text-muted-foreground">Archivos Adjuntos ({attachments?.length ?? 0}/{MAX_FILES})</Label>
