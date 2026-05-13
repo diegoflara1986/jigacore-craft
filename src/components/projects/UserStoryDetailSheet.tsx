@@ -437,7 +437,7 @@ export function UserStoryDetailSheet({ storyId, projectId, open, onOpenChange, e
                       </div>
                     ))}
                   </div>
-                  {!readOnly && (
+                  {!readOnly && !hardLocked && (
                     <div className="flex gap-2">
                       <Input value={commentText} onChange={(e) => setCommentText(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && addComment()}
