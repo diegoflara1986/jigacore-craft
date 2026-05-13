@@ -152,13 +152,6 @@ export const PERMISSION_MODULES = [
       { action: "editar", label: "Editar mi perfil" },
     ]
   },
-  { module: "config_notificaciones", label: "Mis Notificaciones",
-    icon: "🔔",
-    actions: [
-      { action: "ver", label: "Ver preferencias" },
-      { action: "editar", label: "Editar preferencias" },
-    ]
-  },
   { module: "config_apariencia", label: "Apariencia", icon: "🎨",
     actions: [
       { action: "editar", label: "Editar apariencia" },
