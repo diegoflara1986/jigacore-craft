@@ -4,10 +4,11 @@ import { useProjectMembers } from "@/hooks/useProjects";
 import { ManualTimeLogModal } from "@/components/timer/ManualTimeLogModal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Plus, Trash2, Clock, CheckCircle2, Pencil } from "lucide-react";
+import { Plus, Trash2, Clock, CheckCircle2, Circle, Pencil } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { usePermissions } from "@/hooks/usePermissions";
 import { PermissionDeniedDialog } from "@/components/PermissionDeniedDialog";
@@ -110,7 +111,7 @@ export function ProjectTimeTab({ projectId, isArchived = false }: Props) {
             </TableHeader>
             <TableBody>
               {logs?.map(l => (
-                <TableRow key={l.id}>
+                <TableRow key={l.id} className={(l as any).approved ? "bg-green-50 dark:bg-green-950/20" : undefined}>
                   <TableCell className="text-sm">{l.log_date}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
@@ -129,18 +130,21 @@ export function ProjectTimeTab({ projectId, isArchived = false }: Props) {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className={`h-7 w-7 ${(l as any).approved ? "text-primary" : "text-muted-foreground"}`}
+                              className={`h-7 w-7 ${(l as any).approved ? "text-green-600" : "text-muted-foreground"}`}
                               onClick={() =>
                                 guardAction("tiempo", "aprobar", "aprobar registro de tiempo", () =>
                                   toggleApprove(l.id, (l as any).approved)
                                 )
                               }
                             >
-                              <CheckCircle2 className="h-3.5 w-3.5" />
+                              {(l as any).approved ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Circle className="h-3.5 w-3.5" />}
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent>{(l as any).approved ? "Quitar aprobación" : "Aprobar registro"}</TooltipContent>
+                          <TooltipContent>{(l as any).approved ? "Aprobado — clic para quitar aprobación" : "Aprobar registro"}</TooltipContent>
                         </Tooltip>
+                      )}
+                      {(l as any).approved && (
+                        <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50 text-[10px] px-1.5 py-0 h-5">Aprobado</Badge>
                       )}
                       {l.user_id === profile?.id && !isArchived && !(l as any).approved && (
                         <>
