@@ -150,6 +150,11 @@ export function ProjectKanbanTab({ projectId, isArchived = false }: Props) {
       toast.error("Historia bloqueada", { description: "No puedes mover una historia bloqueada. Desbloquéala primero." });
       return;
     }
+    if (story && story.status === "done") {
+      e.preventDefault();
+      toast.error("Historia completada", { description: "Una HU completada queda bloqueada y no se puede mover ni editar." });
+      return;
+    }
     e.dataTransfer.setData("text/plain", id);
     setDraggedId(id);
   }, [isArchived, sprintStories, hasPermission]);
@@ -168,6 +173,10 @@ export function ProjectKanbanTab({ projectId, isArchived = false }: Props) {
     const movingStory = sprintStories.find(s => s.id === e.dataTransfer.getData("text/plain"));
     if (movingStory && isBlocked(movingStory)) {
       toast.error("Historia bloqueada", { description: "No puedes mover una historia bloqueada." });
+      return;
+    }
+    if (movingStory && movingStory.status === "done") {
+      toast.error("Historia completada", { description: "Una HU completada queda bloqueada y no se puede mover." });
       return;
     }
     e.preventDefault();
@@ -211,17 +220,18 @@ export function ProjectKanbanTab({ projectId, isArchived = false }: Props) {
     const comments = commentCounts?.[story.id] ?? 0;
     const tasks = taskCounts?.[story.id];
     const blocked = isBlocked(story);
+    const completed = story.status === "done";
 
     return (
       <div
         key={story.id}
-        draggable={!isArchived}
+        draggable={!isArchived && !completed}
         onDragStart={(e) => handleDragStart(e, story.id)}
         onClick={() => setSelectedStoryId(story.id)}
         className={cn(
           "bg-card border rounded-lg p-3 cursor-grab active:cursor-grabbing hover:shadow-md transition-all space-y-2",
           draggedId === story.id && "opacity-40 scale-95",
-          blocked ? "border-destructive/50 bg-destructive/5" : "border-border"
+          blocked ? "border-destructive/50 bg-destructive/5" : completed ? "border-muted-foreground/30 bg-muted/30 cursor-not-allowed" : "border-border"
         )}
       >
         <div className="flex items-center justify-between">
