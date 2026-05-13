@@ -109,10 +109,46 @@ export function useCreateUserStory() {
 export function useUpdateUserStory() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...updates }: Partial<UserStory> & { id: string; _projectId?: string }) => {
-      const { epics, assigned_profile, sprints, _projectId, ...updateData } = updates as any;
+    mutationFn: async ({ id, ...updates }: Partial<UserStory> & {
+      id: string;
+      _projectId?: string;
+      previousValues?: {
+        status?: string | null;
+        assigned_to?: string | null;
+        priority?: string | null;
+        story_points?: number | null;
+        sprint_id?: string | null;
+      };
+    }) => {
+      const { epics, assigned_profile, sprints, _projectId, previousValues, ...updateData } = updates as any;
       const { error } = await supabase.from("user_stories").update(updateData).eq("id", id);
       if (error) throw error;
+
+      // Audit history (non-blocking)
+      try {
+        if (previousValues) {
+          const auditFields = ["status", "assigned_to", "priority", "story_points", "sprint_id"] as const;
+          const { data: authData } = await supabase.auth.getUser();
+          const userId = authData?.user?.id;
+          if (userId) {
+            const entries = auditFields
+              .filter((f) => f in updateData && (previousValues as any)[f] !== (updateData as any)[f])
+              .map((f) => ({
+                user_story_id: id,
+                user_id: userId,
+                field_name: f,
+                old_value: (previousValues as any)[f] != null ? String((previousValues as any)[f]) : null,
+                new_value: (updateData as any)[f] != null ? String((updateData as any)[f]) : null,
+              }));
+            if (entries.length > 0) {
+              await supabase.from("user_story_history").insert(entries);
+            }
+          }
+        }
+      } catch (_e) {
+        // Silently ignore history errors
+      }
+
       return { id };
     },
     onSuccess: (_d, variables) => {
@@ -121,6 +157,7 @@ export function useUpdateUserStory() {
       qc.invalidateQueries({ queryKey: ["project-stats"] });
       qc.invalidateQueries({ queryKey: ["epics"] });
       qc.invalidateQueries({ queryKey: ["user-stories-for-sprints"] });
+      qc.invalidateQueries({ queryKey: ["user-story-history", variables.id] });
       toast({ title: "Historia actualizada" });
     },
     onError: (e: any) => toast({ title: "No se pudo actualizar la historia", description: parseError(e), variant: "destructive" }),
