@@ -59,7 +59,14 @@ export function ReportTeamTab({ stories, timeLogs, members, sprints, projects }:
         .sort((a, b) => b.totalSP - a.totalSP)
         .slice(0, 10);
     }
-    return memberData.filter((m: any) => m.project_id === selectedChartProject);
+    return memberData
+      .filter((m: any) => m.project_id === selectedChartProject)
+      .map((m: any) => ({
+        name: m.name,
+        totalSP: m.totalSP,
+        hours: m.hours,
+        hPerSP: m.hPerSP,
+      }));
   })();
 
   const avgEfficiency = chartMembers.filter(m => m.hPerSP !== null).length > 0
