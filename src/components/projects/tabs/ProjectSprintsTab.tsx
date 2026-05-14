@@ -220,6 +220,20 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
     setStartConfirm(null);
   };
 
+  const saveDates = async () => {
+    if (!editDates.start_date || !editDates.end_date) {
+      toast({ title: "Fechas requeridas", description: "Debes definir ambas fechas.", variant: "destructive" });
+      return;
+    }
+    await updateSprint.mutateAsync({
+      id: editDatesSprintId!,
+      start_date: format(editDates.start_date, "yyyy-MM-dd"),
+      end_date: format(editDates.end_date, "yyyy-MM-dd"),
+    });
+    setEditDatesSprintId(null);
+    toast({ title: "Fechas actualizadas" });
+  };
+
   const handleDeleteSprint = async () => {
     if (!deleteConfirm) return;
     // Move stories back to backlog
@@ -237,7 +251,11 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
     for (const story of incompleteStories) {
       await updateStory.mutateAsync({ id: story.id, sprint_id: null });
     }
-    await updateSprint.mutateAsync({ id: completeReview.id, status: "completed" });
+    await updateSprint.mutateAsync({
+      id: completeReview.id,
+      status: "completed",
+      end_date: realEndDate ? format(realEndDate, "yyyy-MM-dd") : undefined,
+    });
     try {
       const sprint = completeReview;
       const { data: membersData } = await supabase.from("project_members").select("user_id").eq("project_id", projectId);
@@ -257,6 +275,7 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
     }
     setCompleteReview(null);
     setIncompleteHandled(false);
+    setRealEndDate(undefined);
   };
 
   const toggleBacklogItem = (id: string) => {
