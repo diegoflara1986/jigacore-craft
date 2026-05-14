@@ -358,6 +358,83 @@ export function ReportDashboardTab({ projects, stories, sprints, incidents, time
           </CardContent>
         </Card>
       </div>
+
+      {/* Portfolio Analysis */}
+      <div>
+        <h2 className="text-lg font-medium text-foreground mb-4">Análisis del portafolio</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Donut: team distribution */}
+          <Card>
+            <CardHeader><CardTitle className="text-base">Distribución del equipo</CardTitle></CardHeader>
+            <CardContent>
+              {teamByProject.length > 0 ? (
+                <ResponsiveContainer width="100%" height={220}>
+                  <PieChart>
+                    <Pie data={teamByProject} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={55} outerRadius={85} paddingAngle={2}>
+                      {teamByProject.map((_: any, i: number) => (
+                        <Cell key={i} fill={["hsl(199,89%,48%)", "hsl(142,71%,45%)", "hsl(38,92%,50%)", "hsl(270,60%,55%)", "hsl(0,72%,51%)"][i % 5]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(v: number, n: string) => [v + " personas", n]} />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-[220px] text-muted-foreground text-sm">Sin datos de equipo</div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Velocity comparison */}
+          <Card>
+            <CardHeader><CardTitle className="text-base">Velocity por sprint</CardTitle></CardHeader>
+            <CardContent>
+              {velocityComparison.length > 0 ? (
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart data={velocityComparison}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                    <XAxis dataKey="sprint" tick={{ fontSize: 10 }} />
+                    <YAxis tick={{ fontSize: 10 }} />
+                    <Tooltip formatter={(v: number) => [v + " SP", "Velocity"]} />
+                    <Bar dataKey="velocity" fill="hsl(199,89%,48%)" radius={[4,4,0,0]} name="Velocity" />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-[220px] text-muted-foreground text-sm">Sin sprints completados</div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Timeline */}
+          <Card>
+            <CardHeader><CardTitle className="text-base">Línea de tiempo de proyectos</CardTitle></CardHeader>
+            <CardContent>
+              {timelineData.length > 0 ? (
+                <div className="space-y-3 pt-2">
+                  {timelineData.map((p: any) => (
+                    <div key={p.name}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-medium text-foreground truncate max-w-[120px]">{p.name}</span>
+                        <span className="text-[10px] text-muted-foreground">{p.end ? new Date(p.end).toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" }) : "Sin fecha fin"}</span>
+                      </div>
+                      <div className="h-2 rounded-full bg-muted overflow-hidden">
+                        <div className="h-full rounded-full bg-primary" style={{ width: (() => {
+                          if (!p.start || !p.end) return "50%";
+                          const total = new Date(p.end).getTime() - new Date(p.start).getTime();
+                          const elapsed = Date.now() - new Date(p.start).getTime();
+                          return Math.min(Math.max(Math.round((elapsed / total) * 100), 5), 100) + "%";
+                        })() }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-[220px] text-muted-foreground text-sm">Los proyectos no tienen fechas configuradas</div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }
