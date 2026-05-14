@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -40,12 +40,21 @@ export function ReportSprintTab({ sprints, stories, timeLogs, members, projectId
   const { data: retro } = useSprintRetrospective(selectedSprintId || undefined);
   const [retroForm, setRetroForm] = useState({ went_well: "", to_improve: "", action_items: "" });
 
-  // Sync retro data
-  const currentRetro = {
-    went_well: retroForm.went_well || retro?.went_well || "",
-    to_improve: retroForm.to_improve || retro?.to_improve || "",
-    action_items: retroForm.action_items || retro?.action_items || "",
-  };
+// Limpiar formulario al cambiar de sprint
+  useEffect(() => {
+    setRetroForm({ went_well: "", to_improve: "", action_items: "" });
+  }, [selectedSprintId]);
+
+  // Cargar datos de BD cuando llegan
+  useEffect(() => {
+    if (retro) {
+      setRetroForm({
+        went_well: retro.went_well || "",
+        to_improve: retro.to_improve || "",
+        action_items: retro.action_items || "",
+      });
+    }
+  }, [retro]);
 
   const saveRetro = async () => {
     if (!selectedSprintId || !projectId) return;
@@ -232,15 +241,15 @@ export function ReportSprintTab({ sprints, stories, timeLogs, members, projectId
             <CardContent className="space-y-4">
               <div className="bg-success/5 border border-success/20 rounded-lg p-4">
                 <p className="text-sm font-medium mb-2">✅ ¿Qué salió bien?</p>
-                <Textarea value={retroForm.went_well || retro?.went_well || ""} onChange={e => setRetroForm(p => ({ ...p, went_well: e.target.value }))} placeholder="Describe lo que salió bien..." rows={3} />
+                <Textarea value={retroForm.went_well} onChange={e => setRetroForm(p => ({ ...p, went_well: e.target.value }))} placeholder="Describe lo que salió bien..." rows={3} />
               </div>
               <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-4">
                 <p className="text-sm font-medium mb-2">❌ ¿Qué puede mejorar?</p>
-                <Textarea value={retroForm.to_improve || retro?.to_improve || ""} onChange={e => setRetroForm(p => ({ ...p, to_improve: e.target.value }))} placeholder="Describe lo que se puede mejorar..." rows={3} />
+                <Textarea value={retroForm.to_improve} onChange={e => setRetroForm(p => ({ ...p, to_improve: e.target.value }))} placeholder="Describe lo que se puede mejorar..." rows={3} />
               </div>
               <div className="bg-info/5 border border-info/20 rounded-lg p-4">
                 <p className="text-sm font-medium mb-2">🎯 Acciones para el próximo sprint</p>
-                <Textarea value={retroForm.action_items || retro?.action_items || ""} onChange={e => setRetroForm(p => ({ ...p, action_items: e.target.value }))} placeholder="Acciones concretas..." rows={3} />
+                <Textarea value={retroForm.action_items} onChange={e => setRetroForm(p => ({ ...p, action_items: e.target.value }))} placeholder="Acciones concretas..." rows={3} />
               </div>
               <Button onClick={saveRetro}>Guardar Retrospectiva</Button>
             </CardContent>
