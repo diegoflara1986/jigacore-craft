@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -41,16 +42,33 @@ export function ReportTeamTab({ stories, timeLogs, members, sprints, projects }:
     };
   });
 
-  const projectIds = [...new Set(members.map((m: any) => m.project_id))];
-  const productivityByProject = projectIds.map((pid: string) => {
-    const project = projects.find((p: any) => p.id === pid);
-    const pMembers = memberData.filter((m: any) => m.project_id === pid);
-    return { projectName: project?.name ?? "—", members: pMembers };
-  }).filter((p: any) => p.members.length > 0);
+  const [selectedChartProject, setSelectedChartProject] = useState<string>("all");
 
-  const avgEfficiency = memberData.length > 0
-    ? memberData.filter(m => m.hPerSP !== null).reduce((a, m) => a + (m.hPerSP ?? 0), 0) / Math.max(memberData.filter(m => m.hPerSP !== null).length, 1)
+  // Datos para gráfica según proyecto seleccionado
+  const chartMembers = (() => {
+    if (selectedChartProject === "all") {
+      // Consolidar por miembro (suma de todos los proyectos), top 10 por SP
+      const byMember: Record<string, { name: string; totalSP: number; hours: number; hPerSP: number | null }> = {};
+      memberData.forEach((m: any) => {
+        if (!byMember[m.name]) byMember[m.name] = { name: m.name, totalSP: 0, hours: 0, hPerSP: null };
+        byMember[m.name].totalSP += m.totalSP;
+        byMember[m.name].hours += m.hours;
+      });
+      return Object.values(byMember)
+        .map(m => ({ ...m, hPerSP: m.totalSP > 0 ? Math.round((m.hours / m.totalSP) * 10) / 10 : null }))
+        .sort((a, b) => b.totalSP - a.totalSP)
+        .slice(0, 10);
+    }
+    return memberData.filter((m: any) => m.project_id === selectedChartProject);
+  })();
+
+  const avgEfficiency = chartMembers.filter(m => m.hPerSP !== null).length > 0
+    ? chartMembers.filter(m => m.hPerSP !== null).reduce((a, m) => a + (m.hPerSP ?? 0), 0) / chartMembers.filter(m => m.hPerSP !== null).length
     : 0;
+
+  const selectedProjectName = selectedChartProject === "all"
+    ? "Todos los proyectos"
+    : projects.find((p: any) => p.id === selectedChartProject)?.name ?? "—";
 
   return (
     <div className="space-y-6">
@@ -106,13 +124,26 @@ export function ReportTeamTab({ stories, timeLogs, members, sprints, projects }:
         </CardContent>
       </Card>
 
-      {/* Gráfica 1 — Productividad por proyecto */}
-      {productivityByProject.map((proj: any) => (
-        <Card key={proj.projectName}>
-          <CardHeader><CardTitle className="text-base">Productividad — {proj.projectName}</CardTitle></CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={proj.members} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <CardTitle className="text-base">Productividad — {selectedProjectName}</CardTitle>
+            <select
+              value={selectedChartProject}
+              onChange={e => setSelectedChartProject(e.target.value)}
+              className="border rounded px-3 py-1.5 text-sm bg-background"
+            >
+              <option value="all">Todos los proyectos (top 10)</option>
+              {projects.map((p: any) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {chartMembers.length > 0 ? (
+            <ResponsiveContainer width="100%" height={240}>
+              <BarChart data={chartMembers} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                 <XAxis dataKey="name" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} />
@@ -122,19 +153,22 @@ export function ReportTeamTab({ stories, timeLogs, members, sprints, projects }:
                 <Bar dataKey="hours" name="Horas aprobadas" fill="hsl(38,92%,50%)" radius={[4,4,0,0]} />
               </BarChart>
             </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      ))}
+          ) : (
+            <div className="flex items-center justify-center h-[240px] text-muted-foreground text-sm">Sin datos para este proyecto</div>
+          )}
+        </CardContent>
+      </Card>
 
-      {/* Gráfica 2 — Ranking de eficiencia */}
-      {memberData.filter(m => m.hPerSP !== null).length > 0 && (
+      {chartMembers.filter(m => m.hPerSP !== null).length > 0 && (
         <Card>
-          <CardHeader><CardTitle className="text-base">Ranking de eficiencia (h/Punto) — menor es mejor</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle className="text-base">Ranking de eficiencia (h/Punto) — {selectedProjectName}</CardTitle>
+          </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={Math.max(180, memberData.length * 40)}>
+            <ResponsiveContainer width="100%" height={Math.max(180, chartMembers.length * 44)}>
               <BarChart
                 layout="vertical"
-                data={[...memberData].filter(m => m.hPerSP !== null).sort((a, b) => (a.hPerSP ?? 0) - (b.hPerSP ?? 0))}
+                data={[...chartMembers].filter(m => m.hPerSP !== null).sort((a, b) => (a.hPerSP ?? 0) - (b.hPerSP ?? 0))}
                 margin={{ top: 5, right: 40, bottom: 5, left: 120 }}
               >
                 <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
@@ -142,13 +176,15 @@ export function ReportTeamTab({ stories, timeLogs, members, sprints, projects }:
                 <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={115} />
                 <RTooltip formatter={(v: number) => [`${v}h/punto`, "Eficiencia"]} />
                 <Bar dataKey="hPerSP" name="h/Punto" radius={[0,4,4,0]}>
-                  {[...memberData].filter(m => m.hPerSP !== null).sort((a, b) => (a.hPerSP ?? 0) - (b.hPerSP ?? 0)).map((m, i) => (
+                  {[...chartMembers].filter(m => m.hPerSP !== null).sort((a, b) => (a.hPerSP ?? 0) - (b.hPerSP ?? 0)).map((m, i) => (
                     <Cell key={i} fill={(m.hPerSP ?? 0) <= avgEfficiency ? "#22c55e" : "#ef4444"} />
                   ))}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
-            <p className="text-xs text-muted-foreground mt-2 px-1">Verde = más eficiente que el promedio del equipo ({avgEfficiency.toFixed(1)}h/punto). Rojo = por encima del promedio.</p>
+            <p className="text-xs text-muted-foreground mt-2 px-1">
+              Verde = más eficiente que el promedio ({avgEfficiency.toFixed(1)}h/punto). Rojo = por encima del promedio. Menor valor = más eficiente.
+            </p>
           </CardContent>
         </Card>
       )}
