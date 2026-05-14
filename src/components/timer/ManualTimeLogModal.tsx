@@ -134,7 +134,7 @@ export function ManualTimeLogModal({ open, onOpenChange, projectId: fixedProject
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label className="text-xs">Fecha</Label>
-              <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="h-9" />
+              <Input type="date" value={date} onChange={e => setDate(e.target.value)} max={new Date().toISOString().split("T")[0]} className="h-9" />
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Horas</Label>
