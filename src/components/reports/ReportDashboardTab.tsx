@@ -149,29 +149,28 @@ export function ReportDashboardTab({ projects, stories, sprints, incidents, time
     return { name: p.name, value: count };
   }).filter(p => p.value > 0);
 
-  // Velocity comparison: last 5 sprints per project
-  const velocityComparison = (() => {
-    const allCompletedSprints = sprints
-      .filter((s: any) => s.status === "completed" && s.end_date)
-      .sort((a: any, b: any) => new Date(b.end_date).getTime() - new Date(a.end_date).getTime())
-      .slice(0, 5)
-      .reverse();
 
-    return allCompletedSprints.map((s: any) => {
-      const project = projects?.find((p: any) => p.id === s.project_id);
-      const vel = stories.filter((st: any) => st.sprint_id === s.id && st.status === "done").reduce((a: number, st: any) => a + (st.story_points ?? 0), 0);
-      return { sprint: s.name, proyecto: project?.name ?? "—", velocity: vel };
+  // Gantt: project start/end dates with progress
+  const ganttData = activeProjects
+    .filter((p: any) => p.start_date && p.end_date)
+    .map((p: any) => {
+      const start = new Date(p.start_date).getTime();
+      const end = new Date(p.end_date).getTime();
+      const now = Date.now();
+      const total = end - start;
+      const elapsed = now - start;
+      const progress = total > 0 ? Math.min(Math.max(Math.round((elapsed / total) * 100), 0), 100) : 0;
+      const isOverdue = now > end;
+      const daysLeft = Math.ceil((end - now) / 86400000);
+      return {
+        name: p.name,
+        start: p.start_date,
+        end: p.end_date,
+        progress,
+        isOverdue,
+        daysLeft,
+      };
     });
-  })();
-
-  // Timeline: project start/end dates
-  const timelineData = activeProjects
-    .filter((p: any) => p.start_date || p.end_date)
-    .map((p: any) => ({
-      name: p.name,
-      start: p.start_date ?? null,
-      end: p.end_date ?? null,
-    }));
 
   return (
     <div className="space-y-6">
@@ -362,7 +361,7 @@ export function ReportDashboardTab({ projects, stories, sprints, incidents, time
       {/* Portfolio Analysis */}
       <div>
         <h2 className="text-lg font-medium text-foreground mb-4">Análisis del portafolio</h2>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Donut: team distribution */}
           <Card>
             <CardHeader><CardTitle className="text-base">Distribución del equipo</CardTitle></CardHeader>
@@ -385,51 +384,41 @@ export function ReportDashboardTab({ projects, stories, sprints, incidents, time
             </CardContent>
           </Card>
 
-          {/* Velocity comparison */}
+          {/* Gantt */}
           <Card>
-            <CardHeader><CardTitle className="text-base">Velocity por sprint</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-base">Gantt de proyectos</CardTitle></CardHeader>
             <CardContent>
-              {velocityComparison.length > 0 ? (
-                <ResponsiveContainer width="100%" height={220}>
-                  <BarChart data={velocityComparison}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                    <XAxis dataKey="sprint" tick={{ fontSize: 10 }} />
-                    <YAxis tick={{ fontSize: 10 }} />
-                    <Tooltip formatter={(v: number) => [v + " SP", "Velocity"]} />
-                    <Bar dataKey="velocity" fill="hsl(199,89%,48%)" radius={[4,4,0,0]} name="Velocity" />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex items-center justify-center h-[220px] text-muted-foreground text-sm">Sin sprints completados</div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Timeline */}
-          <Card>
-            <CardHeader><CardTitle className="text-base">Línea de tiempo de proyectos</CardTitle></CardHeader>
-            <CardContent>
-              {timelineData.length > 0 ? (
-                <div className="space-y-3 pt-2">
-                  {timelineData.map((p: any) => (
+              {ganttData.length > 0 ? (
+                <div className="space-y-4 pt-1">
+                  {ganttData.map((p: any) => (
                     <div key={p.name}>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-medium text-foreground truncate max-w-[120px]">{p.name}</span>
-                        <span className="text-[10px] text-muted-foreground">{p.end ? new Date(p.end).toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" }) : "Sin fecha fin"}</span>
+                      <div className="flex items-center justify-between mb-1 gap-2">
+                        <span className="text-xs font-medium text-foreground truncate max-w-[140px]">{p.name}</span>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-[10px] text-muted-foreground">
+                            {new Date(p.start).toLocaleDateString("es-CO", { day: "numeric", month: "short" })} → {new Date(p.end).toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" })}
+                          </span>
+                          <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${p.isOverdue ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" : "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"}`}>
+                            {p.isOverdue ? `${Math.abs(p.daysLeft)}d vencido` : `${p.daysLeft}d restantes`}
+                          </span>
+                        </div>
                       </div>
-                      <div className="h-2 rounded-full bg-muted overflow-hidden">
-                        <div className="h-full rounded-full bg-primary" style={{ width: (() => {
-                          if (!p.start || !p.end) return "50%";
-                          const total = new Date(p.end).getTime() - new Date(p.start).getTime();
-                          const elapsed = Date.now() - new Date(p.start).getTime();
-                          return Math.min(Math.max(Math.round((elapsed / total) * 100), 5), 100) + "%";
-                        })() }} />
+                      <div className="relative h-5 rounded bg-muted overflow-hidden">
+                        <div
+                          className={`h-full rounded transition-all ${p.isOverdue ? "bg-destructive/70" : "bg-primary"}`}
+                          style={{ width: `${p.progress}%` }}
+                        />
+                        <span className="absolute inset-0 flex items-center justify-center text-[10px] font-medium text-white mix-blend-difference">
+                          {p.progress}%
+                        </span>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="flex items-center justify-center h-[220px] text-muted-foreground text-sm">Los proyectos no tienen fechas configuradas</div>
+                <div className="flex items-center justify-center h-[160px] text-muted-foreground text-sm text-center px-4">
+                  Los proyectos no tienen fechas de inicio y fin configuradas
+                </div>
               )}
             </CardContent>
           </Card>
