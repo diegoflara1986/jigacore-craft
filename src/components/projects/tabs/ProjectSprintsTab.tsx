@@ -96,7 +96,9 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
   const [selectedBacklogIds, setSelectedBacklogIds] = useState<string[]>([]);
   const [createHUOpen, setCreateHUOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<SprintWithStats | null>(null);
-  
+  const [editDatesSprintId, setEditDatesSprintId] = useState<string | null>(null);
+  const [editDates, setEditDates] = useState<{ start_date: Date | undefined; end_date: Date | undefined }>({ start_date: undefined, end_date: undefined });
+  const [realEndDate, setRealEndDate] = useState<Date | undefined>(undefined);
   const [newStory, setNewStory] = useState({ title: "", description: "", type: "story", priority: "medium", status: "backlog", story_points: "", epic_id: "", assigned_to: "", sprint_id: "" });
   const [expandedSprints, setExpandedSprints] = useState<Set<string>>(new Set());
   const toggleSprint = (id: string) => setExpandedSprints(prev => {
@@ -218,6 +220,20 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
     setStartConfirm(null);
   };
 
+  const saveDates = async () => {
+    if (!editDates.start_date || !editDates.end_date) {
+      toast({ title: "Fechas requeridas", description: "Debes definir ambas fechas.", variant: "destructive" });
+      return;
+    }
+    await updateSprint.mutateAsync({
+      id: editDatesSprintId!,
+      start_date: format(editDates.start_date, "yyyy-MM-dd"),
+      end_date: format(editDates.end_date, "yyyy-MM-dd"),
+    });
+    setEditDatesSprintId(null);
+    toast({ title: "Fechas actualizadas" });
+  };
+
   const handleDeleteSprint = async () => {
     if (!deleteConfirm) return;
     // Move stories back to backlog
@@ -235,7 +251,11 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
     for (const story of incompleteStories) {
       await updateStory.mutateAsync({ id: story.id, sprint_id: null });
     }
-    await updateSprint.mutateAsync({ id: completeReview.id, status: "completed" });
+    await updateSprint.mutateAsync({
+      id: completeReview.id,
+      status: "completed",
+      end_date: realEndDate ? format(realEndDate, "yyyy-MM-dd") : undefined,
+    });
     try {
       const sprint = completeReview;
       const { data: membersData } = await supabase.from("project_members").select("user_id").eq("project_id", projectId);
@@ -255,6 +275,7 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
     }
     setCompleteReview(null);
     setIncompleteHandled(false);
+    setRealEndDate(undefined);
   };
 
   const toggleBacklogItem = (id: string) => {
@@ -311,8 +332,18 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
                       <LayoutDashboard className="h-3.5 w-3.5 mr-1" />Ver Tablero
                     </Button>
                   )}
+                  <Button size="sm" variant="ghost" onClick={() => {
+                    const s = sprints?.find(sp => sp.id === sprint.id);
+                    setEditDates({
+                      start_date: s?.start_date ? new Date(s.start_date) : undefined,
+                      end_date: s?.end_date ? new Date(s.end_date) : undefined,
+                    });
+                    setEditDatesSprintId(sprint.id);
+                  }}>
+                    <CalendarIcon className="h-4 w-4 mr-1" /> Fechas
+                  </Button>
                   {!isArchived && (
-                    <Button size="sm" onClick={() => guardAction("sprints", "gestionar", "completar un sprint", () => setCompleteReview(sprint))}>
+                    <Button size="sm" onClick={() => guardAction("sprints", "gestionar", "completar un sprint", () => { setCompleteReview(sprint); setRealEndDate(sprint.end_date ? new Date(sprint.end_date) : new Date()); })}>
                       <CheckCircle2 className="h-3.5 w-3.5 mr-1" />Completar
                     </Button>
                   )}
@@ -630,7 +661,7 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
       </Dialog>
 
       {/* Sprint Review / Complete */}
-      <Dialog open={!!completeReview} onOpenChange={() => setCompleteReview(null)}>
+      <Dialog open={!!completeReview} onOpenChange={() => { setCompleteReview(null); setRealEndDate(undefined); }}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader><DialogTitle>Sprint Review — {completeReview?.name}</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
@@ -670,9 +701,36 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
               </div>
             )}
 
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Fecha de cierre real <span className="text-destructive">*</span></Label>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Fecha inicio (bloqueada)</Label>
+                  <Button variant="outline" className="w-full justify-start text-left font-normal h-9 text-xs mt-1 opacity-60 cursor-not-allowed" disabled>
+                    <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                    {completeReview?.start_date ? format(new Date(completeReview.start_date), "dd/MM/yyyy") : "Sin fecha"}
+                  </Button>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Fecha fin real</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-full justify-start text-left font-normal h-9 text-xs mt-1">
+                        <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                        {realEndDate ? format(realEndDate, "dd/MM/yyyy") : "Seleccionar"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar mode="single" selected={realEndDate} onSelect={setRealEndDate} className="p-3 pointer-events-auto" />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+            </div>
+
             <Separator />
             <DialogFooter>
-              <Button variant="outline" onClick={() => { setCompleteReview(null); setIncompleteHandled(false); }}>Cancelar</Button>
+              <Button variant="outline" onClick={() => { setCompleteReview(null); setIncompleteHandled(false); setRealEndDate(undefined); }}>Cancelar</Button>
               <Button onClick={handleFinalizeSprint} disabled={updateSprint.isPending || updateStory.isPending}>
                 Finalizar Sprint
               </Button>
@@ -773,6 +831,43 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
       </Dialog>
 
       
+      {/* Edit Dates Dialog */}
+      <Dialog open={!!editDatesSprintId} onOpenChange={(open) => { if (!open) setEditDatesSprintId(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Editar fechas del sprint</DialogTitle></DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>Fecha inicio <span className="text-destructive">*</span></Label>
+              <Popover><PopoverTrigger asChild>
+                <Button variant="outline" className="w-full justify-start text-left font-normal h-9 text-xs">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {editDates.start_date ? format(editDates.start_date, "dd/MM/yyyy") : "Seleccionar"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar mode="single" selected={editDates.start_date} onSelect={(d) => setEditDates(p => ({ ...p, start_date: d }))} className="p-3 pointer-events-auto" />
+              </PopoverContent></Popover>
+            </div>
+            <div className="space-y-2">
+              <Label>Fecha fin <span className="text-destructive">*</span></Label>
+              <Popover><PopoverTrigger asChild>
+                <Button variant="outline" className="w-full justify-start text-left font-normal h-9 text-xs">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {editDates.end_date ? format(editDates.end_date, "dd/MM/yyyy") : "Seleccionar"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar mode="single" selected={editDates.end_date} onSelect={(d) => setEditDates(p => ({ ...p, end_date: d }))} className="p-3 pointer-events-auto" />
+              </PopoverContent></Popover>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setEditDatesSprintId(null)}>Cancelar</Button>
+            <Button onClick={saveDates}>Guardar fechas</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <PermissionDeniedDialog open={denied.open} onOpenChange={closeDenied} actionLabel={denied.actionLabel} requiredPermission={denied.requiredPermission} />
     </div>
   );
