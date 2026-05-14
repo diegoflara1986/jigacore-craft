@@ -20,10 +20,11 @@ export function ReportTeamTab({ stories, timeLogs, members, sprints }: Props) {
     const p = m.profiles;
     const mStories = completedStories.filter(s => s.assigned_to === p?.id);
     const sp = mStories.reduce((a: number, s: any) => a + (s.story_points ?? 0), 0);
-    const hours = timeLogs.filter(t => t.user_id === p?.id).reduce((a: number, t: any) => a + (t.hours ?? 0), 0);
+    const hours = timeLogs.filter(t => t.user_id === p?.id && (t as any).approved === true).reduce((a: number, t: any) => a + (t.hours ?? 0), 0);
+    const efficiency = sp > 0 ? Math.round((hours / sp) * 10) / 10 : null;
     const completedSprints = sprints.filter(s => s.status === "completed");
     const velocity = completedSprints.length > 0 ? Math.round(sp / completedSprints.length) : sp;
-    return { id: p?.id, name: p?.full_name || p?.email || "?", role: m.project_role, sp, tasks: mStories.length, hours: Math.round(hours * 10) / 10, velocity };
+    return { id: p?.id, name: p?.full_name || p?.email || "?", role: m.project_role, sp, tasks: mStories.length, hours: Math.round(hours * 10) / 10, efficiency, velocity };
   });
 
   // Activity heatmap data - last 8 weeks
@@ -62,10 +63,11 @@ export function ReportTeamTab({ stories, timeLogs, members, sprints }: Props) {
                   <Badge variant="outline" className="text-xs">{m.role}</Badge>
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="grid grid-cols-4 gap-2 text-center">
                 <div><p className="text-lg font-bold text-info">{m.sp}</p><p className="text-[10px] text-muted-foreground">SP</p></div>
                 <div><p className="text-lg font-bold">{m.tasks}</p><p className="text-[10px] text-muted-foreground">Tareas</p></div>
                 <div><p className="text-lg font-bold text-accent">{m.hours}h</p><p className="text-[10px] text-muted-foreground">Horas</p></div>
+                <div><p className="text-lg font-bold text-success">{m.efficiency !== null ? `${m.efficiency}h` : "—"}</p><p className="text-[10px] text-muted-foreground">h/SP</p></div>
               </div>
             </CardContent>
           </Card>
@@ -77,7 +79,7 @@ export function ReportTeamTab({ stories, timeLogs, members, sprints }: Props) {
         <CardHeader><CardTitle className="text-base">Tabla Comparativa</CardTitle></CardHeader>
         <CardContent className="p-0">
           <Table>
-            <TableHeader><TableRow><TableHead>Miembro</TableHead><TableHead>Rol</TableHead><TableHead>SP</TableHead><TableHead>Tareas</TableHead><TableHead>Horas</TableHead><TableHead>Velocidad</TableHead><TableHead className="w-32">Progreso</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead>Miembro</TableHead><TableHead>Rol</TableHead><TableHead>SP</TableHead><TableHead>Tareas</TableHead><TableHead>Horas</TableHead><TableHead>Eficiencia</TableHead><TableHead>Velocidad</TableHead><TableHead className="w-32">Progreso</TableHead></TableRow></TableHeader>
             <TableBody>
               {memberData.sort((a, b) => b.sp - a.sp).map(m => (
                 <TableRow key={m.id}>
@@ -86,12 +88,16 @@ export function ReportTeamTab({ stories, timeLogs, members, sprints }: Props) {
                   <TableCell className="font-semibold">{m.sp}</TableCell>
                   <TableCell>{m.tasks}</TableCell>
                   <TableCell>{m.hours}h</TableCell>
+                  <TableCell>{m.efficiency !== null ? `${m.efficiency} h/SP` : "—"}</TableCell>
                   <TableCell>{m.velocity}</TableCell>
                   <TableCell><Progress value={(m.sp / maxSP) * 100} className="h-2" /></TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
+          <p className="text-xs text-muted-foreground px-4 py-3 border-t">
+            💡 Eficiencia = horas registradas ÷ story points completados. Menor valor = más eficiente.
+          </p>
         </CardContent>
       </Card>
 
