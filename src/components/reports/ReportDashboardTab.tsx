@@ -1,8 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, Zap, CheckCircle, Bug, Target } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { TrendingUp, TrendingDown, Zap, CheckCircle, Bug, Target, Briefcase, AlertTriangle, XOctagon } from "lucide-react";
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell, BarChart, Bar, AreaChart, Area, ReferenceLine } from "recharts";
 
 interface Props {
+  projects: any[];
   stories: any[];
   sprints: any[];
   incidents: any[];
