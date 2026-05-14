@@ -14,6 +14,7 @@ import { ReportSprintTab } from "@/components/reports/ReportSprintTab";
 import { ReportTeamTab } from "@/components/reports/ReportTeamTab";
 import { ReportFinancialTab } from "@/components/reports/ReportFinancialTab";
 import { ReportIncidentsTab } from "@/components/reports/ReportIncidentsTab";
+import { ReportStakeholderTab } from "@/components/reports/ReportStakeholderTab";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -49,9 +50,10 @@ export default function Reports() {
   const projectId = selectedProject !== "all" ? selectedProject : undefined;
 
   const { profile } = useAuth();
-  const { hasScope } = usePermissions();
+  const { hasScope, hasPermission } = usePermissions();
   const isAdmin = ["admin", "super_admin"].includes(profile?.role ?? "");
   const onlyAssigned = !isAdmin && hasScope("reportes", "solo_asignados");
+  const canVerInteresados = hasPermission("reportes", "ver_interesados");
   const { data: assignedProjects } = useProjects(undefined, undefined, onlyAssigned);
   const assignedProjectIds = onlyAssigned
     ? (assignedProjects ?? []).map((p) => p.id)
@@ -64,6 +66,7 @@ export default function Reports() {
   const { data: incidents = [] } = useAllIncidents(projectId, dateFrom, dateTo);
   const { data: costConfigs = [] } = useAllCostConfigs(projectId);
   const { data: members = [] } = useAllProjectMembers(projectId);
+  const { data: epics = [] } = useAllEpics(projectId);
   const { data: slaConfigs = [] } = useSlaConfigs();
 
   const exportPDF = () => toast({ title: "Exportación PDF", description: "Funcionalidad de exportación próximamente" });
@@ -124,6 +127,9 @@ export default function Reports() {
           <TabsTrigger value="team">Equipo</TabsTrigger>
           <TabsTrigger value="financial">Financiero</TabsTrigger>
           <TabsTrigger value="incidents">Incidentes</TabsTrigger>
+          {canVerInteresados && (
+            <TabsTrigger value="stakeholder">Vista Interesados</TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="dashboard">
@@ -145,6 +151,21 @@ export default function Reports() {
         <TabsContent value="incidents">
           <ReportIncidentsTab incidents={incidents} slaConfigs={slaConfigs} />
         </TabsContent>
+
+        {canVerInteresados && (
+          <TabsContent value="stakeholder">
+            <ReportStakeholderTab
+              projects={projects}
+              stories={stories}
+              sprints={sprints}
+              timeLogs={timeLogs}
+              costConfigs={costConfigs}
+              members={members}
+              epics={epics}
+              selectedProjectId={projectId}
+            />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );
