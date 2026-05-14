@@ -9,10 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Clock, Trash2, Check, Circle, Pencil } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceLine, Legend } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { usePermissions } from "@/hooks/usePermissions";
-
-const DAY_NAMES = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 
 export default function MyWork() {
   usePageTitle("Mi Trabajo");
@@ -32,6 +30,7 @@ export default function MyWork() {
   const updateTL = useUpdateTimeLog();
   const queryClient = useQueryClient();
   const [editingLog, setEditingLog] = useState<any>(null);
+  const [selectedProject, setSelectedProject] = useState<string>("all");
   void updateTL;
 
   const toggleApprove = async (logId: string, currentApproved: boolean) => {
@@ -55,45 +54,30 @@ export default function MyWork() {
     }
   };
 
-  const weekDays = useMemo(() => {
-    const days: string[] = [];
-    const start = new Date(dateFrom);
-    const d = new Date(start);
-    for (let i = 0; i < 7; i++) {
-      days.push(new Date(d).toISOString().split("T")[0]);
-      d.setDate(d.getDate() + 1);
-    }
-    return days;
-  }, [dateFrom]);
-
-  const projectMap = useMemo(() => {
-    const map: Record<string, { name: string; color: string; days: Record<string, number>; total: number }> = {};
-    logs?.forEach(l => {
-      const pid = l.project_id;
-      if (!map[pid]) map[pid] = { name: l.projects?.name ?? "Proyecto", color: l.projects?.color ?? "#1E3A5F", days: {}, total: 0 };
-      map[pid].days[l.log_date] = (map[pid].days[l.log_date] || 0) + l.hours;
-      map[pid].total += l.hours;
-    });
-    return map;
+  const availableProjects = useMemo(() => {
+    const map = new Map<string, string>();
+    logs?.forEach(l => { if (l.projects?.name) map.set(l.project_id, l.projects.name); });
+    return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
   }, [logs]);
 
-  const dayTotals = weekDays.map(d => Object.values(projectMap).reduce((sum, p) => sum + (p.days[d] || 0), 0));
-  const weekTotal = dayTotals.reduce((a, b) => a + b, 0);
+  const filteredLogs = useMemo(() => {
+    if (selectedProject === "all") return logs ?? [];
+    return (logs ?? []).filter(l => l.project_id === selectedProject);
+  }, [logs, selectedProject]);
 
-  const chartData = weekDays.map((d, i) => {
-    const entry: any = { name: DAY_NAMES[i] };
-    Object.entries(projectMap).forEach(([_pid, p]) => {
-      entry[p.name] = p.days[d] || 0;
+  const projectChartData = useMemo(() => {
+    const map: Record<string, { name: string; horas: number }> = {};
+    filteredLogs.forEach(l => {
+      const name = l.projects?.name ?? "Sin proyecto";
+      if (!map[l.project_id]) map[l.project_id] = { name, horas: 0 };
+      map[l.project_id].horas += l.hours;
     });
-    return entry;
-  });
+    return Object.values(map).sort((a, b) => b.horas - a.horas);
+  }, [filteredLogs]);
 
-  const projectColors = Object.values(projectMap).map(p => p.color);
-  const projectNames = Object.values(projectMap).map(p => p.name);
-
-  const totalHours = useMemo(() => logs?.reduce((a, l) => a + l.hours, 0) ?? 0, [logs]);
-  const totalRegistros = logs?.length ?? 0;
-  const activeProjects = useMemo(() => new Set(logs?.map(l => l.project_id) ?? []).size, [logs]);
+  const totalHours = useMemo(() => filteredLogs.reduce((a, l) => a + l.hours, 0), [filteredLogs]);
+  const totalRegistros = filteredLogs.length;
+  const activeProjects = useMemo(() => new Set(filteredLogs.map(l => l.project_id)).size, [filteredLogs]);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -127,69 +111,39 @@ export default function MyWork() {
         <Button onClick={() => setShowManual(true)} size="sm"><Plus className="h-4 w-4 mr-1" />Agregar registro manual</Button>
       </div>
 
-      {Object.keys(projectMap).length > 0 && (
-        <Card>
-          <CardHeader><CardTitle className="text-sm">Horas por día — Total: {weekTotal.toFixed(1)}h</CardTitle></CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                <YAxis tick={{ fontSize: 12 }} />
-                <Tooltip />
-                <Legend />
-                <ReferenceLine y={8} stroke="hsl(var(--destructive))" strokeDasharray="4 4" label="8h" />
-                {projectNames.map((name, i) => (
-                  <Bar key={name} dataKey={name} stackId="a" fill={projectColors[i] || "hsl(var(--primary))"} radius={i === projectNames.length - 1 ? [4, 4, 0, 0] : undefined} />
-                ))}
+      <Card>
+        <CardHeader><CardTitle className="text-sm">Horas por proyecto</CardTitle></CardHeader>
+        <CardContent>
+          {projectChartData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={projectChartData} layout="vertical">
+                <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={v => `${v}h`} />
+                <YAxis type="category" dataKey="name" tick={{ fontSize: 12 }} width={140} />
+                <Tooltip formatter={(v: number) => [`${v}h`, "Horas"]} />
+                <CartesianGrid strokeDasharray="3 3" />
+                <Bar dataKey="horas" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      )}
-
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-40">Proyecto</TableHead>
-                {DAY_NAMES.map((d, i) => (
-                  <TableHead key={i} className="text-center w-16">{d}<br /><span className="text-[10px] text-muted-foreground">{weekDays[i]?.slice(5)}</span></TableHead>
-                ))}
-                <TableHead className="text-center w-16 font-bold">Total</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {Object.entries(projectMap).map(([pid, p]) => (
-                <TableRow key={pid}>
-                  <TableCell className="font-medium text-sm">
-                    <div className="flex items-center gap-2">
-                      <div className="h-3 w-3 rounded-sm shrink-0" style={{ backgroundColor: p.color }} />
-                      {p.name}
-                    </div>
-                  </TableCell>
-                  {weekDays.map((d, i) => <TableCell key={i} className="text-center text-sm">{p.days[d] ? p.days[d].toFixed(1) : "—"}</TableCell>)}
-                  <TableCell className="text-center font-bold text-sm">{p.total.toFixed(1)}</TableCell>
-                </TableRow>
-              ))}
-              {Object.keys(projectMap).length === 0 && (
-                <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">Sin registros esta semana</TableCell></TableRow>
-              )}
-              {Object.keys(projectMap).length > 0 && (
-                <TableRow className="bg-muted/50 font-bold">
-                  <TableCell>Total</TableCell>
-                  {dayTotals.map((t, i) => <TableCell key={i} className="text-center text-sm">{t > 0 ? t.toFixed(1) : "—"}</TableCell>)}
-                  <TableCell className="text-center">{weekTotal.toFixed(1)}h</TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-8">Sin registros en el período</p>
+          )}
         </CardContent>
       </Card>
 
       <Card>
-        <CardHeader><CardTitle className="text-sm flex items-center gap-2"><Clock className="h-4 w-4" />Registros detallados</CardTitle></CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <CardTitle className="text-sm flex items-center gap-2"><Clock className="h-4 w-4" />Registros detallados</CardTitle>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Proyecto:</span>
+            <select value={selectedProject} onChange={e => setSelectedProject(e.target.value)}
+              className="border rounded px-2 py-1 text-sm bg-background">
+              <option value="all">Todos los proyectos</option>
+              {availableProjects.map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+          </div>
+        </CardHeader>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
@@ -203,7 +157,7 @@ export default function MyWork() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {logs?.map(l => (
+              {filteredLogs.map(l => (
                 <TableRow key={l.id}>
                   <TableCell className="text-sm">{l.log_date}</TableCell>
                   <TableCell className="text-sm">{l.projects?.name}</TableCell>
@@ -236,7 +190,7 @@ export default function MyWork() {
                   </TableCell>
                 </TableRow>
               ))}
-              {(!logs || logs.length === 0) && (
+              {filteredLogs.length === 0 && (
                 <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-6">Sin registros</TableCell></TableRow>
               )}
             </TableBody>
