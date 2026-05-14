@@ -148,7 +148,7 @@ export function ReportTeamTab({ stories, timeLogs, members, sprints, projects }:
       {chartMembers.filter(m => m.hPerSP !== null).length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Ranking de eficiencia (h/Punto) — {selectedProjectName}</CardTitle>
+            <CardTitle className="text-base">Ranking de eficiencia (h/Punto)</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={Math.max(180, chartMembers.length * 44)}>
