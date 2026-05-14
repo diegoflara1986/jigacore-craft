@@ -23,8 +23,9 @@ export function ReportFinancialTab({ projects, timeLogs, costConfigs, sprints, m
   // Build rate map
   const rateMap: Record<string, number> = {};
   costConfigs.forEach(c => { if (c.user_id) rateMap[c.user_id] = c.hourly_rate; });
+  const approvedLogs = timeLogs.filter((t: any) => t.approved === true);
 
-  const realCost = timeLogs.reduce((sum, t) => sum + (t.hours ?? 0) * (rateMap[t.user_id] ?? 0), 0);
+  const realCost = approvedLogs.reduce((sum, t) => sum + (t.hours ?? 0) * (rateMap[t.user_id] ?? 0), 0);
   const remaining = budget - realCost;
   const pctUsed = budget > 0 ? Math.round((realCost / budget) * 100) : 0;
 
@@ -32,7 +33,7 @@ export function ReportFinancialTab({ projects, timeLogs, costConfigs, sprints, m
 
   // Monthly data for chart
   const months: Record<string, number> = {};
-  timeLogs.forEach(t => {
+  approvedLogs.forEach(t => {
     const m = t.log_date?.slice(0, 7);
     if (m) months[m] = (months[m] ?? 0) + (t.hours ?? 0) * (rateMap[t.user_id] ?? 0);
   });
@@ -45,7 +46,7 @@ export function ReportFinancialTab({ projects, timeLogs, costConfigs, sprints, m
 
   // Per sprint breakdown
   const sprintData = sprints.map(s => {
-    const sprintLogs = timeLogs.filter(t => {
+    const sprintLogs = approvedLogs.filter(t => {
       if (!s.start_date || !s.end_date) return false;
       return t.log_date >= s.start_date && t.log_date <= s.end_date;
     });
@@ -57,14 +58,14 @@ export function ReportFinancialTab({ projects, timeLogs, costConfigs, sprints, m
   // Per member breakdown
   const memberCosts = members.map((m: any) => {
     const p = m.profiles;
-    const hours = timeLogs.filter(t => t.user_id === p?.id).reduce((a: number, t: any) => a + (t.hours ?? 0), 0);
+    const hours = approvedLogs.filter(t => t.user_id === p?.id).reduce((a: number, t: any) => a + (t.hours ?? 0), 0);
     const rate = rateMap[p?.id] ?? 0;
     return { name: p?.full_name || p?.email, role: m.project_role, rate, hours: Math.round(hours * 10) / 10, cost: Math.round(hours * rate) };
   }).filter(m => m.hours > 0).sort((a, b) => b.cost - a.cost);
 
   // All projects view
   const allProjectsData = !selectedProjectId ? projects.map(p => {
-    const pLogs = timeLogs.filter(t => t.project_id === p.id);
+    const pLogs = approvedLogs.filter(t => t.project_id === p.id);
     const pCosts = costConfigs.filter(c => c.project_id === p.id);
     const pRateMap: Record<string, number> = {};
     pCosts.forEach(c => { if (c.user_id) pRateMap[c.user_id] = c.hourly_rate; });
@@ -88,6 +89,9 @@ export function ReportFinancialTab({ projects, timeLogs, costConfigs, sprints, m
           </CardContent>
         </Card>
       </div>
+      <p className="text-xs text-muted-foreground text-center">
+        {approvedLogs.length} de {timeLogs.length} registros aprobados • {approvedLogs.reduce((a, t) => a + (t.hours ?? 0), 0).toFixed(1)}h de {timeLogs.reduce((a, t) => a + (t.hours ?? 0), 0).toFixed(1)}h totales
+      </p>
 
       {/* Budget vs Real Chart */}
       {chartData.length > 0 && (
