@@ -96,8 +96,9 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
   const [selectedBacklogIds, setSelectedBacklogIds] = useState<string[]>([]);
   const [createHUOpen, setCreateHUOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<SprintWithStats | null>(null);
-  
-  const [newStory, setNewStory] = useState({ title: "", description: "", type: "story", priority: "medium", status: "backlog", story_points: "", epic_id: "", assigned_to: "", sprint_id: "" });
+  const [editDatesSprintId, setEditDatesSprintId] = useState<string | null>(null);
+  const [editDates, setEditDates] = useState<{ start_date: Date | undefined; end_date: Date | undefined }>({ start_date: undefined, end_date: undefined });
+  const [realEndDate, setRealEndDate] = useState<Date | undefined>(undefined);
   const [expandedSprints, setExpandedSprints] = useState<Set<string>>(new Set());
   const toggleSprint = (id: string) => setExpandedSprints(prev => {
     const next = new Set(prev);
