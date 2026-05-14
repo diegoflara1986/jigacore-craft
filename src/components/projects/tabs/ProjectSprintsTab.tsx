@@ -28,6 +28,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { useDeleteSprint } from "@/hooks/useSprints";
+import { toast } from "@/hooks/use-toast";
 
 
 const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
@@ -135,6 +136,10 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
 
   const handleCreate = async () => {
     if (!newSprint.name.trim()) return;
+    if (!newSprint.start_date || !newSprint.end_date) {
+      toast({ title: "Fechas requeridas", description: "Debes definir fecha de inicio y fin para crear el sprint.", variant: "destructive" });
+      return;
+    }
     const created = await createSprint.mutateAsync({
       project_id: projectId,
       name: newSprint.name,
@@ -183,6 +188,10 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
 
   const handleEdit = async () => {
     if (!editSprint || !newSprint.name.trim()) return;
+    if (!newSprint.start_date || !newSprint.end_date) {
+      toast({ title: "Fechas requeridas", description: "Debes definir fecha de inicio y fin del sprint.", variant: "destructive" });
+      return;
+    }
     await updateSprint.mutateAsync({
       id: editSprint.id,
       name: newSprint.name,
@@ -424,10 +433,10 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div className="space-y-2">
-                <Label>Fecha inicio</Label>
+                <Label>Fecha inicio <span className="text-destructive">*</span></Label>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal h-9 text-xs", !newSprint.start_date && "text-muted-foreground")}>
+                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal h-9 text-xs", !newSprint.start_date && "text-muted-foreground border-destructive")}>
                       <CalendarIcon className="mr-2 h-3.5 w-3.5" />
                       {newSprint.start_date ? format(newSprint.start_date, "dd/MM/yyyy") : "Seleccionar"}
                     </Button>
@@ -438,10 +447,10 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
                 </Popover>
               </div>
               <div className="space-y-2">
-                <Label>Fecha fin</Label>
+                <Label>Fecha fin <span className="text-destructive">*</span></Label>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal h-9 text-xs", !newSprint.end_date && "text-muted-foreground")}>
+                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal h-9 text-xs", !newSprint.end_date && "text-muted-foreground border-destructive")}>
                       <CalendarIcon className="mr-2 h-3.5 w-3.5" />
                       {newSprint.end_date ? format(newSprint.end_date, "dd/MM/yyyy") : "Seleccionar"}
                     </Button>
@@ -510,10 +519,10 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div className="space-y-2">
-                <Label>Fecha inicio</Label>
+                <Label>Fecha inicio <span className="text-destructive">*</span></Label>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal h-9 text-xs", !newSprint.start_date && "text-muted-foreground")}>
+                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal h-9 text-xs", !newSprint.start_date && "text-muted-foreground border-destructive")}>
                       <CalendarIcon className="mr-2 h-3.5 w-3.5" />
                       {newSprint.start_date ? format(newSprint.start_date, "dd/MM/yyyy") : "Seleccionar"}
                     </Button>
@@ -524,10 +533,10 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
                 </Popover>
               </div>
               <div className="space-y-2">
-                <Label>Fecha fin</Label>
+                <Label>Fecha fin <span className="text-destructive">*</span></Label>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal h-9 text-xs", !newSprint.end_date && "text-muted-foreground")}>
+                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal h-9 text-xs", !newSprint.end_date && "text-muted-foreground border-destructive")}>
                       <CalendarIcon className="mr-2 h-3.5 w-3.5" />
                       {newSprint.end_date ? format(newSprint.end_date, "dd/MM/yyyy") : "Seleccionar"}
                     </Button>
