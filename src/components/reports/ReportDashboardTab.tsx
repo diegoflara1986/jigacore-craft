@@ -111,6 +111,7 @@ export function ReportDashboardTab({ projects, stories, sprints, incidents, time
   const projectStats = activeProjects.map((p: any) => {
     const pStories = stories.filter((s: any) => s.project_id === p.id);
     const pCompleted = pStories.filter((s: any) => s.status === "done");
+    const pPending = pStories.filter((s: any) => s.status !== "done" && !(s as any).deleted_at);
     const pSprints = sprints.filter((s: any) => s.project_id === p.id && s.status === "completed");
     const pActiveSprint = sprints.find((s: any) => s.project_id === p.id && s.status === "active");
     const pIncidents = incidents.filter((i: any) => i.project_id === p.id && (i.status === "abierto" || i.status === "en_progreso"));
@@ -134,6 +135,7 @@ export function ReportDashboardTab({ projects, stories, sprints, incidents, time
       activeSprint: pActiveSprint?.name ?? "—",
       totalStories: pStories.length,
       completedStories: pCompleted.length,
+      pendingStories: pPending.length,
       semaforo,
       openIncidents: pIncidents.length,
     };
@@ -224,35 +226,44 @@ export function ReportDashboardTab({ projects, stories, sprints, incidents, time
               <TableHeader>
                 <TableRow>
                   <TableHead>Proyecto</TableHead>
-                  <TableHead>Sprint activo</TableHead>
-                  <TableHead>Velocity</TableHead>
-                  <TableHead>Progreso</TableHead>
-                  <TableHead>HUs</TableHead>
-                  <TableHead>Estado</TableHead>
+                  <TableHead className="text-center">Sprint activo</TableHead>
+                  <TableHead className="text-center">Velocity</TableHead>
+                  <TableHead className="text-center">Progreso</TableHead>
+                  <TableHead className="text-center">HUs completadas</TableHead>
+                  <TableHead className="text-center">HUs pendientes</TableHead>
+                  <TableHead className="text-center">HUs totales</TableHead>
+                  <TableHead className="text-center">Estado</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {projectStats.length === 0 && (
-                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Sin proyectos</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Sin proyectos</TableCell></TableRow>
                 )}
                 {projectStats.map(p => (
                   <TableRow key={p.id}>
                     <TableCell className="font-medium">{p.name}</TableCell>
-                    <TableCell>{p.activeSprint}</TableCell>
-                    <TableCell>{p.lastVelocity} SP</TableCell>
+                    <TableCell className="text-center text-sm text-muted-foreground">{p.activeSprint}</TableCell>
+                    <TableCell className="text-center font-mono">{p.lastVelocity} pts</TableCell>
                     <TableCell>
-                      <div className="w-full">
-                        <div className="h-2 rounded-full bg-muted overflow-hidden">
-                          <div className={`h-full rounded-full transition-all ${p.progress >= 80 ? "bg-success" : p.progress >= 40 ? "bg-warning" : "bg-destructive"}`} style={{ width: `${Math.min(p.progress, 100)}%` }} />
+                      <div className="flex items-center gap-2 min-w-[100px]">
+                        <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+                          <div className={`h-full rounded-full transition-all ${p.progress >= 80 ? "bg-green-500" : p.progress >= 40 ? "bg-amber-500" : "bg-destructive"}`} style={{ width: `${Math.min(p.progress, 100)}%` }} />
                         </div>
-                        <span className="text-xs text-muted-foreground">{p.progress}%</span>
+                        <span className="text-xs text-muted-foreground w-8">{p.progress}%</span>
                       </div>
                     </TableCell>
-                    <TableCell>{p.completedStories}/{p.totalStories}</TableCell>
-                    <TableCell>
-                      <Badge variant={p.semaforo === "green" ? "default" : p.semaforo === "yellow" ? "secondary" : "destructive"}>
+                    <TableCell className="text-center text-green-600 font-medium">{p.completedStories}</TableCell>
+                    <TableCell className="text-center text-amber-600 font-medium">{p.pendingStories}</TableCell>
+                    <TableCell className="text-center text-muted-foreground">{p.totalStories}</TableCell>
+                    <TableCell className="text-center">
+                      <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full ${
+                        p.semaforo === "green" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" :
+                        p.semaforo === "yellow" ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400" :
+                        "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                      }`}>
+                        <span className="w-2 h-2 rounded-full inline-block" style={{ background: p.semaforo === "green" ? "#22c55e" : p.semaforo === "yellow" ? "#eab308" : "#ef4444" }} />
                         {p.semaforo === "green" ? "En curso" : p.semaforo === "yellow" ? "En riesgo" : "Bloqueado"}
-                      </Badge>
+                      </span>
                     </TableCell>
                   </TableRow>
                 ))}
