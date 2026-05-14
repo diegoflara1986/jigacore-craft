@@ -123,6 +123,7 @@ export const PERMISSION_MODULES = [
              required: true },
     actions: [
       { action: "ver", label: "Ver reportes" },
+      { action: "ver_interesados", label: "Ver reporte de interesados" },
     ]
   },
   { module: "incidentes", label: "Incidentes Externos", icon: "🐛",
