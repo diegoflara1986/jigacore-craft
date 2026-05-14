@@ -124,19 +124,7 @@ export function ReportTeamTab({ stories, timeLogs, members, sprints, projects }:
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <CardTitle className="text-base">Productividad — {selectedProjectName}</CardTitle>
-            <select
-              value={selectedChartProject}
-              onChange={e => setSelectedChartProject(e.target.value)}
-              className="border rounded px-3 py-1.5 text-sm bg-background"
-            >
-              <option value="all">Todos los proyectos (top 10)</option>
-              {projects.map((p: any) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
-          </div>
+          <CardTitle className="text-base">Productividad por miembro {chartMembers.length === 10 ? "(top 10)" : ""}</CardTitle>
         </CardHeader>
         <CardContent>
           {chartMembers.length > 0 ? (
