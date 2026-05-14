@@ -63,10 +63,11 @@ export function ReportTeamTab({ stories, timeLogs, members, sprints }: Props) {
                   <Badge variant="outline" className="text-xs">{m.role}</Badge>
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="grid grid-cols-4 gap-2 text-center">
                 <div><p className="text-lg font-bold text-info">{m.sp}</p><p className="text-[10px] text-muted-foreground">SP</p></div>
                 <div><p className="text-lg font-bold">{m.tasks}</p><p className="text-[10px] text-muted-foreground">Tareas</p></div>
                 <div><p className="text-lg font-bold text-accent">{m.hours}h</p><p className="text-[10px] text-muted-foreground">Horas</p></div>
+                <div><p className="text-lg font-bold text-success">{m.efficiency !== null ? `${m.efficiency}h` : "—"}</p><p className="text-[10px] text-muted-foreground">h/SP</p></div>
               </div>
             </CardContent>
           </Card>
