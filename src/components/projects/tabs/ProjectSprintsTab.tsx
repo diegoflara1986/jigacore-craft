@@ -661,7 +661,7 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
       </Dialog>
 
       {/* Sprint Review / Complete */}
-      <Dialog open={!!completeReview} onOpenChange={() => setCompleteReview(null)}>
+      <Dialog open={!!completeReview} onOpenChange={() => { setCompleteReview(null); setRealEndDate(undefined); }}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader><DialogTitle>Sprint Review — {completeReview?.name}</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
@@ -701,9 +701,36 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
               </div>
             )}
 
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Fecha de cierre real <span className="text-destructive">*</span></Label>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Fecha inicio (bloqueada)</Label>
+                  <Button variant="outline" className="w-full justify-start text-left font-normal h-9 text-xs mt-1 opacity-60 cursor-not-allowed" disabled>
+                    <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                    {completeReview?.start_date ? format(new Date(completeReview.start_date), "dd/MM/yyyy") : "Sin fecha"}
+                  </Button>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Fecha fin real</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-full justify-start text-left font-normal h-9 text-xs mt-1">
+                        <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                        {realEndDate ? format(realEndDate, "dd/MM/yyyy") : "Seleccionar"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar mode="single" selected={realEndDate} onSelect={setRealEndDate} className="p-3 pointer-events-auto" />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+            </div>
+
             <Separator />
             <DialogFooter>
-              <Button variant="outline" onClick={() => { setCompleteReview(null); setIncompleteHandled(false); }}>Cancelar</Button>
+              <Button variant="outline" onClick={() => { setCompleteReview(null); setIncompleteHandled(false); setRealEndDate(undefined); }}>Cancelar</Button>
               <Button onClick={handleFinalizeSprint} disabled={updateSprint.isPending || updateStory.isPending}>
                 Finalizar Sprint
               </Button>
