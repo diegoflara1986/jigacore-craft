@@ -32,7 +32,7 @@ const STATUS_LABELS: Record<string, string> = {
   done: "Completado",
 };
 
-export function ReportDashboardTab({ stories, sprints, incidents, timeLogs, dateFrom, dateTo }: Props) {
+export function ReportDashboardTab({ projects, stories, sprints, incidents, timeLogs, dateFrom, dateTo }: Props) {
   // Metrics
   const completedStories = stories.filter(s => s.status === "done");
   const completedSP = completedStories.reduce((a, s) => a + (s.story_points ?? 0), 0);
