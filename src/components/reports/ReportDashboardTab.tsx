@@ -143,6 +143,36 @@ export function ReportDashboardTab({ projects, stories, sprints, incidents, time
   const blocked = projectStats.filter(p => p.semaforo === "red").length;
   const avgVelocityPortfolio = projectStats.length > 0 ? Math.round(projectStats.reduce((a, p) => a + p.lastVelocity, 0) / projectStats.length) : 0;
 
+  // Donut: team distribution by project
+  const teamByProject = activeProjects.map((p: any) => {
+    const count = (members ?? []).filter((m: any) => m.project_id === p.id).length;
+    return { name: p.name, value: count };
+  }).filter(p => p.value > 0);
+
+  // Velocity comparison: last 5 sprints per project
+  const velocityComparison = (() => {
+    const allCompletedSprints = sprints
+      .filter((s: any) => s.status === "completed" && s.end_date)
+      .sort((a: any, b: any) => new Date(b.end_date).getTime() - new Date(a.end_date).getTime())
+      .slice(0, 5)
+      .reverse();
+
+    return allCompletedSprints.map((s: any) => {
+      const project = projects?.find((p: any) => p.id === s.project_id);
+      const vel = stories.filter((st: any) => st.sprint_id === s.id && st.status === "done").reduce((a: number, st: any) => a + (st.story_points ?? 0), 0);
+      return { sprint: s.name, proyecto: project?.name ?? "—", velocity: vel };
+    });
+  })();
+
+  // Timeline: project start/end dates
+  const timelineData = activeProjects
+    .filter((p: any) => p.start_date || p.end_date)
+    .map((p: any) => ({
+      name: p.name,
+      start: p.start_date ?? null,
+      end: p.end_date ?? null,
+    }));
+
   return (
     <div className="space-y-6">
       {/* Portfolio Header */}
