@@ -332,8 +332,18 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
                       <LayoutDashboard className="h-3.5 w-3.5 mr-1" />Ver Tablero
                     </Button>
                   )}
+                  <Button size="sm" variant="ghost" onClick={() => {
+                    const s = sprints?.find(sp => sp.id === sprint.id);
+                    setEditDates({
+                      start_date: s?.start_date ? new Date(s.start_date) : undefined,
+                      end_date: s?.end_date ? new Date(s.end_date) : undefined,
+                    });
+                    setEditDatesSprintId(sprint.id);
+                  }}>
+                    <CalendarIcon className="h-4 w-4 mr-1" /> Fechas
+                  </Button>
                   {!isArchived && (
-                    <Button size="sm" onClick={() => guardAction("sprints", "gestionar", "completar un sprint", () => setCompleteReview(sprint))}>
+                    <Button size="sm" onClick={() => guardAction("sprints", "gestionar", "completar un sprint", () => { setCompleteReview(sprint); setRealEndDate(sprint.end_date ? new Date(sprint.end_date) : new Date()); })}>
                       <CheckCircle2 className="h-3.5 w-3.5 mr-1" />Completar
                     </Button>
                   )}
