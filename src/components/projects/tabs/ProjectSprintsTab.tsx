@@ -831,6 +831,43 @@ export function ProjectSprintsTab({ projectId, onNavigateToBoard, isArchived = f
       </Dialog>
 
       
+      {/* Edit Dates Dialog */}
+      <Dialog open={!!editDatesSprintId} onOpenChange={(open) => { if (!open) setEditDatesSprintId(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Editar fechas del sprint</DialogTitle></DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>Fecha inicio <span className="text-destructive">*</span></Label>
+              <Popover><PopoverTrigger asChild>
+                <Button variant="outline" className="w-full justify-start text-left font-normal h-9 text-xs">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {editDates.start_date ? format(editDates.start_date, "dd/MM/yyyy") : "Seleccionar"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar mode="single" selected={editDates.start_date} onSelect={(d) => setEditDates(p => ({ ...p, start_date: d }))} className="p-3 pointer-events-auto" />
+              </PopoverContent></Popover>
+            </div>
+            <div className="space-y-2">
+              <Label>Fecha fin <span className="text-destructive">*</span></Label>
+              <Popover><PopoverTrigger asChild>
+                <Button variant="outline" className="w-full justify-start text-left font-normal h-9 text-xs">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {editDates.end_date ? format(editDates.end_date, "dd/MM/yyyy") : "Seleccionar"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar mode="single" selected={editDates.end_date} onSelect={(d) => setEditDates(p => ({ ...p, end_date: d }))} className="p-3 pointer-events-auto" />
+              </PopoverContent></Popover>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setEditDatesSprintId(null)}>Cancelar</Button>
+            <Button onClick={saveDates}>Guardar fechas</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <PermissionDeniedDialog open={denied.open} onOpenChange={closeDenied} actionLabel={denied.actionLabel} requiredPermission={denied.requiredPermission} />
     </div>
   );
