@@ -1,48 +1,70 @@
 import { useState, useMemo } from "react";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { useAuth } from "@/lib/auth";
-import { useTimeLogs, useDeleteTimeLog } from "@/hooks/useTimeLogs";
+import { useTimeLogs, useDeleteTimeLog, useUpdateTimeLog } from "@/hooks/useTimeLogs";
+import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { ManualTimeLogModal } from "@/components/timer/ManualTimeLogModal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Clock, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
+import { Plus, Clock, Trash2, Check, Circle, Pencil } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceLine, Legend } from "recharts";
 import { usePermissions } from "@/hooks/usePermissions";
 
 const DAY_NAMES = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
-
-function getWeekRange(offset: number) {
-  const now = new Date();
-  const day = now.getDay();
-  const monday = new Date(now);
-  monday.setDate(now.getDate() - ((day === 0 ? 7 : day) - 1) + offset * 7);
-  monday.setHours(0, 0, 0, 0);
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
-  return { from: monday.toISOString().split("T")[0], to: sunday.toISOString().split("T")[0], monday };
-}
 
 export default function MyWork() {
   usePageTitle("Mi Trabajo");
   const { profile } = useAuth();
   const { hasPermission } = usePermissions();
   const canDeleteTiempo = hasPermission("tiempo", "eliminar");
-  const [weekOffset, setWeekOffset] = useState(0);
+  const canEditTiempo = hasPermission("tiempo", "editar");
+  const canAprobarTiempo = hasPermission("tiempo", "aprobar");
   const [showManual, setShowManual] = useState(false);
-  const week = getWeekRange(weekOffset);
-  const { data: logs } = useTimeLogs(undefined, profile?.id, week);
+  const [dateFrom, setDateFrom] = useState(() => {
+    const d = new Date(); d.setDate(d.getDate() - 30);
+    return d.toISOString().split("T")[0];
+  });
+  const [dateTo, setDateTo] = useState(() => new Date().toISOString().split("T")[0]);
+  const { data: logs } = useTimeLogs(undefined, profile?.id, { from: dateFrom, to: dateTo });
   const deleteTL = useDeleteTimeLog();
+  const updateTL = useUpdateTimeLog();
+  const queryClient = useQueryClient();
+  const [editingLog, setEditingLog] = useState<any>(null);
+  void updateTL;
+
+  const toggleApprove = async (logId: string, currentApproved: boolean) => {
+    const sb = supabase as any;
+    await sb.from("time_logs").update({ approved: !currentApproved }).eq("id", logId);
+    queryClient.invalidateQueries({ queryKey: ["time-logs"] });
+    if (!currentApproved) {
+      const logData = logs?.find(l => l.id === logId);
+      if (logData && logData.user_id !== profile?.id) {
+        try {
+          await supabase.from("notifications").insert({
+            user_id: logData.user_id,
+            type: "time_approved",
+            title: "✅ Tu registro de tiempo fue aprobado",
+            message: `${logData.hours}h del ${logData.log_date} fueron aprobadas`,
+            reference_id: logId,
+            reference_type: "time_log",
+          });
+        } catch {}
+      }
+    }
+  };
 
   const weekDays = useMemo(() => {
     const days: string[] = [];
-    const d = new Date(week.monday);
+    const start = new Date(dateFrom);
+    const d = new Date(start);
     for (let i = 0; i < 7; i++) {
       days.push(new Date(d).toISOString().split("T")[0]);
       d.setDate(d.getDate() + 1);
     }
     return days;
-  }, [week.monday.toISOString()]);
+  }, [dateFrom]);
 
   const projectMap = useMemo(() => {
     const map: Record<string, { name: string; color: string; days: Record<string, number>; total: number }> = {};
@@ -97,10 +119,10 @@ export default function MyWork() {
 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setWeekOffset(o => o - 1)}><ChevronLeft className="h-4 w-4" /></Button>
-          <span className="text-sm font-medium">Semana del {week.from} al {week.to}</span>
-          <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setWeekOffset(o => o + 1)}><ChevronRight className="h-4 w-4" /></Button>
-          {weekOffset !== 0 && <Button variant="ghost" size="sm" onClick={() => setWeekOffset(0)}>Hoy</Button>}
+          <span className="text-sm">Desde</span>
+          <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="border rounded px-2 py-1 text-sm bg-background" />
+          <span className="text-sm">Hasta</span>
+          <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="border rounded px-2 py-1 text-sm bg-background" />
         </div>
         <Button onClick={() => setShowManual(true)} size="sm"><Plus className="h-4 w-4 mr-1" />Agregar registro manual</Button>
       </div>
@@ -189,12 +211,28 @@ export default function MyWork() {
                   <TableCell className="text-sm font-medium">{l.hours}h</TableCell>
                   <TableCell className="text-sm text-muted-foreground max-w-40 truncate">{l.description || "—"}</TableCell>
                   <TableCell>
-                    {canDeleteTiempo && !(l as any).approved && (
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive"
-                        onClick={() => deleteTL.mutate(l.id)}>
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    )}
+                    <div className="flex items-center gap-1">
+                      {canAprobarTiempo && (
+                        <Button variant="ghost" size="icon" className="h-7 w-7"
+                          onClick={() => toggleApprove(l.id, (l as any).approved)}
+                          title={(l as any).approved ? "Quitar aprobación" : "Aprobar registro"}>
+                          {(l as any).approved
+                            ? <Check className="h-3.5 w-3.5 text-green-600" />
+                            : <Circle className="h-3.5 w-3.5" />}
+                        </Button>
+                      )}
+                      {canEditTiempo && !(l as any).approved && (
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingLog(l)}>
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                      {canDeleteTiempo && !(l as any).approved && (
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive"
+                          onClick={() => deleteTL.mutate(l.id)}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -207,6 +245,12 @@ export default function MyWork() {
       </Card>
 
       <ManualTimeLogModal open={showManual} onOpenChange={setShowManual} />
+      <ManualTimeLogModal
+        open={!!editingLog}
+        onOpenChange={(open) => { if (!open) setEditingLog(null); }}
+        editLog={editingLog || undefined}
+        onUpdated={() => setEditingLog(null)}
+      />
     </div>
   );
 }
