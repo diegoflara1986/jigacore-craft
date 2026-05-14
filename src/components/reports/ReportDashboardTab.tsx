@@ -104,6 +104,44 @@ export function ReportDashboardTab({ projects, stories, sprints, incidents, time
     return acc;
   }, []);
 
+  // Portfolio stats
+  const activeProjects = (projects ?? []).filter((p: any) => p.status === "active" || !p.status);
+
+  const projectStats = activeProjects.map((p: any) => {
+    const pStories = stories.filter((s: any) => s.project_id === p.id);
+    const pCompleted = pStories.filter((s: any) => s.status === "done");
+    const pSprints = sprints.filter((s: any) => s.project_id === p.id && s.status === "completed");
+    const pActiveSprint = sprints.find((s: any) => s.project_id === p.id && s.status === "active");
+    const pIncidents = incidents.filter((i: any) => i.project_id === p.id && (i.status === "abierto" || i.status === "en_progreso"));
+
+    const lastSprint = pSprints[pSprints.length - 1];
+    const lastVelocity = lastSprint
+      ? pStories.filter((s: any) => s.sprint_id === lastSprint.id && s.status === "done").reduce((a: number, s: any) => a + (s.story_points ?? 0), 0)
+      : 0;
+
+    const progress = pStories.length > 0 ? Math.round((pCompleted.length / pStories.length) * 100) : 0;
+    const hasBlockedStories = pStories.some((s: any) => (s as any).is_blocked);
+    const hasOpenIncidents = pIncidents.length > 0;
+
+    const semaforo = hasBlockedStories ? "red" : hasOpenIncidents ? "yellow" : progress < 20 && pSprints.length > 1 ? "yellow" : "green";
+
+    return {
+      id: p.id,
+      name: p.name,
+      progress,
+      lastVelocity,
+      activeSprint: pActiveSprint?.name ?? "—",
+      totalStories: pStories.length,
+      completedStories: pCompleted.length,
+      semaforo,
+      openIncidents: pIncidents.length,
+    };
+  });
+
+  const atRisk = projectStats.filter(p => p.semaforo === "yellow").length;
+  const blocked = projectStats.filter(p => p.semaforo === "red").length;
+  const avgVelocityPortfolio = projectStats.length > 0 ? Math.round(projectStats.reduce((a, p) => a + p.lastVelocity, 0) / projectStats.length) : 0;
+
   return (
     <div className="space-y-6">
       {/* Metrics Row */}
