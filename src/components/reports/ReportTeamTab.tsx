@@ -79,7 +79,7 @@ export function ReportTeamTab({ stories, timeLogs, members, sprints }: Props) {
         <CardHeader><CardTitle className="text-base">Tabla Comparativa</CardTitle></CardHeader>
         <CardContent className="p-0">
           <Table>
-            <TableHeader><TableRow><TableHead>Miembro</TableHead><TableHead>Rol</TableHead><TableHead>SP</TableHead><TableHead>Tareas</TableHead><TableHead>Horas</TableHead><TableHead>Velocidad</TableHead><TableHead className="w-32">Progreso</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead>Miembro</TableHead><TableHead>Rol</TableHead><TableHead>SP</TableHead><TableHead>Tareas</TableHead><TableHead>Horas</TableHead><TableHead>Eficiencia</TableHead><TableHead>Velocidad</TableHead><TableHead className="w-32">Progreso</TableHead></TableRow></TableHeader>
             <TableBody>
               {memberData.sort((a, b) => b.sp - a.sp).map(m => (
                 <TableRow key={m.id}>
@@ -88,12 +88,16 @@ export function ReportTeamTab({ stories, timeLogs, members, sprints }: Props) {
                   <TableCell className="font-semibold">{m.sp}</TableCell>
                   <TableCell>{m.tasks}</TableCell>
                   <TableCell>{m.hours}h</TableCell>
+                  <TableCell>{m.efficiency !== null ? `${m.efficiency} h/SP` : "—"}</TableCell>
                   <TableCell>{m.velocity}</TableCell>
                   <TableCell><Progress value={(m.sp / maxSP) * 100} className="h-2" /></TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
+          <p className="text-xs text-muted-foreground px-4 py-3 border-t">
+            💡 Eficiencia = horas registradas ÷ story points completados. Menor valor = más eficiente.
+          </p>
         </CardContent>
       </Card>
 
