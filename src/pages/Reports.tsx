@@ -141,7 +141,7 @@ export default function Reports() {
         </TabsContent>
 
         <TabsContent value="team">
-          <ReportTeamTab stories={stories} timeLogs={timeLogs} members={members} sprints={sprints} />
+          <ReportTeamTab stories={stories} timeLogs={timeLogs} members={members} sprints={sprints} projects={projects} />
         </TabsContent>
 
         <TabsContent value="financial">
