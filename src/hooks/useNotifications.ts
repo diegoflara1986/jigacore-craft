@@ -18,15 +18,23 @@ export interface Notification {
 
 const TYPE_CONFIG: Record<string, { icon: string; color: string }> = {
   tarea_asignada: { icon: "📋", color: "text-blue-500" },
+  story_assigned: { icon: "📋", color: "text-blue-500" },
   mencion: { icon: "💬", color: "text-purple-500" },
   cambio_estado: { icon: "🔄", color: "text-muted-foreground" },
+  story_status_changed: { icon: "🔄", color: "text-blue-400" },
+  story_blocked: { icon: "🔒", color: "text-destructive" },
   sprint_iniciado: { icon: "🚀", color: "text-green-500" },
+  sprint_started: { icon: "🚀", color: "text-green-500" },
   sprint_completado: { icon: "✅", color: "text-green-700" },
+  sprint_completed: { icon: "✅", color: "text-green-700" },
   tarea_vencida: { icon: "⏰", color: "text-destructive" },
+  time_approved: { icon: "⏱️", color: "text-green-600" },
   nuevo_incidente: { icon: "🐛", color: "text-orange-500" },
   presupuesto_alerta: { icon: "💰", color: "text-yellow-500" },
   planning_poker: { icon: "🃏", color: "text-blue-400" },
   estimation_invite: { icon: "📊", color: "text-primary" },
+  project_added: { icon: "👥", color: "text-primary" },
+  project_removed: { icon: "👤", color: "text-muted-foreground" },
   info: { icon: "ℹ️", color: "text-muted-foreground" },
 };
 
