@@ -5,7 +5,7 @@ import { TrendingUp, TrendingDown, Zap, CheckCircle, Bug, Target, Briefcase, Ale
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell, BarChart, Bar, AreaChart, Area, ReferenceLine } from "recharts";
 
 interface Props {
-  projects: any[];
+  projects?: any[];
   stories: any[];
   sprints: any[];
   incidents: any[];
