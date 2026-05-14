@@ -20,10 +20,11 @@ export function ReportTeamTab({ stories, timeLogs, members, sprints }: Props) {
     const p = m.profiles;
     const mStories = completedStories.filter(s => s.assigned_to === p?.id);
     const sp = mStories.reduce((a: number, s: any) => a + (s.story_points ?? 0), 0);
-    const hours = timeLogs.filter(t => t.user_id === p?.id).reduce((a: number, t: any) => a + (t.hours ?? 0), 0);
+    const hours = timeLogs.filter(t => t.user_id === p?.id && (t as any).approved === true).reduce((a: number, t: any) => a + (t.hours ?? 0), 0);
+    const efficiency = sp > 0 ? Math.round((hours / sp) * 10) / 10 : null;
     const completedSprints = sprints.filter(s => s.status === "completed");
     const velocity = completedSprints.length > 0 ? Math.round(sp / completedSprints.length) : sp;
-    return { id: p?.id, name: p?.full_name || p?.email || "?", role: m.project_role, sp, tasks: mStories.length, hours: Math.round(hours * 10) / 10, velocity };
+    return { id: p?.id, name: p?.full_name || p?.email || "?", role: m.project_role, sp, tasks: mStories.length, hours: Math.round(hours * 10) / 10, efficiency, velocity };
   });
 
   // Activity heatmap data - last 8 weeks
