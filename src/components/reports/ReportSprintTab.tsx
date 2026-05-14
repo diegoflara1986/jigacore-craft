@@ -40,12 +40,21 @@ export function ReportSprintTab({ sprints, stories, timeLogs, members, projectId
   const { data: retro } = useSprintRetrospective(selectedSprintId || undefined);
   const [retroForm, setRetroForm] = useState({ went_well: "", to_improve: "", action_items: "" });
 
-  // Sync retro data
-  const currentRetro = {
-    went_well: retroForm.went_well || retro?.went_well || "",
-    to_improve: retroForm.to_improve || retro?.to_improve || "",
-    action_items: retroForm.action_items || retro?.action_items || "",
-  };
+// Limpiar formulario al cambiar de sprint
+  useEffect(() => {
+    setRetroForm({ went_well: "", to_improve: "", action_items: "" });
+  }, [selectedSprintId]);
+
+  // Cargar datos de BD cuando llegan
+  useEffect(() => {
+    if (retro) {
+      setRetroForm({
+        went_well: retro.went_well || "",
+        to_improve: retro.to_improve || "",
+        action_items: retro.action_items || "",
+      });
+    }
+  }, [retro]);
 
   const saveRetro = async () => {
     if (!selectedSprintId || !projectId) return;
