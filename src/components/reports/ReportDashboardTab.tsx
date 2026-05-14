@@ -144,6 +144,94 @@ export function ReportDashboardTab({ projects, stories, sprints, incidents, time
 
   return (
     <div className="space-y-6">
+      {/* Portfolio Header */}
+      <div>
+        <h2 className="text-xl font-semibold mb-4">Portafolio de proyectos</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
+            <div className="p-2 rounded-lg bg-primary/10 text-primary">
+              <Briefcase className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{activeProjects.length}</p>
+              <p className="text-sm text-muted-foreground">Proyectos activos</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
+            <div className="p-2 rounded-lg bg-warning/10 text-warning">
+              <AlertTriangle className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{atRisk}</p>
+              <p className="text-sm text-muted-foreground">En riesgo</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
+            <div className="p-2 rounded-lg bg-destructive/10 text-destructive">
+              <XOctagon className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{blocked}</p>
+              <p className="text-sm text-muted-foreground">Bloqueados</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50">
+            <div className="p-2 rounded-lg bg-success/10 text-success">
+              <TrendingUp className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{avgVelocityPortfolio}</p>
+              <p className="text-sm text-muted-foreground">Velocity promedio</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Projects Table */}
+        <Card className="mt-6">
+          <CardHeader><CardTitle className="text-base">Estado del portafolio</CardTitle></CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Proyecto</TableHead>
+                  <TableHead>Sprint activo</TableHead>
+                  <TableHead>Velocity</TableHead>
+                  <TableHead>Progreso</TableHead>
+                  <TableHead>HUs</TableHead>
+                  <TableHead>Estado</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {projectStats.length === 0 && (
+                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Sin proyectos</TableCell></TableRow>
+                )}
+                {projectStats.map(p => (
+                  <TableRow key={p.id}>
+                    <TableCell className="font-medium">{p.name}</TableCell>
+                    <TableCell>{p.activeSprint}</TableCell>
+                    <TableCell>{p.lastVelocity} SP</TableCell>
+                    <TableCell>
+                      <div className="w-full">
+                        <div className="h-2 rounded-full bg-muted overflow-hidden">
+                          <div className={`h-full rounded-full transition-all ${p.progress >= 80 ? "bg-success" : p.progress >= 40 ? "bg-warning" : "bg-destructive"}`} style={{ width: `${Math.min(p.progress, 100)}%` }} />
+                        </div>
+                        <span className="text-xs text-muted-foreground">{p.progress}%</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>{p.completedStories}/{p.totalStories}</TableCell>
+                    <TableCell>
+                      <Badge variant={p.semaforo === "green" ? "default" : p.semaforo === "yellow" ? "secondary" : "destructive"}>
+                        {p.semaforo === "green" ? "En curso" : p.semaforo === "yellow" ? "En riesgo" : "Bloqueado"}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Metrics Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard title="Story Points Completados" value={completedSP} subtitle="en el período seleccionado" icon={<Zap className="h-5 w-5" />} color="text-info" />
