@@ -10,6 +10,7 @@ interface Props {
   sprints: any[];
   incidents: any[];
   timeLogs: any[];
+  members?: any[];
   dateFrom?: string;
   dateTo?: string;
 }
@@ -32,7 +33,7 @@ const STATUS_LABELS: Record<string, string> = {
   done: "Completado",
 };
 
-export function ReportDashboardTab({ projects, stories, sprints, incidents, timeLogs, dateFrom, dateTo }: Props) {
+export function ReportDashboardTab({ projects, stories, sprints, incidents, timeLogs, members, dateFrom, dateTo }: Props) {
   // Metrics
   const completedStories = stories.filter(s => s.status === "done");
   const completedSP = completedStories.reduce((a, s) => a + (s.story_points ?? 0), 0);
