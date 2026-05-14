@@ -28,6 +28,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ConfirmDeleteDialog } from "@/components/ConfirmDeleteDialog";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { useDeleteSprint } from "@/hooks/useSprints";
+import { toast } from "@/hooks/use-toast";
 
 
 const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
