@@ -41,40 +41,32 @@ export function ReportTeamTab({ stories, timeLogs, members, sprints, projects }:
     };
   });
 
-  const [selectedChartProject, setSelectedChartProject] = useState<string>("all");
-
-  // Datos para gráfica según proyecto seleccionado
   const chartMembers = (() => {
-    if (selectedChartProject === "all") {
-      // Consolidar por miembro (suma de todos los proyectos), top 10 por SP
-      const byMember: Record<string, { name: string; totalSP: number; hours: number; hPerSP: number | null }> = {};
-      memberData.forEach((m: any) => {
-        if (!byMember[m.name]) byMember[m.name] = { name: m.name, totalSP: 0, hours: 0, hPerSP: null };
-        byMember[m.name].totalSP += m.totalSP;
-        byMember[m.name].hours += m.hours;
-      });
-      return Object.values(byMember)
-        .map(m => ({ ...m, hPerSP: m.totalSP > 0 ? Math.round((m.hours / m.totalSP) * 10) / 10 : null }))
-        .sort((a, b) => b.totalSP - a.totalSP)
-        .slice(0, 10);
-    }
-    return memberData
-      .filter((m: any) => m.project_id === selectedChartProject)
-      .map((m: any) => ({
-        name: m.name,
-        totalSP: m.totalSP,
-        hours: m.hours,
-        hPerSP: m.hPerSP,
-      }));
+    // Si hay muchos miembros (selector global en "todos"), top 10 por SP
+    const data = memberData.map((m: any) => ({
+      name: m.name,
+      totalSP: m.totalSP,
+      hours: m.hours,
+      hPerSP: m.hPerSP,
+    }));
+
+    // Consolidar duplicados (mismo nombre en varios proyectos)
+    const byName: Record<string, { name: string; totalSP: number; hours: number; hPerSP: number | null }> = {};
+    data.forEach(m => {
+      if (!byName[m.name]) byName[m.name] = { name: m.name, totalSP: 0, hours: 0, hPerSP: null };
+      byName[m.name].totalSP += m.totalSP;
+      byName[m.name].hours += m.hours;
+    });
+
+    return Object.values(byName)
+      .map(m => ({ ...m, hPerSP: m.totalSP > 0 ? Math.round((m.hours / m.totalSP) * 10) / 10 : null }))
+      .sort((a, b) => b.totalSP - a.totalSP)
+      .slice(0, 10);
   })();
 
   const avgEfficiency = chartMembers.filter(m => m.hPerSP !== null).length > 0
     ? chartMembers.filter(m => m.hPerSP !== null).reduce((a, m) => a + (m.hPerSP ?? 0), 0) / chartMembers.filter(m => m.hPerSP !== null).length
     : 0;
-
-  const selectedProjectName = selectedChartProject === "all"
-    ? "Todos los proyectos"
-    : projects.find((p: any) => p.id === selectedChartProject)?.name ?? "—";
 
   return (
     <div className="space-y-6">
