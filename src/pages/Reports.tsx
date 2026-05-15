@@ -133,7 +133,7 @@ export default function Reports() {
         </TabsList>
 
         <TabsContent value="dashboard">
-          <ReportDashboardTab stories={stories} sprints={sprints} incidents={incidents} timeLogs={timeLogs} dateFrom={dateFrom} dateTo={dateTo} projects={projects} members={members} />
+          <ReportDashboardTab stories={stories} sprints={sprints} incidents={incidents} timeLogs={timeLogs} dateFrom={dateFrom} dateTo={dateTo} projects={projects} members={members} selectedProjectId={projectId} />
         </TabsContent>
 
         <TabsContent value="sprint">
