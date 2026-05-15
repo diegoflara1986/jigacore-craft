@@ -13,6 +13,7 @@ interface Props {
   members?: any[];
   dateFrom?: string;
   dateTo?: string;
+  selectedProjectId?: string;
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -33,7 +34,7 @@ const STATUS_LABELS: Record<string, string> = {
   done: "Completado",
 };
 
-export function ReportDashboardTab({ projects, stories, sprints, incidents, timeLogs, members, dateFrom, dateTo }: Props) {
+export function ReportDashboardTab({ projects, stories, sprints, incidents, timeLogs, members, dateFrom, dateTo, selectedProjectId }: Props) {
   // Metrics
   const completedStories = stories.filter(s => s.status === "done");
   const completedSP = completedStories.reduce((a, s) => a + (s.story_points ?? 0), 0);
@@ -106,7 +107,9 @@ export function ReportDashboardTab({ projects, stories, sprints, incidents, time
   }, []);
 
   // Portfolio stats
-  const activeProjects = (projects ?? []).filter((p: any) => p.status === "active" || !p.status);
+  const activeProjects = (projects ?? [])
+    .filter((p: any) => p.status === "active" || !p.status)
+    .filter((p: any) => !selectedProjectId || p.id === selectedProjectId);
 
   const projectStats = activeProjects.map((p: any) => {
     const pStories = stories.filter((s: any) => s.project_id === p.id);
