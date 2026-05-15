@@ -13,31 +13,80 @@ interface Props {
 }
 
 export function ReportTeamTab({ stories, timeLogs, members, sprints, projects }: Props) {
-  // Detalle por miembro (filtrado por proyecto)
   const memberData = members.map((m: any) => {
     const pr = m.profiles;
     const project = projects.find((p: any) => p.id === m.project_id);
-    const mStories = stories.filter((s: any) => s.assigned_to === pr?.id && s.project_id === m.project_id);
-    const mCompleted = mStories.filter((s: any) => s.status === "done");
-    const mPending = mStories.filter((s: any) => s.status !== "done" && !(s as any).deleted_at);
-    const totalSP = mCompleted.reduce((a: number, s: any) => a + (s.story_points ?? 0), 0);
-    const totalHUs = mCompleted.length;
-    const pendingHUs = mPending.length;
-    const hours = Math.round(timeLogs.filter((t: any) => t.user_id === pr?.id && t.project_id === m.project_id && (t as any).approved === true).reduce((a: number, t: any) => a + (t.hours ?? 0), 0) * 10) / 10;
-    const hPerSP = totalSP > 0 ? Math.round((hours / totalSP) * 10) / 10 : null;
+
+    // Horas aprobadas de este miembro en este proyecto
+    const memberLogs = timeLogs.filter((t: any) =>
+      t.user_id === pr?.id &&
+      t.project_id === m.project_id &&
+      (t as any).approved === true
+    );
+    const hours = Math.round(memberLogs.reduce((a: number, t: any) => a + (t.hours ?? 0), 0) * 10) / 10;
+
+    // SP atribuidos proporcionalmente por horas registradas en cada HU completada
+    const completedInProject = stories.filter((s: any) =>
+      s.project_id === m.project_id && s.status === "done" && (s.story_points ?? 0) > 0
+    );
+    let attributedSP = 0;
+    let attributedHUs = 0;
+    completedInProject.forEach((story: any) => {
+      const storyLogs = timeLogs.filter((t: any) =>
+        t.user_story_id === story.id && (t as any).approved === true
+      );
+      const totalStoryHours = storyLogs.reduce((a: number, t: any) => a + (t.hours ?? 0), 0);
+      const myStoryHours = storyLogs
+        .filter((t: any) => t.user_id === pr?.id)
+        .reduce((a: number, t: any) => a + (t.hours ?? 0), 0);
+
+      if (totalStoryHours > 0 && myStoryHours > 0) {
+        // Distribución proporcional
+        const proportion = myStoryHours / totalStoryHours;
+        attributedSP += Math.round((story.story_points ?? 0) * proportion * 10) / 10;
+        attributedHUs += proportion;
+      } else if (totalStoryHours === 0 && story.assigned_to === pr?.id) {
+        // Sin logs de tiempo: atribuir al asignado final como fallback
+        attributedSP += story.story_points ?? 0;
+        attributedHUs += 1;
+      }
+    });
+
+    attributedSP = Math.round(attributedSP * 10) / 10;
+    const totalHUs = Math.round(attributedHUs);
+
+    // HUs pendientes asignadas actualmente a este miembro en este proyecto
+    const pendingHUs = stories.filter((s: any) =>
+      s.assigned_to === pr?.id &&
+      s.project_id === m.project_id &&
+      s.status !== "done" &&
+      !(s as any).deleted_at
+    ).length;
+
+    const totalAllHUs = totalHUs + pendingHUs;
+
+    const hPerSP = attributedSP > 0 ? Math.round((hours / attributedSP) * 10) / 10 : null;
     const hPerHU = totalHUs > 0 ? Math.round((hours / totalHUs) * 10) / 10 : null;
-    const spPerHU = totalHUs > 0 ? Math.round((totalSP / totalHUs) * 10) / 10 : null;
+    const spPerHU = totalHUs > 0 ? Math.round((attributedSP / totalHUs) * 10) / 10 : null;
+
     const pSprints = sprints.filter((s: any) => s.project_id === m.project_id && s.status === "completed");
-    const velocity = pSprints.length > 0 ? Math.round(totalSP / pSprints.length) : totalSP;
+    const velocity = pSprints.length > 0 ? Math.round(attributedSP / pSprints.length * 10) / 10 : attributedSP;
+
     return {
       key: `${pr?.id}-${m.project_id}`,
       name: pr?.full_name || pr?.email || "?",
       role: m.project_role,
       project: project?.name ?? "—",
       project_id: m.project_id,
-      totalSP, totalHUs, pendingHUs,
-      totalAllHUs: mStories.length,
-      hours, hPerSP, hPerHU, spPerHU, velocity,
+      totalSP: attributedSP,
+      totalHUs,
+      pendingHUs,
+      totalAllHUs,
+      hours,
+      hPerSP,
+      hPerHU,
+      spPerHU,
+      velocity,
     };
   });
 
