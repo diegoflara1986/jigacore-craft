@@ -1,7 +1,8 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 
 export interface Profile {
   id: string;
@@ -36,6 +37,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const currentUserIdRef = useRef<string | null>(null);
 
   const fetchProfile = async (userId: string) => {
     const { data } = await supabase
@@ -49,6 +52,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
+        const newUserId = session?.user?.id ?? null;
+        const prevUserId = currentUserIdRef.current;
+
+        // If the identity changed (login, logout, or user switch),
+        // drop any cached data from the previous user to avoid
+        // showing the wrong user's info.
+        if (newUserId !== prevUserId) {
+          setProfile(null);
+          queryClient.clear();
+        }
+        currentUserIdRef.current = newUserId;
+
         setSession(session);
         if (session?.user) {
           setTimeout(() => fetchProfile(session.user.id), 0);
@@ -61,6 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
+      currentUserIdRef.current = session?.user?.id ?? null;
       if (session?.user) {
         fetchProfile(session.user.id);
       }
@@ -68,12 +84,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [queryClient]);
 
   const signOut = async () => {
     await supabase.auth.signOut();
     setSession(null);
     setProfile(null);
+    currentUserIdRef.current = null;
+    queryClient.clear();
   };
 
   return (
