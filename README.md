@@ -1,3 +1,5 @@
-# Welcome to your Lovable project
+# SGP - Sistema de Gestión de Proyectos
 
-TODO: Document your project here
+Aplicación web para gestionar proyectos, sprints, backlog, tiempos, costos e incidentes.
+
+Stack: Vite, React, TypeScript, Tailwind, shadcn/ui y Supabase.

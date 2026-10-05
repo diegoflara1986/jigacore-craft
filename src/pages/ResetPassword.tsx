@@ -40,7 +40,7 @@ export default function ResetPassword() {
         <CardHeader className="text-center space-y-4 pb-2">
           <div className="mx-auto flex items-center gap-2">
             <Hexagon className="h-10 w-10 text-accent" />
-            <span className="text-2xl font-bold text-foreground">Jigacore PM</span>
+            <span className="text-2xl font-bold text-foreground">SGP</span>
           </div>
           <p className="text-muted-foreground text-sm">Nueva contraseña</p>
         </CardHeader>

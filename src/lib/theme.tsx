@@ -14,14 +14,14 @@ export const useTheme = () => React.useContext(ThemeContext);
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = React.useState<Theme>(() => {
     if (typeof window !== "undefined") {
-      return (localStorage.getItem("jigacore-theme") as Theme) || "light";
+      return (localStorage.getItem("sgp-theme") as Theme) || "light";
     }
     return "light";
   });
 
   React.useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
-    localStorage.setItem("jigacore-theme", theme);
+    localStorage.setItem("sgp-theme", theme);
   }, [theme]);
 
   const toggleTheme = () => setTheme((t) => (t === "light" ? "dark" : "light"));
