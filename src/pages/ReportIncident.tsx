@@ -120,7 +120,7 @@ export default function ReportIncident() {
       <div className="min-h-screen bg-white flex flex-col items-center">
         <header className="w-full border-b py-4 flex justify-center items-center gap-2">
           <Hexagon className="h-7 w-7 text-primary" />
-          <span className="text-lg font-bold">SGP</span>
+          <span className="text-lg font-bold">Power SGP</span>
         </header>
         <div className="flex-1 flex flex-col items-center justify-center p-6 max-w-lg text-center">
           <div className="h-20 w-20 rounded-full bg-green-100 flex items-center justify-center mb-6 animate-bounce">
@@ -149,7 +149,7 @@ export default function ReportIncident() {
     <div className="min-h-screen bg-white">
       <header className="w-full border-b py-4 flex justify-center items-center gap-2">
         <Hexagon className="h-7 w-7 text-primary" />
-        <span className="text-lg font-bold">SGP</span>
+        <span className="text-lg font-bold">Power SGP</span>
       </header>
       <div className="max-w-[700px] mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold text-gray-900 text-center">Reportar un Incidente</h1>

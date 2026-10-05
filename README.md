@@ -1,4 +1,4 @@
-# SGP - Sistema de Gestión de Proyectos
+# Power SGP - Sistema de Gestión de Proyectos
 
 Aplicación web para gestionar proyectos, sprints, backlog, tiempos, costos e incidentes.
 

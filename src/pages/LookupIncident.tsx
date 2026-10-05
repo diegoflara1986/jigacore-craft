@@ -47,7 +47,7 @@ export default function LookupIncident() {
     <div className="min-h-screen bg-white flex flex-col items-center">
       <header className="w-full border-b py-4 flex justify-center items-center gap-2">
         <Hexagon className="h-7 w-7 text-primary" />
-        <span className="text-lg font-bold">SGP</span>
+        <span className="text-lg font-bold">Power SGP</span>
       </header>
       <div className="flex-1 flex flex-col items-center justify-center p-6 max-w-lg w-full">
         <Card className="w-full">

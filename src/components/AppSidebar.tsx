@@ -58,7 +58,7 @@ export function AppSidebar() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Hexagon className="h-7 w-7 text-sidebar-primary shrink-0" />
-            {!collapsed && <span className="text-lg font-bold text-sidebar-primary-foreground">SGP</span>}
+            {!collapsed && <span className="text-lg font-bold text-sidebar-primary-foreground">Power SGP</span>}
           </div>
           {!collapsed && (
             <Button variant="ghost" size="icon" onClick={toggleSidebar} className="text-sidebar-muted hover:text-sidebar-foreground hover:bg-sidebar-accent h-7 w-7">
@@ -219,7 +219,7 @@ export function AppSidebar() {
 
       <SidebarFooter className="sidebar-gradient p-4">
         {!collapsed && (
-          <p className="text-[10px] text-sidebar-muted text-center">© 2026 SGP</p>
+          <p className="text-[10px] text-sidebar-muted text-center">© 2026 Power SGP</p>
         )}
       </SidebarFooter>
     </Sidebar>

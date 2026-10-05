@@ -25,7 +25,7 @@ export const useTimer = () => {
   return ctx;
 };
 
-const TIMER_KEY = "sgp_timer";
+const TIMER_KEY = "power_sgp_timer";
 
 export function TimerProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<TimerState>(() => {
